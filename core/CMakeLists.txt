@@ -11,6 +11,8 @@ add_library(planova_core STATIC
     include/planova/team/MemberProjection.h
     include/planova/team/MemberService.h
     src/team/MemberService.cpp
+    src/team/MemberProjection.cpp
+    include/planova/team/VelocityCalculator.h
 )
 target_include_directories(planova_core PUBLIC include)
 target_link_libraries(planova_core PUBLIC Qt6::Core)
