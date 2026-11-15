@@ -13,8 +13,14 @@ PlanovaCore::PlanovaCore(std::filesystem::path workspaceDir)
     store_(workspaceDir_),
     log_(store_),
     clock_(),
-    projects_(log_, clock_)
+    projects_(log_, clock_),
+    memberProjection_(),
+    members_(log_, clock_),
+    gitProjection_(),
+    git_(log_, clock_)
 {
+    log_.add(memberProjection_);
+    log_.add(gitProjection_);
     log_.rebuild();
 }
 
@@ -27,6 +33,26 @@ void PlanovaCore::openProject(const Id& projectId)
 ProjectService& PlanovaCore::projects()
 {
     return projects_;
+}
+
+MemberService& PlanovaCore::members()
+{
+    return members_;
+}
+
+const MemberProjection& PlanovaCore::memberProjection() const
+{
+    return memberProjection_;
+}
+
+GitService& PlanovaCore::git()
+{
+    return git_;
+}
+
+const GitProjection& PlanovaCore::gitProjection() const
+{
+    return gitProjection_;
 }
 
 ChangeBus& PlanovaCore::bus()

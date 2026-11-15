@@ -28,4 +28,5 @@ planova_add_test(tst_ProjectService)
 # --- S2 ---
 planova_add_test(tst_MemberService)
 planova_add_test(tst_Velocity)
+planova_add_test(tst_GitService)
 # --- end S2 ---
