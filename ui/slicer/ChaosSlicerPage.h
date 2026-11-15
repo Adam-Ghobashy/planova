@@ -7,6 +7,7 @@
 class QLabel;
 class QPushButton;
 class QTableView;
+class QTimer;
 
 namespace planova::slicer {
 
@@ -48,6 +49,8 @@ private:
     QPushButton* recalculateBtn_ = nullptr;
     QPushButton* applyBtn_ = nullptr;
     QLabel* statusLabel_ = nullptr;
+    QLabel* emptyLabel_ = nullptr;
+    QTimer* statusTimer_ = nullptr;
     std::vector<Assignment> preview_;
 };
 

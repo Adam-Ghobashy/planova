@@ -5,6 +5,7 @@
 #include <QFontMetrics>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPainterPath>
 #include <QVariantAnimation>
 #include <QtMath>
 #include <algorithm>
@@ -16,11 +17,22 @@ namespace {
 
 constexpr double kPi = 3.14159265358979323846;
 constexpr double kMargin = 20.0;
-constexpr double kLegendReserve = 90.0;  // space kept under the pie for the legend
-constexpr double kRestOffset = 6.0;      // gap between slices when idle
-constexpr double kSpreadOffset = 10.0;   // extra gap at the peak of the animation
+constexpr double kLegendReserve = 110.0;  // space kept under the pie for the legend and hint
+constexpr double kRestOffset = 6.0;       // gap between slices once sliced
+constexpr double kSpreadOffset = 10.0;    // extra gap at the peak of the spreading
 constexpr double kThinSliceDegrees = 3.0;
-constexpr double kMinBadgeSpan = 25.0;   // slices narrower than this get no initials or toppings
+constexpr double kMinBadgeSpan = 25.0;    // slices narrower than this get no initials badge
+constexpr double kCutterRim = 1.1;        // the cutter's "rim" position, as a multiple of the radius
+
+// Toppings scattered over the whole pizza; each belongs to whichever slice it lands in.
+struct Topping { double angleDeg; double distance; double size; bool basil; };
+constexpr Topping kToppings[] = {
+    {10, 0.62, 8, false},  {35, 0.82, 4, true},   {52, 0.42, 6, false},  {78, 0.70, 8, false},
+    {100, 0.86, 4, true},  {118, 0.52, 7, false}, {140, 0.78, 6, false}, {160, 0.36, 4, true},
+    {178, 0.66, 8, false}, {200, 0.84, 5, true},  {222, 0.56, 7, false}, {245, 0.76, 8, false},
+    {268, 0.44, 4, true},  {290, 0.70, 6, false}, {312, 0.84, 4, true},  {330, 0.50, 8, false},
+    {348, 0.76, 7, false}, {22, 0.28, 5, false},
+};
 
 QString initialsOf(const std::string& name) {
     const QStringList parts = QString::fromStdString(name).trimmed().split(' ', Qt::SkipEmptyParts);
@@ -45,31 +57,73 @@ QPointF pointOnCircle(const QPointF& center, double distance, double angleDeg) {
     return QPointF(center.x() + distance * std::sin(rad), center.y() - distance * std::cos(rad));
 }
 
+// The pizza disc (crust + cheese) and every topping, centred on `c`. The caller clips as needed.
+void paintPizzaDisc(QPainter& painter, const QPointF& c, double r) {
+    auto& tm = ThemeManager::instance();
+    painter.setPen(QPen(tm.color(Token::PizzaEdge), 1.5));
+    painter.setBrush(tm.color(Token::PizzaCrust));
+    painter.drawEllipse(c, r, r);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(tm.color(Token::PizzaCheese));
+    painter.drawEllipse(c, r - 12, r - 12);
+    const double scale = r / 180.0;
+    for (const Topping& t : kToppings) {
+        painter.setBrush(tm.color(t.basil ? Token::PizzaBasil : Token::PizzaSauce));
+        painter.drawEllipse(pointOnCircle(c, r * t.distance, t.angleDeg), t.size * scale, t.size * scale);
+    }
+}
+
 } // namespace
 
 PizzaWidget::PizzaWidget(QWidget* parent) : QWidget(parent) {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    setMinimumSize(280, 400);
+    setMinimumSize(280, 420);
+    setMouseTracking(true);  // pointer cursor over clickable slices and legend pills
 
     anim_ = new QVariantAnimation(this);
-    anim_->setDuration(700);
-    anim_->setStartValue(0.0);
-    anim_->setEndValue(1.0);
-    anim_->setEasingCurve(QEasingCurve::InOutQuad);
+    anim_->setEasingCurve(QEasingCurve::Linear);
     connect(anim_, &QVariantAnimation::valueChanged, this, [this](const QVariant& v) {
-        animT_ = v.toDouble();
+        frame_ = timeline_.at(v.toInt());
+        update();
+    });
+    connect(anim_, &QVariantAnimation::finished, this, [this] {
+        animating_ = false;
+        sliced_ = true;
         update();
     });
 }
 
 void PizzaWidget::setPortions(const std::vector<planova::slicer::Portion>& portions) {
     portions_ = portions;
+    if (animating_) setSliced(true);  // the knife positions changed under it: skip to the end
+    update();
+}
+
+void PizzaWidget::setSliced(bool sliced) {
+    anim_->stop();
+    animating_ = false;
+    sliced_ = sliced;
     update();
 }
 
 void PizzaWidget::sliceAnimated() {
     anim_->stop();
+    const std::vector<double> angles = cutAngles();
+    if (angles.empty()) {  // zero or one slice: nothing to cut
+        animating_ = false;
+        sliced_ = true;
+        update();
+        return;
+    }
+    timeline_ = SliceTimeline(angles);
+    frame_ = timeline_.at(0);
+    sliced_ = false;
+    animating_ = true;
+    anim_->setDuration(timeline_.totalMs());
+    anim_->setStartValue(0);
+    anim_->setEndValue(timeline_.totalMs());
     anim_->start();
+    update();
 }
 
 void PizzaWidget::setSelectedMember(const QString& memberId) {
@@ -90,6 +144,25 @@ QPointF PizzaWidget::pieCenter() const {
 
 bool PizzaWidget::hasAssignedSlices() const {
     return std::any_of(portions_.begin(), portions_.end(), [](const Portion& p) { return !p.thinSlice; });
+}
+
+std::vector<double> PizzaWidget::cutAngles() const {
+    std::vector<double> angles;
+    for (const Portion& p : portions_)
+        if (!p.thinSlice) angles.push_back(p.startAngle);
+    if (angles.size() < 2) angles.clear();  // a single slice is the whole pizza: no knife work
+    return angles;
+}
+
+double PizzaWidget::spread() const {
+    if (cutAngles().empty()) return 0.0;  // nothing to pull apart
+    if (animating_) return frame_.spread;
+    return sliced_ ? 1.0 : 0.0;
+}
+
+double PizzaWidget::cutProgress(int cut) const {
+    if (animating_) return cut < static_cast<int>(frame_.cutProgress.size()) ? frame_.cutProgress[cut] : 0.0;
+    return sliced_ ? 1.0 : 0.0;
 }
 
 int PizzaWidget::sliceAt(const QPointF& pos) const {
@@ -114,6 +187,12 @@ int PizzaWidget::sliceAt(const QPointF& pos) const {
     return -1;
 }
 
+int PizzaWidget::legendIndexAt(const QPointF& pos) const {
+    for (size_t i = 0; i < legendRects_.size() && i < portions_.size(); ++i)
+        if (legendRects_[i].contains(pos)) return static_cast<int>(i);
+    return -1;
+}
+
 void PizzaWidget::toggleSelection(int portionIndex) {
     const QString id = QString::fromStdString(portions_[portionIndex].memberId);
     selectedMemberId_ = (selectedMemberId_ == id) ? QString() : id;
@@ -127,13 +206,13 @@ void PizzaWidget::mousePressEvent(QMouseEvent* event) {
         return;
     }
     const QPointF pos = event->position();
-    for (size_t i = 0; i < legendRects_.size() && i < portions_.size(); ++i) {
-        if (legendRects_[i].contains(pos)) {
-            toggleSelection(static_cast<int>(i));
-            return;
-        }
+    const int legend = legendIndexAt(pos);
+    if (legend >= 0) {
+        toggleSelection(legend);
+        return;
     }
-    const int slice = sliceAt(pos);
+    // Slices only exist once the pizza has been cut.
+    const int slice = (sliced_ && !animating_) ? sliceAt(pos) : -1;
     if (slice >= 0) {
         toggleSelection(slice);
     } else if (!selectedMemberId_.isEmpty()) {
@@ -141,6 +220,13 @@ void PizzaWidget::mousePressEvent(QMouseEvent* event) {
         update();
         emit memberSelected(QString());
     }
+}
+
+void PizzaWidget::mouseMoveEvent(QMouseEvent* event) {
+    const QPointF pos = event->position();
+    const bool overSlice = sliced_ && !animating_ && sliceAt(pos) >= 0;
+    setCursor(legendIndexAt(pos) >= 0 || overSlice ? Qt::PointingHandCursor : Qt::ArrowCursor);
+    QWidget::mouseMoveEvent(event);
 }
 
 void PizzaWidget::paintEvent(QPaintEvent* /*event*/) {
@@ -157,18 +243,24 @@ void PizzaWidget::paintEvent(QPaintEvent* /*event*/) {
 
     if (!hasAssignedSlices()) {
         drawEmptyState(painter);
+    } else if (spread() <= 0.0) {
+        drawWholePizza(painter);
+        drawCutLines(painter, true);  // grooves drawn on the cheese as the knife goes
     } else {
-        // Cut lines first, so they show in the gaps between spread slices. They grow out of the
-        // centre during the first part of the animation.
-        const double cutLength = pieRadius() * std::min(1.0, animT_ * 2.5);
-        painter.setPen(QPen(tm.color(Token::Border), 3.0, Qt::SolidLine, Qt::RoundCap));
-        for (const Portion& p : portions_) {
-            if (p.thinSlice) continue;
-            painter.drawLine(pieCenter(), pointOnCircle(pieCenter(), cutLength, p.startAngle));
-        }
+        drawCutLines(painter, false);  // grooves show in the gaps between the slices
         for (size_t i = 0; i < portions_.size(); ++i) drawSlice(painter, static_cast<int>(i));
     }
-    drawLegend(painter);
+    if (animating_ && frame_.wheelVisible) drawCutter(painter);
+
+    const double legendBottom = drawLegend(painter);
+    if (!sliced_ && !animating_ && hasAssignedSlices() && !cutAngles().empty()) {
+        painter.setPen(tm.color(Token::TextMuted));
+        QFont font = painter.font();
+        font.setPointSize(9);
+        painter.setFont(font);
+        painter.drawText(QRectF(0, legendBottom + 2, width(), 20), Qt::AlignCenter,
+                         "Press \"Slice the Project\" to divide the work");
+    }
 }
 
 void PizzaWidget::drawEmptyState(QPainter& painter) const {
@@ -182,42 +274,56 @@ void PizzaWidget::drawEmptyState(QPainter& painter) const {
     painter.drawText(QRectF(c.x() - r, c.y() - 20, 2 * r, 40), Qt::AlignCenter, "No assigned tasks");
 }
 
+void PizzaWidget::drawWholePizza(QPainter& painter) const {
+    paintPizzaDisc(painter, pieCenter(), pieRadius());
+}
+
+void PizzaWidget::drawCutLines(QPainter& painter, bool onTopOfPizza) const {
+    auto& tm = ThemeManager::instance();
+    const std::vector<double> angles = cutAngles();
+    const double r = pieRadius();
+    painter.setPen(QPen(tm.color(onTopOfPizza ? Token::PizzaEdge : Token::Border), onTopOfPizza ? 2.5 : 3.0,
+                        Qt::SolidLine, Qt::RoundCap));
+    for (size_t i = 0; i < angles.size(); ++i) {
+        const double progress = cutProgress(static_cast<int>(i));
+        if (progress <= 0.0) continue;
+        // The knife runs from the rim towards the centre.
+        painter.drawLine(pointOnCircle(pieCenter(), r, angles[i]), pointOnCircle(pieCenter(), r * (1.0 - progress), angles[i]));
+    }
+}
+
 void PizzaWidget::drawSlice(QPainter& painter, int index) const {
     const Portion& p = portions_[index];
     auto& tm = ThemeManager::instance();
 
     const double span = p.thinSlice ? kThinSliceDegrees : p.spanAngle;
     const double bisector = p.startAngle + span / 2.0;
-    const double offset = kRestOffset + kSpreadOffset * std::sin(kPi * animT_);
-    const QPointF c = pieCenter() + (pointOnCircle(QPointF(0, 0), offset, bisector));
+    const double s = spread();
+    const double offset = kRestOffset * s + kSpreadOffset * std::sin(kPi * s);
+    const QPointF c = pieCenter() + pointOnCircle(QPointF(0, 0), offset, bisector);
     const double r = pieRadius();
     const bool selected = !selectedMemberId_.isEmpty() && selectedMemberId_ == QString::fromStdString(p.memberId);
 
-    // Qt angles are counter-clockwise from 3 o'clock in 1/16 degree.
-    const int qtStart = static_cast<int>(std::round((90.0 - p.startAngle) * 16.0));
-    const int qtSpan = static_cast<int>(std::round(-span * 16.0));
+    // The wedge: Qt angles run counter-clockwise from 3 o'clock.
+    QPainterPath wedge;
+    wedge.moveTo(c);
+    wedge.arcTo(QRectF(c.x() - r, c.y() - r, 2 * r, 2 * r), 90.0 - p.startAngle, -span);
+    wedge.closeSubpath();
 
-    // Crust, then the cheese surface inset from the rim.
-    const QRectF outer(c.x() - r, c.y() - r, 2 * r, 2 * r);
+    painter.save();
+    painter.setClipPath(wedge);
+    paintPizzaDisc(painter, c, r);
+    painter.restore();
+
     painter.setPen(QPen(tm.color(selected ? Token::TextPrimary : Token::PizzaEdge), selected ? 3.0 : 1.5));
-    painter.setBrush(tm.color(Token::PizzaCrust));
-    painter.drawPie(outer, qtStart, qtSpan);
-    if (p.thinSlice) return;
+    painter.setBrush(Qt::NoBrush);
+    painter.drawPath(wedge);
 
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(tm.color(Token::PizzaCheese));
-    painter.drawPie(outer.adjusted(12, 12, -12, -12), qtStart, qtSpan);
+    if (p.thinSlice || span < kMinBadgeSpan) return;
 
-    if (span < kMinBadgeSpan) return;
-
-    // Toppings
-    painter.setBrush(tm.color(Token::PizzaSauce));
-    painter.drawEllipse(pointOnCircle(c, r * 0.62, p.startAngle + span * 0.35), 8, 8);
-    painter.drawEllipse(pointOnCircle(c, r * 0.74, p.startAngle + span * 0.72), 6, 6);
-    painter.setBrush(tm.color(Token::PizzaBasil));
-    painter.drawEllipse(pointOnCircle(c, r * 0.80, p.startAngle + span * 0.52), 4, 4);
-
-    // Initials badge in the member's colour (matches the legend dot)
+    // Initials badge in the member's colour (matches the legend dot); fades in as the slices spread.
+    painter.save();
+    painter.setOpacity(s);
     const QPointF badge = pointOnCircle(c, r * 0.35, bisector);
     painter.setPen(QPen(tm.color(Token::Surface), 2.0));
     painter.setBrush(memberColor(index));
@@ -228,9 +334,39 @@ void PizzaWidget::drawSlice(QPainter& painter, int index) const {
     painter.setFont(font);
     painter.setPen(tm.color(Token::AccentText));
     painter.drawText(QRectF(badge.x() - 14, badge.y() - 14, 28, 28), Qt::AlignCenter, initialsOf(p.memberName));
+    painter.restore();
 }
 
-void PizzaWidget::drawLegend(QPainter& painter) {
+void PizzaWidget::drawCutter(QPainter& painter) const {
+    auto& tm = ThemeManager::instance();
+    const double r = pieRadius();
+    const QPointF pos = pointOnCircle(pieCenter(), r * kCutterRim * frame_.wheelDistance, frame_.wheelAngleDeg);
+    const QPointF outward = pointOnCircle(QPointF(0, 0), 1.0, frame_.wheelAngleDeg);
+
+    painter.save();
+    painter.setOpacity(frame_.wheelLifted ? 0.75 : 1.0);
+
+    // Handle, pointing away from the pizza
+    painter.setPen(QPen(tm.color(Token::PizzaEdge), 6.0, Qt::SolidLine, Qt::RoundCap));
+    painter.drawLine(pos, pos + outward * 38.0);
+
+    // Wheel: it spins as it travels
+    painter.translate(pos);
+    painter.rotate(frame_.wheelDistance * 720.0 + frame_.wheelAngleDeg);
+    painter.setPen(QPen(tm.color(Token::TextMuted), 2.0));
+    painter.setBrush(tm.color(Token::Surface));
+    painter.drawEllipse(QPointF(0, 0), 14, 14);
+    painter.setPen(QPen(tm.color(Token::Border), 1.5));
+    for (int spoke = 0; spoke < 6; ++spoke) {
+        painter.drawLine(QPointF(0, 0), pointOnCircle(QPointF(0, 0), 12.0, spoke * 60.0));
+    }
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(tm.color(Token::TextMuted));
+    painter.drawEllipse(QPointF(0, 0), 3, 3);
+    painter.restore();
+}
+
+double PizzaWidget::drawLegend(QPainter& painter) {
     auto& tm = ThemeManager::instance();
     QFont font = painter.font();
     font.setPointSize(9);
@@ -284,6 +420,7 @@ void PizzaWidget::drawLegend(QPainter& painter) {
         painter.drawText(QRectF(r.left() + 24, r.top(), r.width() - 28, r.height()),
                          Qt::AlignLeft | Qt::AlignVCenter, pills[i].text);
     }
+    return y;
 }
 
 } // namespace planova::slicer

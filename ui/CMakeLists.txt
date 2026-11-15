@@ -18,6 +18,7 @@ target_sources(planova_ui PRIVATE
     slicer/AssigneeDelegate.cpp
     slicer/ChaosSlicerPage.cpp
     slicer/PizzaWidget.cpp
+    slicer/SliceTimeline.cpp
     slicer/SlicerTableDelegate.cpp
 )
 

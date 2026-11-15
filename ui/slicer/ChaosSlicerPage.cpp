@@ -13,6 +13,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QTableView>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <stdexcept>
 
@@ -78,6 +79,16 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
 
     headerLayout->addStretch();
 
+    // Status message as a small pill beside the buttons, so showing it never moves the page.
+    statusLabel_ = new QLabel(contentWidget);
+    statusLabel_->setObjectName("statusLabel");
+    statusLabel_->hide();
+    headerLayout->addWidget(statusLabel_);
+    statusTimer_ = new QTimer(this);
+    statusTimer_->setSingleShot(true);
+    statusTimer_->setInterval(4000);
+    connect(statusTimer_, &QTimer::timeout, statusLabel_, &QLabel::hide);
+
     recalculateBtn_ = new QPushButton("Recalculate", contentWidget);
     recalculateBtn_->setObjectName("recalculateButton");  // styled by slicer.qss
     connect(recalculateBtn_, &QPushButton::clicked, this, &ChaosSlicerPage::onRecalculate);
@@ -89,11 +100,6 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     headerLayout->addWidget(applyBtn_);
 
     mainLayout->addLayout(headerLayout);
-
-    statusLabel_ = new QLabel(contentWidget);
-    statusLabel_->setObjectName("statusLabel");
-    statusLabel_->hide();  // shown once there is a message
-    mainLayout->addWidget(statusLabel_);
 
     // --- 2. Card 1: Assignment Strategy Weights ---
     sliders_ = new WeightSlidersPanel(contentWidget);
@@ -120,10 +126,8 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     pizzaHeader->addStretch();
 
     auto* sliceBtn = new QPushButton("Slice the Project", pizzaCard);
-    sliceBtn->setObjectName("primaryButton");
-    connect(sliceBtn, &QPushButton::clicked, this, [this] {
-        if (pizza_) pizza_->sliceAnimated();
-    });
+    sliceBtn->setObjectName("sliceButton");  // styled like the primary button by slicer.qss
+    connect(sliceBtn, &QPushButton::clicked, this, [this] { pizza_->sliceAnimated(); });
     pizzaHeader->addWidget(sliceBtn);
     pizzaCardLayout->addLayout(pizzaHeader);
 
@@ -169,6 +173,11 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
 
     mainLayout->addWidget(table_);
 
+    emptyLabel_ = new QLabel("No unassigned tasks to slice.", contentWidget);
+    emptyLabel_->setObjectName("emptyLabel");
+    emptyLabel_->setAlignment(Qt::AlignCenter);
+    mainLayout->addWidget(emptyLabel_);
+
     scrollArea->setWidget(contentWidget);
     rootLayout->addWidget(scrollArea);
 
@@ -185,7 +194,8 @@ bool ChaosSlicerPage::recalculate() {
     model_->setAssignments(preview_, tasks_.all(), members_.all());
     fitTableHeight();
     pizza_->setPortions(slicer_.portions(preview_));
-    pizza_->sliceAnimated();
+    // The pizza stays whole until the user slices it. Once sliced, new weights cut it again.
+    if (pizza_->isSliced()) pizza_->sliceAnimated();
     return true;
 }
 
@@ -209,10 +219,13 @@ void ChaosSlicerPage::onApply() {
 void ChaosSlicerPage::showStatus(const QString& text) {
     statusLabel_->setText(text);
     statusLabel_->setVisible(!text.isEmpty());
+    statusTimer_->start();  // hides the message again after a few seconds
 }
 
 void ChaosSlicerPage::fitTableHeight() {
     const int rows = model_->rowCount();
+    table_->setVisible(rows > 0);
+    emptyLabel_->setVisible(rows == 0);
     const int rowHeight = table_->verticalHeader()->defaultSectionSize();
     table_->setFixedHeight(table_->horizontalHeader()->height() + rows * rowHeight + 2);
 }

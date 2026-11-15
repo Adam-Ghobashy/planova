@@ -61,10 +61,49 @@ private slots:
         w.resize(400, 500);
         QCOMPARE(w.sliceAt(pointAt(w, 90, 0.5)), -1);
     }
+    void startsWholeUntilSliced() {
+        PizzaWidget w;
+        w.setPortions({portion("1", "Alice Smith", 2, 0, 180), portion("2", "Bob Jones", 2, 180, 180)});
+        QVERIFY(!w.isSliced());
+        QVERIFY(!w.isAnimating());
+    }
+    void slicingAnimatesThenEndsSliced() {
+        PizzaWidget w;
+        w.setPortions({portion("1", "Alice Smith", 2, 0, 180), portion("2", "Bob Jones", 2, 180, 180)});
+        w.sliceAnimated();
+        QVERIFY(w.isAnimating());
+        QVERIFY(!w.isSliced());  // still whole while the cutter works
+        QTRY_VERIFY_WITH_TIMEOUT(w.isSliced(), 5000);
+        QVERIFY(!w.isAnimating());
+    }
+    void setSlicedIsInstant() {
+        PizzaWidget w;
+        w.setPortions({portion("1", "Alice Smith", 2, 0, 180), portion("2", "Bob Jones", 2, 180, 180)});
+        w.setSliced(true);
+        QVERIFY(w.isSliced());
+        w.setSliced(false);
+        QVERIFY(!w.isSliced());
+    }
+    void oneSliceOnlyHasNothingToCut() {
+        PizzaWidget w;
+        w.setPortions({portion("1", "Alice Smith", 4, 0, 360)});
+        w.sliceAnimated();
+        QVERIFY(w.isSliced());  // no cutter animation for a single slice
+        QVERIFY(!w.isAnimating());
+    }
+    void clickingTheWholePizzaSelectsNothing() {
+        PizzaWidget w;
+        w.resize(400, 500);
+        w.setPortions({portion("1", "Alice Smith", 2, 0, 180), portion("2", "Bob Jones", 2, 180, 180)});
+        QSignalSpy spy(&w, &PizzaWidget::memberSelected);
+        QTest::mouseClick(&w, Qt::LeftButton, Qt::NoModifier, pointAt(w, 90, 0.5).toPoint());
+        QCOMPARE(spy.count(), 0);  // slices do not exist until the pizza is cut
+    }
     void clickEmitsMemberSelectedThenClears() {
         PizzaWidget w;
         w.resize(400, 500);
         w.setPortions({portion("1", "Alice Smith", 2, 0, 180), portion("2", "Bob Jones", 2, 180, 180)});
+        w.setSliced(true);
         QSignalSpy spy(&w, &PizzaWidget::memberSelected);
 
         const QPoint pos = pointAt(w, 90, 0.5).toPoint();

@@ -38,7 +38,7 @@ QLabel#cardSubtitle {
 }
 
 /* Buttons */
-QPushButton#primaryButton, QPushButton#applyButton {
+QPushButton#primaryButton, QPushButton#applyButton, QPushButton#sliceButton {
     background-color: #5438DC;
     color: #FFFFFF;
     border: none;
@@ -48,11 +48,11 @@ QPushButton#primaryButton, QPushButton#applyButton {
     font-weight: 600;
 }
 
-QPushButton#primaryButton:hover, QPushButton#applyButton:hover {
+QPushButton#primaryButton:hover, QPushButton#applyButton:hover, QPushButton#sliceButton:hover {
     background-color: #4526CB;
 }
 
-QPushButton#primaryButton:pressed, QPushButton#applyButton:pressed {
+QPushButton#primaryButton:pressed, QPushButton#applyButton:pressed, QPushButton#sliceButton:pressed {
     background-color: #381BAF;
 }
 
@@ -74,10 +74,20 @@ QPushButton#secondaryButton:pressed, QPushButton#recalculateButton:pressed {
     background-color: #ECE7DC;
 }
 
+/* Short-lived message pill in the page header */
 QLabel#statusLabel {
-    color: #6B6B73;
+    background-color: #D4F981;
+    color: #1A1A1F;
+    border-radius: 12px;
+    padding: 5px 14px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
+}
+
+QLabel#emptyLabel {
+    color: #6B6B73;
+    font-size: 13px;
+    padding: 28px;
 }
 
 /* Sliders */
@@ -85,6 +95,11 @@ QWidget#WeightSlidersPanel {
     background-color: #FFFFFF;
     border: 1px solid #E7E2D6;
     border-radius: 12px;
+}
+
+/* Children of the weights card must not paint the page background over the white card. */
+QWidget#WeightSlidersPanel QLabel, QWidget#WeightSlidersPanel QSlider {
+    background: transparent;
 }
 
 QSlider::groove:horizontal {
@@ -124,10 +139,13 @@ QLabel#sliderValueLabel {
     min-width: 36px;
 }
 
-QLabel#sumLabel {
-    color: #6B6B73;
+QWidget#WeightSlidersPanel QLabel#sumLabel {
+    background-color: #F3F0FF;
+    color: #5438DC;
+    border-radius: 10px;
+    padding: 3px 10px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 /* Assignments Table */

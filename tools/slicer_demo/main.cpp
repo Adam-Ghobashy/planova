@@ -12,6 +12,7 @@
 #include <QApplication>
 #include <QMainWindow>
 #include <QPixmap>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QStyleFactory>
@@ -101,11 +102,16 @@ int main(int argc, char* argv[]) {
 
     QString screenshotPath;
     QString screenshotTablePath;
+    QString sliceShotPath;  // --slice-shot <png> <ms>: press "Slice the Project", capture after <ms>
+    int sliceShotMs = 0;
     for (int i = 1; i < argc; ++i) {
         if (QString(argv[i]) == "--screenshot" && i + 1 < argc) {
             screenshotPath = argv[++i];
         } else if (QString(argv[i]) == "--screenshot-table" && i + 1 < argc) {
             screenshotTablePath = argv[++i];
+        } else if (QString(argv[i]) == "--slice-shot" && i + 2 < argc) {
+            sliceShotPath = argv[++i];
+            sliceShotMs = QString(argv[++i]).toInt();
         }
     }
 
@@ -121,7 +127,15 @@ int main(int argc, char* argv[]) {
     window.setCentralWidget(page);
     window.show();
 
-    if (!screenshotPath.isEmpty()) {
+    if (!sliceShotPath.isEmpty()) {
+        QTimer::singleShot(300, [&window, page, sliceShotPath, sliceShotMs]() {
+            page->findChild<QPushButton*>("sliceButton")->click();
+            QTimer::singleShot(sliceShotMs, [&window, sliceShotPath]() {
+                window.grab().save(sliceShotPath);
+                QApplication::exit(0);
+            });
+        });
+    } else if (!screenshotPath.isEmpty()) {
         QTimer::singleShot(300, [&window, screenshotPath]() {
             QPixmap pix = window.grab();
             pix.save(screenshotPath);

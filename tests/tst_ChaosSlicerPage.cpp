@@ -81,6 +81,36 @@ private slots:
         page.findChild<QPushButton*>("applyButton")->click();
         QCOMPARE(page.findChild<QLabel*>("statusLabel")->text(), QString("Applied 0 assignments"));
     }
+    void pizzaStartsWholeAndRecalculateKeepsItWhole() {
+        Board b;
+        b.addAlice();
+        b.members.addMember(MemberDto{"2", "Bob", "Dev", false, {{SkillCategory::Backend, 5}}, 100, 1.0});
+        b.addTask("t1");
+        b.addTask("t2");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        auto* pizza = page.findChild<PizzaWidget*>();
+        QVERIFY(!pizza->isSliced());
+
+        page.findChild<QPushButton*>("recalculateButton")->click();
+        QVERIFY(!pizza->isSliced());
+        QVERIFY(!pizza->isAnimating());
+    }
+    void sliceButtonStartsTheCutter() {
+        Board b;
+        b.addAlice();
+        b.members.addMember(MemberDto{"2", "Bob", "Dev", false, {{SkillCategory::Backend, 5}}, 100, 1.0});
+        b.addTask("t1");
+        b.addTask("t2");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        auto* pizza = page.findChild<PizzaWidget*>();
+
+        page.findChild<QPushButton*>("sliceButton")->click();
+        QVERIFY(pizza->isAnimating());
+        QTRY_VERIFY_WITH_TIMEOUT(pizza->isSliced(), 5000);
+
+        page.findChild<QPushButton*>("recalculateButton")->click();
+        QVERIFY(pizza->isAnimating());  // already sliced, so new weights cut it again
+    }
     void pizzaSelectionHighlightsRows() {
         Board b;
         b.addAlice();

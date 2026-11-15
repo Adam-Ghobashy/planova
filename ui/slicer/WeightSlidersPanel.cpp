@@ -8,7 +8,8 @@
 namespace planova::slicer {
 
 WeightSlidersPanel::WeightSlidersPanel(QWidget* parent) : QWidget(parent) {
-    setObjectName("card");
+    setObjectName("WeightSlidersPanel");        // styled as a card by slicer.qss
+    setAttribute(Qt::WA_StyledBackground, true);  // a plain QWidget ignores its stylesheet background otherwise
 
     auto* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(20, 16, 20, 16);
@@ -32,21 +33,24 @@ WeightSlidersPanel::WeightSlidersPanel(QWidget* parent) : QWidget(parent) {
 
     const char* names[3] = {"Skill Match (α)", "Workload Leveling (β)", "Priority Weight (γ)"};
     for (int i = 0; i < 3; ++i) {
-        auto* itemLayout = new QHBoxLayout();
-        itemLayout->setSpacing(10);
+        // Name and value on one line, the slider under them.
+        auto* itemLayout = new QVBoxLayout();
+        itemLayout->setSpacing(6);
 
+        auto* labelRow = new QHBoxLayout();
         auto* nameLabel = new QLabel(names[i], this);
         nameLabel->setObjectName("sliderNameLabel");
-        itemLayout->addWidget(nameLabel);
+        labelRow->addWidget(nameLabel);
+        labelRow->addStretch();
+        valueLabels_[i] = new QLabel(this);
+        valueLabels_[i]->setObjectName("sliderValueLabel");
+        labelRow->addWidget(valueLabels_[i]);
+        itemLayout->addLayout(labelRow);
 
         sliders_[i] = new QSlider(Qt::Horizontal, this);
         sliders_[i]->setRange(0, 100);
         sliders_[i]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        itemLayout->addWidget(sliders_[i], 1);
-
-        valueLabels_[i] = new QLabel(this);
-        valueLabels_[i]->setObjectName("sliderValueLabel");
-        itemLayout->addWidget(valueLabels_[i]);
+        itemLayout->addWidget(sliders_[i]);
 
         connect(sliders_[i], &QSlider::valueChanged, this, [this, i](int v) {
             onSliderMoved(i, v);
