@@ -23,14 +23,15 @@ std::vector<Assignment> SlicerService::preview(const ScoringWeights& weights) co
     return strategy_.assign(tasks_.all(), members_.all(), weights);
 }
 
-void SlicerService::apply(const std::vector<Assignment>& assignments, const ScoringWeights& weights) {
+int SlicerService::apply(const std::vector<Assignment>& assignments, const ScoringWeights& weights) {
     requireValid(weights);
     const int64_t now = clock_.nowMs();
-    bool anyChanged = false;
+    int changed = 0;
 
     for (const auto& a : assignments) {
         auto task = tasks_.byId(a.taskId);
         if (!task) continue;
+        if (!members_.byId(a.memberId)) continue;                       // unknown member
         if (task->assignee && *task->assignee == a.memberId) continue;  // unchanged
 
         QJsonObject payload;
@@ -45,10 +46,10 @@ void SlicerService::apply(const std::vector<Assignment>& assignments, const Scor
         e.payload = payload;
         e.id = makeEventId(e.ts, e.author, e.payload);
         log_.append(e);
-        anyChanged = true;
+        ++changed;
     }
 
-    if (anyChanged || !lastWeights_ || *lastWeights_ != weights) {
+    if (changed > 0 || !lastWeights_ || *lastWeights_ != weights) {
         QJsonObject payload;
         payload["skill"] = weights.skill;
         payload["workload"] = weights.workload;
@@ -63,6 +64,7 @@ void SlicerService::apply(const std::vector<Assignment>& assignments, const Scor
         log_.append(e);
         lastWeights_ = weights;
     }
+    return changed;
 }
 
 std::vector<Portion> SlicerService::portions() const {

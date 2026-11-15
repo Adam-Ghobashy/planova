@@ -21,7 +21,8 @@ public:
     std::vector<Assignment> preview(const ScoringWeights& weights) const;
     // Appends TaskAssigned for each changed task, and SlicerWeightsChanged on first apply,
     // changed weights, or any changed assignee. Identical re-apply appends nothing.
-    void apply(const std::vector<Assignment>& assignments, const ScoringWeights& weights);
+    // Returns how many tasks changed assignee. Unknown tasks or members are skipped.
+    int apply(const std::vector<Assignment>& assignments, const ScoringWeights& weights);
     std::vector<Portion> portions() const;                                          // board state
     std::vector<Portion> portions(const std::vector<Assignment>& preview) const;    // overlay on ToDo tasks
 

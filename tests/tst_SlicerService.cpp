@@ -62,6 +62,24 @@ private slots:
         f.svc.apply(preview, w);
         QCOMPARE(int(f.store.events.size()), afterFirst);
     }
+    void applyReturnsChangedCount() {
+        Fixture f;
+        ScoringWeights w;
+        auto preview = f.svc.preview(w);
+        QCOMPARE(f.svc.apply(preview, w), 1);
+        f.tq.setAssignee("t1", "1");
+        int afterFirst = int(f.store.events.size());
+        QCOMPARE(f.svc.apply(preview, w), 0);
+        QCOMPARE(int(f.store.events.size()), afterFirst);
+    }
+    void applySkipsUnknownMember() {
+        Fixture f;
+        Assignment bad;
+        bad.taskId = "t1";
+        bad.memberId = "nope";
+        QCOMPARE(f.svc.apply({bad}, ScoringWeights{}), 0);
+        for (const auto& e : f.store.events) QVERIFY(e.type != "TaskAssigned");
+    }
     void changedWeightsAppendOnlyWeightsEvent() {
         Fixture f;
         ScoringWeights w;
