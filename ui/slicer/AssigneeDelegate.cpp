@@ -1,20 +1,28 @@
 #include "slicer/AssigneeDelegate.h"
+#include "slicer/SlicerTableDelegate.h"
 #include "theme/ThemeManager.h"
 #include <QComboBox>
 #include <QPainter>
+#include <QTimer>
 
 namespace planova::slicer {
 
 AssigneeDelegate::AssigneeDelegate(const std::vector<MemberDto>& members, QObject* parent)
     : QStyledItemDelegate(parent), members_(members) {}
 
-QWidget* AssigneeDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem& /*option*/,
-                                        const QModelIndex& /*index*/) const {
+QWidget* AssigneeDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem&,
+                                        const QModelIndex&) const {
     auto* combo = new QComboBox(parent);
     combo->setObjectName("overrideCombo");
     for (const auto& m : members_) {
         combo->addItem(QString::fromStdString(m.name), QString::fromStdString(m.id));
     }
+    auto* self = const_cast<AssigneeDelegate*>(this);
+    connect(combo, QOverload<int>::of(&QComboBox::activated), self, [self, combo] {
+        emit self->commitData(combo);
+        emit self->closeEditor(combo);
+    });
+    QTimer::singleShot(0, combo, &QComboBox::showPopup);
     return combo;
 }
 
@@ -45,16 +53,10 @@ void AssigneeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     auto& tm = ThemeManager::instance();
     const QRect rect = option.rect;
 
-    // Row Background
-    if (option.state & QStyle::State_Selected) {
-        painter->fillRect(rect, tm.color(Token::AccentSoft));
-    } else {
-        painter->fillRect(rect, tm.color(Token::Surface));
-    }
+    painter->fillRect(rect, slicerRowBackground(option, index));
     painter->setPen(QPen(tm.color(Token::SurfaceAlt), 1));
     painter->drawLine(rect.bottomLeft(), rect.bottomRight());
 
-    // Combobox pill
     int comboW = 120;
     int comboH = 28;
     QRectF comboRect(rect.left() + 8, rect.top() + (rect.height() - comboH) / 2.0, comboW, comboH);
@@ -63,7 +65,6 @@ void AssigneeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     painter->setBrush(tm.color(Token::Surface));
     painter->drawRoundedRect(comboRect, 6, 6);
 
-    // Text
     QString text = index.data(Qt::DisplayRole).toString();
     QFont font = painter->font();
     font.setPointSize(9);
@@ -71,7 +72,6 @@ void AssigneeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     painter->setPen(tm.color(Token::TextPrimary));
     painter->drawText(comboRect.adjusted(8, 0, -20, 0), Qt::AlignLeft | Qt::AlignVCenter, text);
 
-    // Chevron down arrow
     painter->setPen(QPen(tm.color(Token::TextMuted), 1.5));
     qreal ax = comboRect.right() - 12;
     qreal ay = comboRect.center().y();
@@ -81,9 +81,9 @@ void AssigneeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     painter->restore();
 }
 
-QSize AssigneeDelegate::sizeHint(const QStyleOptionViewItem& /*option*/,
-                                 const QModelIndex& /*index*/) const {
+QSize AssigneeDelegate::sizeHint(const QStyleOptionViewItem&,
+                                 const QModelIndex&) const {
     return QSize(140, 56);
 }
 
-} // namespace planova::slicer
+}

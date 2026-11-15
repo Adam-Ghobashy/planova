@@ -12,26 +12,29 @@ namespace {
 void requireValid(const ScoringWeights& w) {
     if (!w.valid()) throw std::invalid_argument("Scoring weights must be non-negative and sum to 100");
 }
-} // namespace
+}
 
 SlicerService::SlicerService(ITaskQuery& tasks, IMemberQuery& members, IAssignmentStrategy& strategy,
                              EventLog& log, IClock& clock)
-    : tasks_(tasks), members_(members), strategy_(strategy), log_(log), clock_(clock) {}
+    : tasks_(tasks), members_(members), strategy_(strategy), log_(log), clock_(clock) {
+    log_.add(weights_);
+}
 
 std::vector<Assignment> SlicerService::preview(const ScoringWeights& weights) const {
     requireValid(weights);
     return strategy_.assign(tasks_.all(), members_.all(), weights);
 }
 
-void SlicerService::apply(const std::vector<Assignment>& assignments, const ScoringWeights& weights) {
+int SlicerService::apply(const std::vector<Assignment>& assignments, const ScoringWeights& weights) {
     requireValid(weights);
     const int64_t now = clock_.nowMs();
-    bool anyChanged = false;
+    int changed = 0;
 
     for (const auto& a : assignments) {
         auto task = tasks_.byId(a.taskId);
         if (!task) continue;
-        if (task->assignee && *task->assignee == a.memberId) continue;  // unchanged
+        if (!members_.byId(a.memberId)) continue;
+        if (task->assignee && *task->assignee == a.memberId) continue;
 
         QJsonObject payload;
         payload["taskId"] = QString::fromStdString(a.taskId);
@@ -45,10 +48,11 @@ void SlicerService::apply(const std::vector<Assignment>& assignments, const Scor
         e.payload = payload;
         e.id = makeEventId(e.ts, e.author, e.payload);
         log_.append(e);
-        anyChanged = true;
+        ++changed;
     }
 
-    if (anyChanged || !lastWeights_ || *lastWeights_ != weights) {
+    const auto lastWeights = weights_.last();
+    if (changed > 0 || !lastWeights || *lastWeights != weights) {
         QJsonObject payload;
         payload["skill"] = weights.skill;
         payload["workload"] = weights.workload;
@@ -61,8 +65,8 @@ void SlicerService::apply(const std::vector<Assignment>& assignments, const Scor
         e.payload = payload;
         e.id = makeEventId(e.ts, e.author, e.payload);
         log_.append(e);
-        lastWeights_ = weights;
     }
+    return changed;
 }
 
 std::vector<Portion> SlicerService::portions() const {
@@ -77,4 +81,4 @@ std::vector<Portion> SlicerService::portions(const std::vector<Assignment>& prev
     return PizzaPortionCalculator::calculate(tasks, members_.all());
 }
 
-} // namespace planova::slicer
+}

@@ -1,4 +1,3 @@
-/* Chaos Slicer (Pizza) Light Theme - Figma Match */
 
 QWidget#ChaosSlicerPage {
     background-color: #FAF8F5;
@@ -15,7 +14,6 @@ QWidget#slicerScrollContent {
     background: transparent;
 }
 
-/* Card Containers */
 QFrame#card {
     background-color: #FFFFFF;
     border: 1px solid #E7E2D6;
@@ -37,8 +35,7 @@ QLabel#cardSubtitle {
     font-size: 12px;
 }
 
-/* Buttons */
-QPushButton#primaryButton {
+QPushButton#primaryButton, QPushButton#applyButton, QPushButton#sliceButton {
     background-color: #5438DC;
     color: #FFFFFF;
     border: none;
@@ -48,15 +45,15 @@ QPushButton#primaryButton {
     font-weight: 600;
 }
 
-QPushButton#primaryButton:hover {
-    background-color: #4529CA;
+QPushButton#primaryButton:hover, QPushButton#applyButton:hover, QPushButton#sliceButton:hover {
+    background-color: #4526CB;
 }
 
-QPushButton#primaryButton:pressed {
-    background-color: #381EB8;
+QPushButton#primaryButton:pressed, QPushButton#applyButton:pressed, QPushButton#sliceButton:pressed {
+    background-color: #381BAF;
 }
 
-QPushButton#secondaryButton {
+QPushButton#secondaryButton, QPushButton#recalculateButton {
     background-color: #FFFFFF;
     color: #1A1A1F;
     border: 1px solid #E7E2D6;
@@ -66,19 +63,37 @@ QPushButton#secondaryButton {
     font-weight: 500;
 }
 
-QPushButton#secondaryButton:hover {
+QPushButton#secondaryButton:hover, QPushButton#recalculateButton:hover {
     background-color: #F5F2EA;
 }
 
-QPushButton#secondaryButton:pressed {
-    background-color: #EDE8DC;
+QPushButton#secondaryButton:pressed, QPushButton#recalculateButton:pressed {
+    background-color: #ECE7DC;
 }
 
-/* Sliders */
+QLabel#statusLabel {
+    background-color: #D4F981;
+    color: #1A1A1F;
+    border-radius: 12px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QLabel#emptyLabel {
+    color: #6B6B73;
+    font-size: 13px;
+    padding: 28px;
+}
+
 QWidget#WeightSlidersPanel {
     background-color: #FFFFFF;
     border: 1px solid #E7E2D6;
     border-radius: 12px;
+}
+
+QWidget#WeightSlidersPanel QLabel, QWidget#WeightSlidersPanel QSlider {
+    background: transparent;
 }
 
 QSlider::groove:horizontal {
@@ -102,7 +117,7 @@ QSlider::handle:horizontal {
 }
 
 QSlider::handle:horizontal:hover {
-    background: #4529CA;
+    background: #4526CB;
 }
 
 QLabel#sliderNameLabel {
@@ -118,13 +133,15 @@ QLabel#sliderValueLabel {
     min-width: 36px;
 }
 
-QLabel#sumLabel {
-    color: #6B6B73;
+QWidget#WeightSlidersPanel QLabel#sumLabel {
+    background-color: #F3F0FF;
+    color: #5438DC;
+    border-radius: 10px;
+    padding: 3px 10px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
 }
 
-/* Assignments Table */
 QTableView#assignmentsTable {
     background-color: #FFFFFF;
     border: 1px solid #E7E2D6;
@@ -151,7 +168,6 @@ QTableView::item {
     border-bottom: 1px solid #F5F2EA;
 }
 
-/* Action Override Combobox */
 QComboBox#overrideCombo {
     background-color: #FFFFFF;
     color: #1A1A1F;

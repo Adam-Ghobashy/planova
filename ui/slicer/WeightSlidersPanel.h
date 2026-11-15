@@ -12,9 +12,9 @@ class WeightSlidersPanel : public QWidget {
 public:
     explicit WeightSlidersPanel(QWidget* parent = nullptr);
     ScoringWeights weights() const { return weights_; }
-    void setWeights(const ScoringWeights& w);
 signals:
     void weightsChanged(const planova::slicer::ScoringWeights& weights);
+    void weightsCommitted(const planova::slicer::ScoringWeights& weights);
 private:
     void onSliderMoved(int index, int value);
     void syncWidgets();
@@ -24,4 +24,4 @@ private:
     QLabel* sumLabel_ = nullptr;
 };
 
-} // namespace planova::slicer
+}

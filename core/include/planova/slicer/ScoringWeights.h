@@ -16,4 +16,4 @@ struct ScoringWeights {
     bool operator!=(const ScoringWeights& o) const noexcept { return !(*this == o); }
 };
 
-} // namespace planova::slicer
+}

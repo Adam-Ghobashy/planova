@@ -1,7 +1,10 @@
 #pragma once
+#include <QColor>
 #include <QStyledItemDelegate>
 
 namespace planova::slicer {
+
+QColor slicerRowBackground(const QStyleOptionViewItem& option, const QModelIndex& index);
 
 class SlicerTableDelegate : public QStyledItemDelegate {
     Q_OBJECT
@@ -14,4 +17,4 @@ public:
                    const QModelIndex& index) const override;
 };
 
-} // namespace planova::slicer
+}

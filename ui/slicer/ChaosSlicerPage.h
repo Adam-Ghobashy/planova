@@ -7,9 +7,11 @@
 class QLabel;
 class QPushButton;
 class QTableView;
+class QTimer;
 
 namespace planova::slicer {
 
+class AssigneeDelegate;
 class WeightSlidersPanel;
 class AssignmentTableModel;
 class PizzaWidget;
@@ -25,11 +27,17 @@ public:
 public slots:
     void refreshFromBoard();
 
+signals:
+    void assignmentsApplied(int changed);
+
 private slots:
     void onRecalculate();
     void onApply();
 
 private:
+    bool recalculate();
+    void fitTableHeight();
+    void showStatus(const QString& text);
     planova::slicer::SlicerService& slicer_;
     ITaskQuery& tasks_;
     IMemberQuery& members_;
@@ -40,7 +48,12 @@ private:
     AssignmentTableModel* model_ = nullptr;
     QPushButton* recalculateBtn_ = nullptr;
     QPushButton* applyBtn_ = nullptr;
+    AssigneeDelegate* assigneeDelegate_ = nullptr;
+    bool applying_ = false;
+    QLabel* statusLabel_ = nullptr;
+    QLabel* emptyLabel_ = nullptr;
+    QTimer* statusTimer_ = nullptr;
     std::vector<Assignment> preview_;
 };
 
-} // namespace planova::slicer
+}

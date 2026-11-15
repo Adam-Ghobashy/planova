@@ -10,4 +10,4 @@ public:
                                    const ScoringWeights& weights) const override;
 };
 
-} // namespace planova::slicer
+}

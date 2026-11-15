@@ -26,7 +26,17 @@ void AssignmentTableModel::setAssignments(const std::vector<Assignment>& assignm
     assignments_ = assignments;
     tasks_ = tasks;
     members_ = members;
+    manualTaskIds_.clear();
     endResetModel();
+}
+
+void AssignmentTableModel::setHighlightedMember(const Id& memberId) {
+    if (highlightedMember_ == memberId) return;
+    highlightedMember_ = memberId;
+    if (!assignments_.empty()) {
+        emit dataChanged(index(0, 0), index(static_cast<int>(assignments_.size()) - 1, ColCount - 1),
+                         {HighlightedRole});
+    }
 }
 
 int AssignmentTableModel::rowCount(const QModelIndex& parent) const {
@@ -62,7 +72,6 @@ QVariant AssignmentTableModel::data(const QModelIndex& index, int role) const {
     const auto* t = findTask(a.taskId);
     const auto* m = findMember(a.memberId);
 
-    // Custom structured roles for rich rendering delegates
     if (role == TaskTitleRole && t) return QString::fromStdString(t->title);
     if (role == TaskComplexityRole && t) return t->complexity;
     if (role == RequiredSkillRole && t) return QString::fromStdString(skillToString(t->skill)).toUpper();
@@ -72,6 +81,8 @@ QVariant AssignmentTableModel::data(const QModelIndex& index, int role) const {
     if (role == MatchPctRole) return a.matchPct;
     if (role == WaitingOnDepRole) return a.waitingOnDep;
     if (role == RationaleRole) return QString::fromStdString(a.rationale);
+    if (role == HighlightedRole) return !highlightedMember_.empty() && a.memberId == highlightedMember_;
+    if (role == ManualOverrideRole) return manualTaskIds_.count(a.taskId) > 0;
 
     switch (index.column()) {
         case Column::TaskComplexity:
@@ -140,11 +151,14 @@ bool AssignmentTableModel::setData(const QModelIndex& index, const QVariant& val
     }
 
     auto& a = assignments_[index.row()];
+    if (a.memberId == newMemberId) return true;
     a.memberId = newMemberId;
     a.matchPct = 0;
     a.rationale = "Manual override";
+    manualTaskIds_.insert(a.taskId);
 
     emit dataChanged(this->index(index.row(), 0), this->index(index.row(), Column::ColCount - 1));
+    emit assignmentEdited();
     return true;
 }
 
@@ -158,6 +172,9 @@ Qt::ItemFlags AssignmentTableModel::flags(const QModelIndex& index) const {
 }
 
 QVariant AssignmentTableModel::headerData(int section, Qt::Orientation orientation, int role) const {
+    if (orientation == Qt::Horizontal && role == Qt::TextAlignmentRole) {
+        return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
+    }
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
         switch (section) {
             case Column::TaskComplexity: return QString("Task & Complexity");
@@ -173,4 +190,4 @@ QVariant AssignmentTableModel::headerData(int section, Qt::Orientation orientati
     return QAbstractTableModel::headerData(section, orientation, role);
 }
 
-} // namespace planova::slicer
+}

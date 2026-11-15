@@ -4,12 +4,8 @@
 
 namespace planova::slicer {
 
-// Note: TaskAssigned belongs to S3's event block (section 2 of team plan):
-// same string, payload {taskId, memberId, by}.
 inline constexpr const char* TaskAssigned = "TaskAssigned";
 
-// SlicerWeightsChanged belongs to S4:
-// payload {skill, workload, priority} (integers summing to 100).
 inline constexpr const char* SlicerWeightsChanged = "SlicerWeightsChanged";
 
 inline std::string skillToString(SkillCategory s) {
@@ -35,4 +31,4 @@ inline std::string priorityToString(Priority p) {
     return "Unknown";
 }
 
-} // namespace planova::slicer
+}

@@ -2,6 +2,7 @@
 #include "planova/common/Dtos.h"
 #include "planova/slicer/SlicerTypes.h"
 #include <QAbstractTableModel>
+#include <set>
 #include <vector>
 
 namespace planova::slicer {
@@ -20,13 +21,16 @@ public:
         AssigneeInitialsRole,
         MatchPctRole,
         WaitingOnDepRole,
-        RationaleRole
+        RationaleRole,
+        HighlightedRole,
+        ManualOverrideRole
     };
 
     explicit AssignmentTableModel(QObject* parent = nullptr);
     void setAssignments(const std::vector<Assignment>& assignments, const std::vector<TaskDto>& tasks,
                         const std::vector<MemberDto>& members);
     std::vector<Assignment> currentAssignments() const { return assignments_; }
+    void setHighlightedMember(const Id& memberId);
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
     int columnCount(const QModelIndex& parent = QModelIndex()) const override;
@@ -35,12 +39,17 @@ public:
     Qt::ItemFlags flags(const QModelIndex& index) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
+signals:
+    void assignmentEdited();
+
 private:
     const TaskDto* findTask(const Id& id) const;
     const MemberDto* findMember(const Id& id) const;
     std::vector<Assignment> assignments_;
     std::vector<TaskDto> tasks_;
     std::vector<MemberDto> members_;
+    Id highlightedMember_;
+    std::set<Id> manualTaskIds_;
 };
 
-} // namespace planova::slicer
+}
