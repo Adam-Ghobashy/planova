@@ -33,6 +33,20 @@ private slots:
         QCOMPARE(p[0].share, 0.75);
         QCOMPARE(p[1].share, 0.25);
     }
+    void anglesChainFromShares() {
+        // complexity 2 + 3 + 5 = 10: shares 0.2 / 0.3 / 0.5 -> spans 72 / 108 / 180 degrees,
+        // and each slice starts where the previous one ended.
+        auto p = PizzaPortionCalculator::calculate(
+            {task("t1", 2, TaskStatus::ToDo, Id("1")), task("t2", 3, TaskStatus::ToDo, Id("2")),
+             task("t3", 5, TaskStatus::ToDo, Id("3"))},
+            {member("1", "Alice"), member("2", "Bob"), member("3", "Cara")});
+        QCOMPARE(p[0].spanAngle, 72.0);
+        QCOMPARE(p[1].startAngle, 72.0);
+        QCOMPARE(p[1].spanAngle, 108.0);
+        QCOMPARE(p[2].startAngle, 180.0);
+        QCOMPARE(p[2].spanAngle, 180.0);
+        QCOMPARE(p[2].startAngle + p[2].spanAngle, 360.0);
+    }
     void memberWithoutTasksGetsThinSlice() {
         auto p = PizzaPortionCalculator::calculate({task("t1", 4, TaskStatus::InProgress, Id("1"))},
                                                    {member("1", "Alice"), member("2", "Bob")});

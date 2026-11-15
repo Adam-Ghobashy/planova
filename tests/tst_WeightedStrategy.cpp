@@ -117,6 +117,26 @@ private slots:
         QVERIFY(res[0].waitingOnDep);
     }
 
+    void scoreEquationHandComputed() {
+        // score = 0.5*S + 0.3*L + 0.2*Pn  (S = rating/5, L = 1 - hours/maxHours, Pn = velocity/5 for High)
+        // Ann: S = 4/5 = 0.8, L = 1 - 0/10 = 1.0, Pn = 3/5 = 0.6  ->  0.40 + 0.30 + 0.12 = 0.82 -> 82
+        // Ben: S = 5/5 = 1.0, L = 1 - 10/10 = 0,  Pn = 1/5 = 0.2  ->  0.50 + 0.00 + 0.04 = 0.54 -> 54
+        WeightedScoringStrategy strat;
+        auto res = strat.assign({task("busy", Priority::Medium, 3, 10, TaskStatus::InProgress, Id("2")),
+                                 task("t1", Priority::High, 3, 4), task("t2", Priority::Low, 2, 2)},
+                                {member("1", "Ann", {{SkillCategory::Backend, 4}}, 3.0),
+                                 member("2", "Ben", {{SkillCategory::Backend, 5}}, 1.0)},
+                                ScoringWeights{50, 30, 20});
+        QCOMPARE(int(res.size()), 2);
+        QCOMPARE(res[0].taskId, std::string("t1"));  // High is sliced before Low
+        QCOMPARE(res[0].memberId, std::string("1"));
+        QCOMPARE(res[0].matchPct, 82);
+        // Ann now holds 4h (Ben 10h, max 10). For the Low task Pn = 1 for everyone:
+        // Ann: 0.5*0.8 + 0.3*(1 - 4/10) + 0.2*1 = 0.40 + 0.18 + 0.20 = 0.78 -> 78  (Ben: 0.50 + 0 + 0.20 = 0.70)
+        QCOMPARE(res[1].memberId, std::string("1"));
+        QCOMPARE(res[1].matchPct, 78);
+    }
+
     void rationaleLevelGood() {
         WeightedScoringStrategy strat;
         auto res = strat.assign({task("t1", Priority::Medium, 3, 5)},
