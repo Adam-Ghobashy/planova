@@ -42,6 +42,7 @@ protected:
 
 private:
     bool hasAssignedSlices() const;
+    bool hasCuts() const;                    // two or more slices: there is something to cut
     std::vector<double> cutAngles() const;   // where the knife goes: the start of every slice, if there are 2+
     double spread() const;                   // 0 = together .. 1 = settled apart
     double cutProgress(int cut) const;       // 0 .. 1 for the cut with this index
@@ -60,7 +61,7 @@ private:
     std::vector<QRectF> legendRects_;  // filled while painting, used for clicks
     bool sliced_ = false;
     bool animating_ = false;
-    SliceTimeline timeline_{std::vector<double>{}};
+    SliceTimeline timeline_ = SliceTimeline(std::vector<double>());
     SliceFrame frame_;
     QVariantAnimation* anim_ = nullptr;
 };

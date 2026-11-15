@@ -135,7 +135,7 @@ void PizzaWidget::setSelectedMember(const QString& memberId) {
 double PizzaWidget::pieRadius() const {
     const double byWidth = (width() - 2 * kMargin) / 2.0;
     const double byHeight = (height() - kLegendReserve - 2 * kMargin) / 2.0;
-    return std::max(40.0, std::min(byWidth, byHeight));
+    return (std::max)(40.0, (std::min)(byWidth, byHeight));
 }
 
 QPointF PizzaWidget::pieCenter() const {
@@ -154,8 +154,12 @@ std::vector<double> PizzaWidget::cutAngles() const {
     return angles;
 }
 
+bool PizzaWidget::hasCuts() const {
+    return std::count_if(portions_.begin(), portions_.end(), [](const Portion& p) { return !p.thinSlice; }) >= 2;
+}
+
 double PizzaWidget::spread() const {
-    if (cutAngles().empty()) return 0.0;  // nothing to pull apart
+    if (!hasCuts()) return 0.0;  // nothing to pull apart
     if (animating_) return frame_.spread;
     return sliced_ ? 1.0 : 0.0;
 }
@@ -253,7 +257,7 @@ void PizzaWidget::paintEvent(QPaintEvent* /*event*/) {
     if (animating_ && frame_.wheelVisible) drawCutter(painter);
 
     const double legendBottom = drawLegend(painter);
-    if (!sliced_ && !animating_ && hasAssignedSlices() && !cutAngles().empty()) {
+    if (!sliced_ && !animating_ && hasCuts()) {
         painter.setPen(tm.color(Token::TextMuted));
         QFont font = painter.font();
         font.setPointSize(9);

@@ -15,7 +15,7 @@ public:
     std::optional<ScoringWeights> last() const { return last_; }
 
 private:
-    std::optional<ScoringWeights> last_;
+    std::optional<ScoringWeights> last_ = std::nullopt;
 };
 
 } // namespace planova::slicer

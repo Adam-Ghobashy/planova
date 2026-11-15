@@ -16,6 +16,9 @@ public:
 
     SlicerService(ITaskQuery& tasks, IMemberQuery& members, IAssignmentStrategy& strategy,
                   EventLog& log, IClock& clock);
+    // The event log keeps a pointer to weights_, so a copy would leave it dangling.
+    SlicerService(const SlicerService&) = delete;
+    SlicerService& operator=(const SlicerService&) = delete;
 
     // Throws std::invalid_argument if the weights are invalid. Appends no events.
     std::vector<Assignment> preview(const ScoringWeights& weights) const;

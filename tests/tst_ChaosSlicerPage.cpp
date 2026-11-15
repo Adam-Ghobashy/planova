@@ -34,6 +34,13 @@ struct Board {
 };
 }
 
+// Like the real FileEventStore when the disk write fails.
+class FailingStore : public IEventStore {
+public:
+    void append(const Event&) override { throw std::runtime_error("Cannot write event file"); }
+    std::vector<Event> readAll() const override { return {}; }
+};
+
 class tst_ChaosSlicerPage : public QObject {
     Q_OBJECT
 private slots:
@@ -73,6 +80,25 @@ private slots:
         page.findChild<QPushButton*>("recalculateButton")->click();
 
         QCOMPARE(page.findChild<QLabel*>("statusLabel")->text(), QString("Recalculated"));
+    }
+    void failedSaveIsShownNotThrown() {
+        FakeTaskQuery tasks;
+        FakeMemberQuery members;
+        FailingStore store;
+        EventLog log{store};
+        FakeClock clock{1000};
+        WeightedScoringStrategy strategy;
+        SlicerService service{tasks, members, strategy, log, clock};
+        members.addMember(MemberDto{"1", "Alice", "Dev", false, {{SkillCategory::Backend, 5}}, 100, 1.0});
+        tasks.addTask(TaskDto{"t1", "t1", SkillCategory::Backend, Priority::Medium, 3, 4, TaskStatus::ToDo,
+                              std::nullopt, {}});
+        ChaosSlicerPage page(service, tasks, members);
+        QSignalSpy spy(&page, &ChaosSlicerPage::assignmentsApplied);
+
+        page.findChild<QPushButton*>("applyButton")->click();  // must not throw out of the slot
+
+        QCOMPARE(spy.count(), 0);
+        QVERIFY(page.findChild<QLabel*>("statusLabel")->text().contains("Cannot write event file"));
     }
     void emptyBoardDoesNotCrash() {
         Board b;  // no members, no tasks

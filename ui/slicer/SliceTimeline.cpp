@@ -31,7 +31,7 @@ SliceFrame SliceTimeline::at(int elapsedMs) const {
     frame.cutProgress.assign(cutAngles_.size(), 0.0);
     for (int i = 0; i < cuts; ++i) {
         const double u = clamp01(static_cast<double>(elapsedMs - i * kCutMs) / kCutMs);
-        frame.cutProgress[i] = std::min(1.0, u / kCuttingEnd);
+        frame.cutProgress[i] = (std::min)(1.0, u / kCuttingEnd);
     }
 
     if (cuts > 0 && elapsedMs < cuttingMs) {

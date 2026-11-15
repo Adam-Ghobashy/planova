@@ -207,8 +207,10 @@ void ChaosSlicerPage::onApply() {
     int changed = 0;
     try {
         changed = slicer_.apply(model_->currentAssignments(), sliders_->weights());
-    } catch (const std::invalid_argument& e) {
-        showStatus(QString::fromUtf8(e.what()));
+    } catch (const std::exception& e) {
+        // Invalid weights, or the event store could not write (disk full, file locked).
+        // An exception must never leave a slot, so show it instead.
+        showStatus(QString("Could not apply: %1").arg(QString::fromUtf8(e.what())));
         return;
     }
     refreshFromBoard();
