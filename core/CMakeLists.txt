@@ -6,6 +6,18 @@ add_library(planova_core STATIC
     src/project/ProjectService.cpp
     src/store/FileEventStore.cpp
     src/store/EventLog.cpp
+    include/planova/team/SkillCategory.h
+    include/planova/team/Member.h
+    include/planova/team/MemberProjection.h
+    include/planova/team/MemberService.h
+    include/planova/team/VelocityCalculator.h
+    src/team/MemberService.cpp
+    src/team/MemberProjection.cpp
+    include/planova/git/Commit.h
+    include/planova/git/GitProjection.h
+    include/planova/git/GitService.h
+    src/git/GitProjection.cpp
+    src/git/GitService.cpp
 )
 target_include_directories(planova_core PUBLIC include)
 target_link_libraries(planova_core PUBLIC Qt6::Core)
