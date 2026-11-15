@@ -117,6 +117,33 @@ private slots:
         QVERIFY(res[0].waitingOnDep);
     }
 
+    void rationaleLevelGood() {
+        WeightedScoringStrategy strat;
+        auto res = strat.assign({task("t1", Priority::Medium, 3, 5)},
+                                {member("1", "Alice", {{SkillCategory::Backend, 3}})}, ScoringWeights{});
+        QCOMPARE(QString::fromStdString(res[0].rationale),
+                 QString("Good Backend proficiency (3/5) with balanced load (0h)."));
+    }
+
+    void rationaleLevelBasic() {
+        WeightedScoringStrategy strat;
+        auto res = strat.assign({task("t1", Priority::Medium, 3, 5)},
+                                {member("1", "Alice", {{SkillCategory::Backend, 1}})}, ScoringWeights{});
+        QVERIFY(QString::fromStdString(res[0].rationale).startsWith("Basic Backend proficiency (1/5)"));
+    }
+
+    void rationaleAboveAverageLoad() {
+        // Only Alice is rated, so she gets both tasks. Before the second one she holds 5h
+        // while the team average is 2.5h.
+        WeightedScoringStrategy strat;
+        auto res = strat.assign({task("t1", Priority::Medium, 3, 5), task("t2", Priority::Medium, 3, 5)},
+                                {member("1", "Alice", {{SkillCategory::Backend, 5}}), member("2", "Bob", {})},
+                                ScoringWeights{});
+        QCOMPARE(int(res.size()), 2);
+        QCOMPARE(QString::fromStdString(res[1].rationale),
+                 QString("High Backend proficiency (5/5) with above-average load (5h)."));
+    }
+
     void determinism() {
         WeightedScoringStrategy strat;
         std::vector<MemberDto> ms = {member("1", "Alice", {{SkillCategory::Backend, 4}}, 2.0),

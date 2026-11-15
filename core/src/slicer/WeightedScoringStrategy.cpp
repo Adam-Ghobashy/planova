@@ -14,6 +14,12 @@ int ratingOf(const MemberDto& m, SkillCategory skill) {
     auto it = m.ratings.find(skill);
     return it == m.ratings.end() ? 0 : it->second;
 }
+// High for 4-5, Good for 3, Basic for 1-2.
+std::string levelFor(int rating) {
+    if (rating >= 4) return "High";
+    if (rating == 3) return "Good";
+    return "Basic";
+}
 } // namespace
 
 std::vector<Assignment> WeightedScoringStrategy::assign(const std::vector<TaskDto>& tasks,
@@ -82,9 +88,15 @@ std::vector<Assignment> WeightedScoringStrategy::assign(const std::vector<TaskDt
         if (winner == nullptr) continue;
 
         int rating = ratingOf(*winner, task.skill);
+        int totalHours = 0;
+        for (const auto& kv : hours) totalHours += kv.second;
+        // Compare in integers: hours * memberCount <= totalHours means "at or below the average".
+        bool balanced = hours[winner->id] * static_cast<int>(members.size()) <= totalHours;
         std::string rationale =
-            rating > 0 ? "High " + skillToString(task.skill) + " proficiency (" + std::to_string(rating) +
-                             "/5) with balanced load (" + std::to_string(hours[winner->id]) + "h)."
+            rating > 0 ? levelFor(rating) + " " + skillToString(task.skill) + " proficiency (" +
+                             std::to_string(rating) + "/5) with " +
+                             (balanced ? "balanced load" : "above-average load") + " (" +
+                             std::to_string(hours[winner->id]) + "h)."
                        : "No rated member for " + skillToString(task.skill) + "; assigned by workload.";
         int matchPct = std::clamp(static_cast<int>(std::round(best * 100.0)), 0, 100);
 
