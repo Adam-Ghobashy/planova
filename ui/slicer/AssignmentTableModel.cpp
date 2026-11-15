@@ -158,6 +158,7 @@ bool AssignmentTableModel::setData(const QModelIndex& index, const QVariant& val
     manualTaskIds_.insert(a.taskId);
 
     emit dataChanged(this->index(index.row(), 0), this->index(index.row(), Column::ColCount - 1));
+    emit assignmentEdited();
     return true;
 }
 

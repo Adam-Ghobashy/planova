@@ -57,6 +57,18 @@ QPointF pointOnCircle(const QPointF& center, double distance, double angleDeg) {
     return QPointF(center.x() + distance * std::sin(rad), center.y() - distance * std::cos(rad));
 }
 
+bool samePortions(const std::vector<Portion>& a, const std::vector<Portion>& b) {
+    if (a.size() != b.size()) return false;
+    for (size_t i = 0; i < a.size(); ++i) {
+        if (a[i].memberId != b[i].memberId || a[i].taskCount != b[i].taskCount ||
+            a[i].thinSlice != b[i].thinSlice || std::abs(a[i].startAngle - b[i].startAngle) > 1e-6 ||
+            std::abs(a[i].spanAngle - b[i].spanAngle) > 1e-6) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // The pizza disc (crust + cheese) and every topping, centred on `c`. The caller clips as needed.
 void paintPizzaDisc(QPainter& painter, const QPointF& c, double r) {
     auto& tm = ThemeManager::instance();
@@ -94,8 +106,10 @@ PizzaWidget::PizzaWidget(QWidget* parent) : QWidget(parent) {
 }
 
 void PizzaWidget::setPortions(const std::vector<planova::slicer::Portion>& portions) {
+    // Cuts belong to the slices they were made for. New slices mean a whole pizza again,
+    // and only the "Slice" button cuts it.
+    if (!samePortions(portions_, portions)) setSliced(false);
     portions_ = portions;
-    if (animating_) setSliced(true);  // the knife positions changed under it: skip to the end
     update();
 }
 

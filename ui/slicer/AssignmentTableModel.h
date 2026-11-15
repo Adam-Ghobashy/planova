@@ -40,6 +40,10 @@ public:
     Qt::ItemFlags flags(const QModelIndex& index) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
+signals:
+    // Emitted after the user overrides an assignee (not when assignments are set from a preview).
+    void assignmentEdited();
+
 private:
     const TaskDto* findTask(const Id& id) const;
     const MemberDto* findMember(const Id& id) const;

@@ -2,6 +2,7 @@
 #include "slicer/AssignmentTableModel.h"
 #include "slicer/ChaosSlicerPage.h"
 #include "slicer/PizzaWidget.h"
+#include "slicer/WeightSlidersPanel.h"
 #include "tests/fakes/FakeClock.h"
 #include "tests/fakes/FakeEventStore.h"
 #include "tests/fakes/FakeMemberQuery.h"
@@ -9,6 +10,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QSignalSpy>
+#include <QSlider>
 #include <QTableView>
 #include <QTest>
 
@@ -135,7 +137,48 @@ private slots:
         QTRY_VERIFY_WITH_TIMEOUT(pizza->isSliced(), 5000);
 
         page.findChild<QPushButton*>("recalculateButton")->click();
-        QVERIFY(pizza->isAnimating());  // already sliced, so new weights cut it again
+        QVERIFY(!pizza->isAnimating());  // the cutter only ever starts from the button
+        QVERIFY(pizza->isSliced());      // same slices, so they stay cut
+    }
+    void changingWeightsNeverStartsTheCutter() {
+        Board b;
+        b.addAlice();
+        b.members.addMember(MemberDto{"2", "Bob", "Dev", false, {{SkillCategory::Backend, 5}}, 100, 1.0});
+        b.addTask("t1");
+        b.addTask("t2");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        auto* pizza = page.findChild<PizzaWidget*>();
+        auto sliders = page.findChild<WeightSlidersPanel*>()->findChildren<QSlider*>();
+        QVERIFY(sliders.size() == 3);
+
+        sliders[0]->setValue(80);  // a keyboard-style change commits straight away
+        QVERIFY(!pizza->isAnimating());
+        QVERIFY(!pizza->isSliced());  // still whole
+
+        page.findChild<QPushButton*>("sliceButton")->click();
+        QTRY_VERIFY_WITH_TIMEOUT(pizza->isSliced(), 5000);
+        sliders[1]->setValue(10);
+        QVERIFY(!pizza->isAnimating());
+    }
+    void overridingAnAssigneeMakesThePizzaWholeAgain() {
+        Board b;
+        b.addAlice();
+        b.members.addMember(MemberDto{"2", "Bob", "Dev", false, {{SkillCategory::Backend, 5}}, 100, 1.0});
+        b.addTask("t1");
+        b.addTask("t2");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        auto* pizza = page.findChild<PizzaWidget*>();
+        auto* table = page.findChild<QTableView*>("assignmentsTable");
+        page.findChild<QPushButton*>("sliceButton")->click();
+        QTRY_VERIFY_WITH_TIMEOUT(pizza->isSliced(), 5000);
+
+        // Hand the first task to whoever does not have it, so the slices must change.
+        const QModelIndex first = table->model()->index(0, AssignmentTableModel::Assignee);
+        const bool aliceHasIt = first.data(AssignmentTableModel::AssigneeNameRole).toString() == "Alice";
+        QVERIFY(table->model()->setData(table->model()->index(0, AssignmentTableModel::ActionOverride),
+                                        aliceHasIt ? "2" : "1", Qt::EditRole));
+        QVERIFY(!pizza->isSliced());
+        QVERIFY(!pizza->isAnimating());
     }
     void pizzaSelectionHighlightsRows() {
         Board b;

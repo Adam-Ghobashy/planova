@@ -84,6 +84,32 @@ private slots:
         w.setSliced(false);
         QVERIFY(!w.isSliced());
     }
+    void changedPortionsMakeItWholeAgain() {
+        // Cuts belong to the slices they were made for. New slices need a new press of "Slice".
+        PizzaWidget w;
+        w.setPortions({portion("1", "Alice Smith", 2, 0, 180), portion("2", "Bob Jones", 2, 180, 180)});
+        w.setSliced(true);
+        w.setPortions({portion("1", "Alice Smith", 3, 0, 270), portion("2", "Bob Jones", 1, 270, 90)});
+        QVERIFY(!w.isSliced());
+        QVERIFY(!w.isAnimating());
+    }
+    void samePortionsKeepItSliced() {
+        PizzaWidget w;
+        const std::vector<Portion> p = {portion("1", "Alice Smith", 2, 0, 180), portion("2", "Bob Jones", 2, 180, 180)};
+        w.setPortions(p);
+        w.setSliced(true);
+        w.setPortions(p);
+        QVERIFY(w.isSliced());
+    }
+    void newPortionsStopTheCutter() {
+        PizzaWidget w;
+        w.setPortions({portion("1", "Alice Smith", 2, 0, 180), portion("2", "Bob Jones", 2, 180, 180)});
+        w.sliceAnimated();
+        QVERIFY(w.isAnimating());
+        w.setPortions({portion("1", "Alice Smith", 3, 0, 270), portion("2", "Bob Jones", 1, 270, 90)});
+        QVERIFY(!w.isAnimating());
+        QVERIFY(!w.isSliced());
+    }
     void oneSliceOnlyHasNothingToCut() {
         PizzaWidget w;
         w.setPortions({portion("1", "Alice Smith", 4, 0, 360)});

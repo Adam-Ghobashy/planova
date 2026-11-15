@@ -143,6 +143,10 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     table_->setObjectName("assignmentsTable");
     model_ = new AssignmentTableModel(this);
     table_->setModel(model_);
+    // A manual override changes who holds what, so the pizza follows the table.
+    connect(model_, &AssignmentTableModel::assignmentEdited, this, [this] {
+        pizza_->setPortions(slicer_.portions(model_->currentAssignments()));
+    });
     table_->verticalHeader()->setVisible(false);
     table_->verticalHeader()->setDefaultSectionSize(62);
     table_->setShowGrid(false);
@@ -193,9 +197,8 @@ bool ChaosSlicerPage::recalculate() {
     }
     model_->setAssignments(preview_, tasks_.all(), members_.all());
     fitTableHeight();
+    // New assignments give new slices, so the pizza goes back to whole until "Slice" is pressed.
     pizza_->setPortions(slicer_.portions(preview_));
-    // The pizza stays whole until the user slices it. Once sliced, new weights cut it again.
-    if (pizza_->isSliced()) pizza_->sliceAnimated();
     return true;
 }
 
