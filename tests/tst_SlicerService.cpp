@@ -27,6 +27,19 @@ struct Fixture {
 };
 }
 
+// A different strategy: gives every ToDo task to the last member. Proves SlicerService only
+// depends on the IAssignmentStrategy interface.
+class LastMemberStrategy : public IAssignmentStrategy {
+public:
+    std::vector<Assignment> assign(const std::vector<TaskDto>& tasks, const std::vector<MemberDto>& members,
+                                   const ScoringWeights&) const override {
+        std::vector<Assignment> result;
+        for (const auto& t : tasks)
+            if (t.status == TaskStatus::ToDo) result.push_back({t.id, members.back().id, 0, "Last member", false});
+        return result;
+    }
+};
+
 class tst_SlicerService : public QObject {
     Q_OBJECT
 private slots:
@@ -100,6 +113,23 @@ private slots:
 
         svc2.apply(preview, w);
         QCOMPARE(int(f.store.events.size()), eventCount);
+    }
+    void strategyIsSwappable() {
+        FakeTaskQuery tq;
+        FakeMemberQuery mq;
+        FakeEventStore store;
+        EventLog log{store};
+        FakeClock clock{1000};
+        LastMemberStrategy strategy;
+        SlicerService svc{tq, mq, strategy, log, clock};
+        tq.addTask(TaskDto{"t1", "Task 1", SkillCategory::Backend, Priority::Medium, 3, 5,
+                           TaskStatus::ToDo, std::nullopt, {}});
+        mq.addMember(MemberDto{"1", "Alice", "Dev", false, {}, 100, 1.0});
+        mq.addMember(MemberDto{"2", "Bob", "Dev", false, {}, 100, 1.0});
+
+        ScoringWeights w;
+        QCOMPARE(svc.apply(svc.preview(w), w), 1);
+        QCOMPARE(store.events[0].payload["memberId"].toString(), QString("2"));
     }
     void changedWeightsAppendOnlyWeightsEvent() {
         Fixture f;
