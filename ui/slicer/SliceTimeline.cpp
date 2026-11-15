@@ -5,7 +5,6 @@
 namespace planova::slicer {
 
 namespace {
-// Fractions of one cut's time: cutting in, lifting out, then travelling to the next cut.
 constexpr double kCuttingEnd = 0.55;
 constexpr double kLiftingEnd = 0.80;
 
@@ -15,7 +14,7 @@ double normalizeDegrees(double deg) {
     deg = std::fmod(deg, 360.0);
     return deg < 0.0 ? deg + 360.0 : deg;
 }
-} // namespace
+}
 
 SliceTimeline::SliceTimeline(std::vector<double> cutAnglesDeg) : cutAngles_(std::move(cutAnglesDeg)) {
     if (!cutAngles_.empty()) {
@@ -44,14 +43,13 @@ SliceFrame SliceTimeline::at(int elapsedMs) const {
         frame.wheelVisible = true;
         frame.wheelAngleDeg = cutAngles_[i];
         if (u < kCuttingEnd) {
-            frame.wheelDistance = 1.0 - u / kCuttingEnd;                              // rim -> centre
+            frame.wheelDistance = 1.0 - u / kCuttingEnd;
         } else if (u < kLiftingEnd) {
-            frame.wheelDistance = (u - kCuttingEnd) / (kLiftingEnd - kCuttingEnd);    // centre -> rim
+            frame.wheelDistance = (u - kCuttingEnd) / (kLiftingEnd - kCuttingEnd);
             frame.wheelLifted = true;
         } else {
             frame.wheelLifted = true;
             if (i + 1 < cuts) {
-                // Round the rim, clockwise, to the start of the next cut.
                 const double arc = normalizeDegrees(cutAngles_[i + 1] - cutAngles_[i]);
                 frame.wheelAngleDeg = normalizeDegrees(cutAngles_[i] + arc * (u - kLiftingEnd) / (1.0 - kLiftingEnd));
             }
@@ -62,4 +60,4 @@ SliceFrame SliceTimeline::at(int elapsedMs) const {
     return frame;
 }
 
-} // namespace planova::slicer
+}

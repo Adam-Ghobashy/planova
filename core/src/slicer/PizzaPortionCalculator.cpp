@@ -41,4 +41,4 @@ std::vector<Portion> PizzaPortionCalculator::calculate(const std::vector<TaskDto
     return portions;
 }
 
-} // namespace planova::slicer
+}

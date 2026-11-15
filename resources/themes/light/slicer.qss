@@ -1,4 +1,3 @@
-/* Chaos Slicer (Pizza) Light Theme - Figma Match */
 
 QWidget#ChaosSlicerPage {
     background-color: #FAF8F5;
@@ -15,7 +14,6 @@ QWidget#slicerScrollContent {
     background: transparent;
 }
 
-/* Card Containers */
 QFrame#card {
     background-color: #FFFFFF;
     border: 1px solid #E7E2D6;
@@ -37,7 +35,6 @@ QLabel#cardSubtitle {
     font-size: 12px;
 }
 
-/* Buttons */
 QPushButton#primaryButton, QPushButton#applyButton, QPushButton#sliceButton {
     background-color: #5438DC;
     color: #FFFFFF;
@@ -74,7 +71,6 @@ QPushButton#secondaryButton:pressed, QPushButton#recalculateButton:pressed {
     background-color: #ECE7DC;
 }
 
-/* Short-lived message pill in the page header */
 QLabel#statusLabel {
     background-color: #D4F981;
     color: #1A1A1F;
@@ -90,14 +86,12 @@ QLabel#emptyLabel {
     padding: 28px;
 }
 
-/* Sliders */
 QWidget#WeightSlidersPanel {
     background-color: #FFFFFF;
     border: 1px solid #E7E2D6;
     border-radius: 12px;
 }
 
-/* Children of the weights card must not paint the page background over the white card. */
 QWidget#WeightSlidersPanel QLabel, QWidget#WeightSlidersPanel QSlider {
     background: transparent;
 }
@@ -148,7 +142,6 @@ QWidget#WeightSlidersPanel QLabel#sumLabel {
     font-weight: 600;
 }
 
-/* Assignments Table */
 QTableView#assignmentsTable {
     background-color: #FFFFFF;
     border: 1px solid #E7E2D6;
@@ -175,7 +168,6 @@ QTableView::item {
     border-bottom: 1px solid #F5F2EA;
 }
 
-/* Action Override Combobox */
 QComboBox#overrideCombo {
     background-color: #FFFFFF;
     color: #1A1A1F;

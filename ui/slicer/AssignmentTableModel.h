@@ -22,15 +22,14 @@ public:
         MatchPctRole,
         WaitingOnDepRole,
         RationaleRole,
-        HighlightedRole,     // bool: the row belongs to the member selected on the pizza
-        ManualOverrideRole   // bool: the assignee was changed by the user
+        HighlightedRole,
+        ManualOverrideRole
     };
 
     explicit AssignmentTableModel(QObject* parent = nullptr);
     void setAssignments(const std::vector<Assignment>& assignments, const std::vector<TaskDto>& tasks,
                         const std::vector<MemberDto>& members);
     std::vector<Assignment> currentAssignments() const { return assignments_; }
-    // Rows assigned to this member get HighlightedRole = true. An empty id clears the highlight.
     void setHighlightedMember(const Id& memberId);
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
@@ -41,7 +40,6 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
 signals:
-    // Emitted after the user overrides an assignee (not when assignments are set from a preview).
     void assignmentEdited();
 
 private:
@@ -54,4 +52,4 @@ private:
     std::set<Id> manualTaskIds_;
 };
 
-} // namespace planova::slicer
+}

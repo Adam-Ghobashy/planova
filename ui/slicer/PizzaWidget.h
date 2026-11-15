@@ -11,28 +11,23 @@ class QVariantAnimation;
 
 namespace planova::slicer {
 
-// A whole pizza that a cutter slices on request: one slice per member, angle = share of the
-// total complexity. Starts whole; sliceAnimated() runs the cutter, then the slices stay apart.
 class PizzaWidget : public QWidget {
     Q_OBJECT
 public:
     explicit PizzaWidget(QWidget* parent = nullptr);
     void setPortions(const std::vector<planova::slicer::Portion>& portions);
 
-    void sliceAnimated();                 // whole pizza -> cutter animation -> sliced
-    void setSliced(bool sliced);          // jump straight to sliced / whole, no animation
+    void sliceAnimated();
+    void setSliced(bool sliced);
     bool isSliced() const { return sliced_; }
     bool isAnimating() const { return animating_; }
 
-    // Pie geometry (before any animation offset). Public so tests and hit-testing share it.
     QPointF pieCenter() const;
     double pieRadius() const;
-    // Index into the portions of the slice under `pos`, or -1 (outside, empty slice, empty pizza).
     int sliceAt(const QPointF& pos) const;
-    double legendBottom() const;  // y of the bottom edge of the legend pills (for tests)
+    double legendBottom() const;
 
 signals:
-    // Emitted when the user clicks a slice or legend pill. An empty id means the selection was cleared.
     void memberSelected(const QString& memberId);
 
 protected:
@@ -43,18 +38,18 @@ protected:
 
 private:
     struct LegendLayout {
-        std::vector<QRectF> rects;  // one pill per portion
-        double bottom = 0.0;        // bottom edge of the last row
+        std::vector<QRectF> rects;
+        double bottom = 0.0;
     };
-    LegendLayout layoutLegend(double top) const;  // pure geometry from the portions and the width
+    LegendLayout layoutLegend(double top) const;
     double legendTop() const;
     double legendHeight() const;
-    void updateMinimumHeight();                   // the wrapped legend must always fit
+    void updateMinimumHeight();
     bool hasAssignedSlices() const;
-    bool hasCuts() const;                    // two or more slices: there is something to cut
-    std::vector<double> cutAngles() const;   // where the knife goes: the start of every slice, if there are 2+
-    double spread() const;                   // 0 = together .. 1 = settled apart
-    double cutProgress(int cut) const;       // 0 .. 1 for the cut with this index
+    bool hasCuts() const;
+    std::vector<double> cutAngles() const;
+    double spread() const;
+    double cutProgress(int cut) const;
     int legendIndexAt(const QPointF& pos) const;
     void toggleSelection(int portionIndex);
     bool hasMember(const QString& memberId) const;
@@ -64,7 +59,7 @@ private:
     void drawSlice(QPainter& painter, int index) const;
     void drawCutLines(QPainter& painter, bool onTopOfPizza) const;
     void drawCutter(QPainter& painter) const;
-    double drawLegend(QPainter& painter) const;  // returns the bottom edge of the legend
+    double drawLegend(QPainter& painter) const;
 
     std::vector<planova::slicer::Portion> portions_;
     QString selectedMemberId_;
@@ -75,4 +70,4 @@ private:
     QVariantAnimation* anim_ = nullptr;
 };
 
-} // namespace planova::slicer
+}

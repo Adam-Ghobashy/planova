@@ -14,4 +14,4 @@ public:
                                            const ScoringWeights& weights) const = 0;
 };
 
-} // namespace planova::slicer
+}

@@ -10,11 +10,9 @@ add_library(planova_core STATIC
 target_include_directories(planova_core PUBLIC include)
 target_link_libraries(planova_core PUBLIC Qt6::Core)
 
-# --- S4 ---
 target_sources(planova_core PRIVATE
     src/slicer/WeightedScoringStrategy.cpp
     src/slicer/PizzaPortionCalculator.cpp
     src/slicer/SlicerService.cpp
     src/slicer/SlicerWeightsProjection.cpp
 )
-# --- end S4 ---

@@ -14,13 +14,12 @@ int ratingOf(const MemberDto& m, SkillCategory skill) {
     auto it = m.ratings.find(skill);
     return it == m.ratings.end() ? 0 : it->second;
 }
-// High for 4-5, Good for 3, Basic for 1-2.
 std::string levelFor(int rating) {
     if (rating >= 4) return "High";
     if (rating == 3) return "Good";
     return "Basic";
 }
-} // namespace
+}
 
 std::vector<Assignment> WeightedScoringStrategy::assign(const std::vector<TaskDto>& tasks,
                                                         const std::vector<MemberDto>& members,
@@ -28,7 +27,6 @@ std::vector<Assignment> WeightedScoringStrategy::assign(const std::vector<TaskDt
     std::vector<Assignment> result;
     if (members.empty()) return result;
 
-    // Starting load: InProgress and Review tasks already count against a member.
     std::map<Id, int> hours;
     for (const auto& m : members) hours[m.id] = 0;
     std::set<Id> doneIds;
@@ -42,7 +40,6 @@ std::vector<Assignment> WeightedScoringStrategy::assign(const std::vector<TaskDt
     for (const auto& t : tasks)
         if (t.status == TaskStatus::ToDo) todo.push_back(t);
 
-    // Priority desc, complexity desc, id asc (id keeps the order deterministic).
     std::sort(todo.begin(), todo.end(), [](const TaskDto& a, const TaskDto& b) {
         if (a.priority != b.priority) return static_cast<int>(a.priority) > static_cast<int>(b.priority);
         if (a.complexity != b.complexity) return a.complexity > b.complexity;
@@ -58,7 +55,6 @@ std::vector<Assignment> WeightedScoringStrategy::assign(const std::vector<TaskDt
         for (const auto& dep : task.blockedBy)
             if (!doneIds.count(dep)) waiting = true;
 
-        // If anyone is rated for this skill, only rated members are eligible.
         bool anyRated = std::any_of(members.begin(), members.end(),
                                     [&](const MemberDto& m) { return ratingOf(m, task.skill) > 0; });
 
@@ -82,7 +78,7 @@ std::vector<Assignment> WeightedScoringStrategy::assign(const std::vector<TaskDt
                 winner = &m;
                 best = score;
             } else if (std::abs(score - best) <= kEpsilon && m.name < winner->name) {
-                winner = &m;  // tie: name ascending
+                winner = &m;
             }
         }
         if (winner == nullptr) continue;
@@ -90,7 +86,6 @@ std::vector<Assignment> WeightedScoringStrategy::assign(const std::vector<TaskDt
         int rating = ratingOf(*winner, task.skill);
         int totalHours = 0;
         for (const auto& kv : hours) totalHours += kv.second;
-        // Compare in integers: hours * memberCount <= totalHours means "at or below the average".
         bool balanced = hours[winner->id] * static_cast<int>(members.size()) <= totalHours;
         std::string rationale =
             rating > 0 ? levelFor(rating) + " " + skillToString(task.skill) + " proficiency (" +
@@ -106,4 +101,4 @@ std::vector<Assignment> WeightedScoringStrategy::assign(const std::vector<TaskDt
     return result;
 }
 
-} // namespace planova::slicer
+}

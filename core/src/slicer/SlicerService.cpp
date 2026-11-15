@@ -12,7 +12,7 @@ namespace {
 void requireValid(const ScoringWeights& w) {
     if (!w.valid()) throw std::invalid_argument("Scoring weights must be non-negative and sum to 100");
 }
-} // namespace
+}
 
 SlicerService::SlicerService(ITaskQuery& tasks, IMemberQuery& members, IAssignmentStrategy& strategy,
                              EventLog& log, IClock& clock)
@@ -33,8 +33,8 @@ int SlicerService::apply(const std::vector<Assignment>& assignments, const Scori
     for (const auto& a : assignments) {
         auto task = tasks_.byId(a.taskId);
         if (!task) continue;
-        if (!members_.byId(a.memberId)) continue;                       // unknown member
-        if (task->assignee && *task->assignee == a.memberId) continue;  // unchanged
+        if (!members_.byId(a.memberId)) continue;
+        if (task->assignee && *task->assignee == a.memberId) continue;
 
         QJsonObject payload;
         payload["taskId"] = QString::fromStdString(a.taskId);
@@ -64,7 +64,7 @@ int SlicerService::apply(const std::vector<Assignment>& assignments, const Scori
         e.type = SlicerWeightsChanged;
         e.payload = payload;
         e.id = makeEventId(e.ts, e.author, e.payload);
-        log_.append(e);  // the projection records the new weights as the event is appended
+        log_.append(e);
     }
     return changed;
 }
@@ -81,4 +81,4 @@ std::vector<Portion> SlicerService::portions(const std::vector<Assignment>& prev
     return PizzaPortionCalculator::calculate(tasks, members_.all());
 }
 
-} // namespace planova::slicer
+}

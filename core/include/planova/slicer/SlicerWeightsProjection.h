@@ -6,8 +6,6 @@
 
 namespace planova::slicer {
 
-// Remembers the weights from the most recent SlicerWeightsChanged event,
-// so the service knows what was last applied even after a restart.
 class SlicerWeightsProjection : public IProjection {
 public:
     void reset() override;
@@ -18,4 +16,4 @@ private:
     std::optional<ScoringWeights> last_ = std::nullopt;
 };
 
-} // namespace planova::slicer
+}

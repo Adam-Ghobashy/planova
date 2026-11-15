@@ -12,7 +12,6 @@ namespace {
 
 constexpr int kPillHeight = 22;
 
-// Draws a rounded label centred in `rect`. The painter font must already be set.
 void drawPill(QPainter* painter, const QRectF& rect, const QString& text, const QColor& background,
               const QColor& foreground, const QColor& border, qreal radius) {
     painter->setPen(QPen(border, 1));
@@ -22,7 +21,6 @@ void drawPill(QPainter* painter, const QRectF& rect, const QString& text, const 
     painter->drawText(rect, Qt::AlignCenter, text);
 }
 
-// A pill sized to its text and vertically centred in the cell, starting 8px from the left.
 QRectF pillRectFor(const QRect& cell, const QFontMetrics& fm, const QString& text, int height = kPillHeight) {
     const int width = fm.horizontalAdvance(text) + 16;
     return QRectF(cell.left() + 8, cell.top() + (cell.height() - height) / 2.0, width, height);
@@ -35,7 +33,6 @@ QFont boldFont(const QFont& base, int pointSize) {
     return font;
 }
 
-// Active complexity dots all take the colour of the task's level (1 = green ... 5 = accent).
 QColor complexityColor(int complexity) {
     static const Token ramp[5] = {Token::Member3, Token::Complexity2, Token::PizzaCheese,
                                   Token::Complexity4, Token::Accent};
@@ -43,7 +40,7 @@ QColor complexityColor(int complexity) {
     return ThemeManager::instance().color(ramp[level - 1]);
 }
 
-} // namespace
+}
 
 QColor slicerRowBackground(const QStyleOptionViewItem& option, const QModelIndex& index) {
     auto& tm = ThemeManager::instance();
@@ -92,7 +89,6 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     const int col = index.column();
 
     if (col == AssignmentTableModel::TaskComplexity) {
-        // Line 1: title
         QFont titleFont = painter->font();
         titleFont.setPointSize(10);
         titleFont.setBold(true);
@@ -102,7 +98,6 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
                           Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine,
                           index.data(AssignmentTableModel::TaskTitleRole).toString());
 
-        // Line 2: five dots and the level label
         const int complexity = index.data(AssignmentTableModel::TaskComplexityRole).toInt();
         const int dotY = rect.top() + 36;
         const int dotX = rect.left() + 14;
@@ -158,7 +153,6 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         const int cy = rect.top() + rect.height() / 2;
         const int avatarX = rect.left() + 16;
 
-        // Avatar circle with initials
         painter->setPen(Qt::NoPen);
         painter->setBrush(tm.color(Token::TextPrimary));
         painter->drawEllipse(QPointF(avatarX, cy), 11, 11);
@@ -166,7 +160,6 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         painter->setPen(tm.color(Token::AccentText));
         painter->drawText(QRectF(avatarX - 11, cy - 11, 22, 22), Qt::AlignCenter, initials);
 
-        // Name
         QFont nameFont = painter->font();
         nameFont.setPointSize(10);
         nameFont.setBold(false);
@@ -175,7 +168,6 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         painter->setPen(tm.color(Token::TextPrimary));
         painter->drawText(QRect(avatarX + 16, cy - 10, nameWidth, 20), Qt::AlignLeft | Qt::AlignVCenter, name);
 
-        // Badge: "Manual" after an override, otherwise the match percentage
         if (manual || matchPct > 0) {
             const QString badge = manual ? QString("Manual") : QString("%1%").arg(matchPct);
             const QFont badgeFont = boldFont(painter->font(), 9);
@@ -212,4 +204,4 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     painter->restore();
 }
 
-} // namespace planova::slicer
+}

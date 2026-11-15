@@ -4,8 +4,6 @@
 
 namespace planova::slicer {
 
-// Background for a table row: selected/highlighted rows use AccentSoft, hovered rows SurfaceAlt.
-// Shared by both delegates so every cell in a row has the same background.
 QColor slicerRowBackground(const QStyleOptionViewItem& option, const QModelIndex& index);
 
 class SlicerTableDelegate : public QStyledItemDelegate {
@@ -19,4 +17,4 @@ public:
                    const QModelIndex& index) const override;
 };
 
-} // namespace planova::slicer
+}

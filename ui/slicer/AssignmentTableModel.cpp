@@ -72,7 +72,6 @@ QVariant AssignmentTableModel::data(const QModelIndex& index, int role) const {
     const auto* t = findTask(a.taskId);
     const auto* m = findMember(a.memberId);
 
-    // Custom structured roles for rich rendering delegates
     if (role == TaskTitleRole && t) return QString::fromStdString(t->title);
     if (role == TaskComplexityRole && t) return t->complexity;
     if (role == RequiredSkillRole && t) return QString::fromStdString(skillToString(t->skill)).toUpper();
@@ -152,7 +151,7 @@ bool AssignmentTableModel::setData(const QModelIndex& index, const QVariant& val
     }
 
     auto& a = assignments_[index.row()];
-    if (a.memberId == newMemberId) return true;  // the same member again: not an override
+    if (a.memberId == newMemberId) return true;
     a.memberId = newMemberId;
     a.matchPct = 0;
     a.rationale = "Manual override";
@@ -191,4 +190,4 @@ QVariant AssignmentTableModel::headerData(int section, Qt::Orientation orientati
     return QAbstractTableModel::headerData(section, orientation, role);
 }
 
-} // namespace planova::slicer
+}

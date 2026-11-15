@@ -13,9 +13,7 @@ public:
     explicit WeightSlidersPanel(QWidget* parent = nullptr);
     ScoringWeights weights() const { return weights_; }
 signals:
-    // Fires continuously while a slider moves (use for live labels).
     void weightsChanged(const planova::slicer::ScoringWeights& weights);
-    // Fires once when a change is final: slider released, or a keyboard/wheel step.
     void weightsCommitted(const planova::slicer::ScoringWeights& weights);
 private:
     void onSliderMoved(int index, int value);
@@ -26,4 +24,4 @@ private:
     QLabel* sumLabel_ = nullptr;
 };
 
-} // namespace planova::slicer
+}

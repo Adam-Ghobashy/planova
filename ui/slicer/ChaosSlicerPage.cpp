@@ -56,7 +56,6 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     mainLayout->setContentsMargins(24, 20, 24, 24);
     mainLayout->setSpacing(16);
 
-    // --- 1. Top action header ---
     auto* headerLayout = new QHBoxLayout();
     headerLayout->setContentsMargins(0, 0, 0, 4);
 
@@ -79,7 +78,6 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
 
     headerLayout->addStretch();
 
-    // Status message as a small pill beside the buttons, so showing it never moves the page.
     statusLabel_ = new QLabel(contentWidget);
     statusLabel_->setObjectName("statusLabel");
     statusLabel_->hide();
@@ -90,23 +88,21 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     connect(statusTimer_, &QTimer::timeout, statusLabel_, &QLabel::hide);
 
     recalculateBtn_ = new QPushButton("Recalculate", contentWidget);
-    recalculateBtn_->setObjectName("recalculateButton");  // styled by slicer.qss
+    recalculateBtn_->setObjectName("recalculateButton");
     connect(recalculateBtn_, &QPushButton::clicked, this, &ChaosSlicerPage::onRecalculate);
     headerLayout->addWidget(recalculateBtn_);
 
     applyBtn_ = new QPushButton("Apply Assignments to Board", contentWidget);
-    applyBtn_->setObjectName("applyButton");  // styled by slicer.qss
+    applyBtn_->setObjectName("applyButton");
     connect(applyBtn_, &QPushButton::clicked, this, &ChaosSlicerPage::onApply);
     headerLayout->addWidget(applyBtn_);
 
     mainLayout->addLayout(headerLayout);
 
-    // --- 2. Card 1: Assignment Strategy Weights ---
     sliders_ = new WeightSlidersPanel(contentWidget);
     connect(sliders_, &WeightSlidersPanel::weightsCommitted, this, [this] { onRecalculate(); });
     mainLayout->addWidget(sliders_);
 
-    // --- 3. Card 2: Project Pizza Slicer ---
     auto* pizzaCard = new QFrame(contentWidget);
     pizzaCard->setObjectName("card");
     auto* pizzaCardLayout = new QVBoxLayout(pizzaCard);
@@ -126,24 +122,21 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     pizzaHeader->addStretch();
 
     auto* sliceBtn = new QPushButton("Slice the Project", pizzaCard);
-    sliceBtn->setObjectName("sliceButton");  // styled like the primary button by slicer.qss
+    sliceBtn->setObjectName("sliceButton");
     connect(sliceBtn, &QPushButton::clicked, this, [this] { pizza_->sliceAnimated(); });
     pizzaHeader->addWidget(sliceBtn);
     pizzaCardLayout->addLayout(pizzaHeader);
 
     pizza_ = new PizzaWidget(pizzaCard);
     pizzaCardLayout->addWidget(pizza_);
-    // Picking a member on the pizza highlights that member's table rows.
     connect(pizza_, &PizzaWidget::memberSelected, this,
             [this](const QString& memberId) { model_->setHighlightedMember(memberId.toStdString()); });
     mainLayout->addWidget(pizzaCard);
 
-    // --- 4. Card 3: Assignments Table ---
     table_ = new QTableView(contentWidget);
     table_->setObjectName("assignmentsTable");
     model_ = new AssignmentTableModel(this);
     table_->setModel(model_);
-    // A manual override changes who holds what, so the pizza follows the table.
     connect(model_, &AssignmentTableModel::assignmentEdited, this, [this] {
         pizza_->setPortions(slicer_.portions(model_->currentAssignments()));
     });
@@ -152,14 +145,13 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     table_->setShowGrid(false);
     table_->setSelectionBehavior(QAbstractItemView::SelectRows);
     table_->setSelectionMode(QAbstractItemView::SingleSelection);
-    // The page scrolls, not the table: its height follows its rows (see fitTableHeight).
     table_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     table_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    table_->setMouseTracking(true);  // row hover highlight
-    table_->setEditTriggers(QAbstractItemView::AllEditTriggers);  // only the override column is editable
+    table_->setMouseTracking(true);
+    table_->setEditTriggers(QAbstractItemView::AllEditTriggers);
 
     table_->setItemDelegate(new SlicerTableDelegate(table_));
-    assigneeDelegate_ = new AssigneeDelegate(members_.all(), table_);  // kept up to date in recalculate()
+    assigneeDelegate_ = new AssigneeDelegate(members_.all(), table_);
     table_->setItemDelegateForColumn(AssignmentTableModel::ActionOverride, assigneeDelegate_);
 
     auto* header = table_->horizontalHeader();
@@ -184,21 +176,20 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     scrollArea->setWidget(contentWidget);
     rootLayout->addWidget(scrollArea);
 
-    recalculate();  // first preview, without a status message
+    recalculate();
 }
 
 bool ChaosSlicerPage::recalculate() {
     try {
         preview_ = slicer_.preview(sliders_->weights());
-    } catch (const std::exception& e) {  // invalid weights, or anything a strategy or query throws
+    } catch (const std::exception& e) {
         showStatus(QString::fromUtf8(e.what()));
         return false;
     }
     const std::vector<MemberDto> members = members_.all();
-    assigneeDelegate_->setMembers(members);  // members may have been added since the page was built
+    assigneeDelegate_->setMembers(members);
     model_->setAssignments(preview_, tasks_.all(), members);
     fitTableHeight();
-    // New assignments give new slices, so the pizza goes back to whole until "Slice" is pressed.
     pizza_->setPortions(slicer_.portions(preview_));
     return true;
 }
@@ -209,18 +200,16 @@ void ChaosSlicerPage::onRecalculate() {
 
 void ChaosSlicerPage::onApply() {
     int changed = 0;
-    applying_ = true;  // the events we write must not make the page re-preview and drop the user's overrides
+    applying_ = true;
     try {
         changed = slicer_.apply(model_->currentAssignments(), sliders_->weights());
     } catch (const std::exception& e) {
-        // Invalid weights, or the event store could not write (disk full, file locked).
-        // An exception must never leave a slot, so show it instead.
         applying_ = false;
         showStatus(QString("Could not apply: %1").arg(QString::fromUtf8(e.what())));
         return;
     }
     applying_ = false;
-    pizza_->setPortions(slicer_.portions());  // the board now holds what the table showed
+    pizza_->setPortions(slicer_.portions());
     showStatus(changed == 1 ? QString("Applied 1 assignment") : QString("Applied %1 assignments").arg(changed));
     emit assignmentsApplied(changed);
 }
@@ -228,7 +217,7 @@ void ChaosSlicerPage::onApply() {
 void ChaosSlicerPage::showStatus(const QString& text) {
     statusLabel_->setText(text);
     statusLabel_->setVisible(!text.isEmpty());
-    statusTimer_->start();  // hides the message again after a few seconds
+    statusTimer_->start();
 }
 
 void ChaosSlicerPage::fitTableHeight() {
@@ -240,9 +229,8 @@ void ChaosSlicerPage::fitTableHeight() {
 }
 
 void ChaosSlicerPage::refreshFromBoard() {
-    if (applying_) return;  // our own Apply is running; onApply refreshes the pizza itself
-    // Something else changed the board: the old preview is out of date.
+    if (applying_) return;
     if (recalculate()) showStatus("Board changed: assignments recalculated");
 }
 
-} // namespace planova::slicer
+}

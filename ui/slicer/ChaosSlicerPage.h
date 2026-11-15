@@ -28,7 +28,6 @@ public slots:
     void refreshFromBoard();
 
 signals:
-    // Emitted after Apply with the number of tasks whose assignee changed (0 when nothing changed).
     void assignmentsApplied(int changed);
 
 private slots:
@@ -36,7 +35,7 @@ private slots:
     void onApply();
 
 private:
-    bool recalculate();  // preview + table + pizza; false (with a status message) if the weights are invalid
+    bool recalculate();
     void fitTableHeight();
     void showStatus(const QString& text);
     planova::slicer::SlicerService& slicer_;
@@ -50,11 +49,11 @@ private:
     QPushButton* recalculateBtn_ = nullptr;
     QPushButton* applyBtn_ = nullptr;
     AssigneeDelegate* assigneeDelegate_ = nullptr;
-    bool applying_ = false;  // true while onApply writes events
+    bool applying_ = false;
     QLabel* statusLabel_ = nullptr;
     QLabel* emptyLabel_ = nullptr;
     QTimer* statusTimer_ = nullptr;
     std::vector<Assignment> preview_;
 };
 
-} // namespace planova::slicer
+}

@@ -6,7 +6,6 @@ enum class Token {
     SuccessSoft, WarningSoft, DangerSoft,
     PinHandoff, PinBlocker, PinTesting, PinArchitecture,
     Member1, Member2, Member3, Member4, Member5, Member6,
-    // Appended for the Chaos Slicer screen (S4). Append only: ThemeManager indexes kLightHex by value.
     PizzaCrust, PizzaEdge, PizzaCheese, PizzaSauce, PizzaBasil,
     DangerText, WarningText, Complexity2, Complexity4
 };
@@ -21,6 +20,5 @@ inline constexpr const char* kLightHex[] = {
     "#991B1B", "#92400E", "#34D399", "#FB923C"
 };
 
-// Keeps the enum and the palette in step: add a hex entry for every new token.
 static_assert(sizeof(kLightHex) / sizeof(kLightHex[0]) == static_cast<int>(Token::Complexity4) + 1,
               "kLightHex must have one entry per Token");

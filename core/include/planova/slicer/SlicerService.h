@@ -16,18 +16,13 @@ public:
 
     SlicerService(ITaskQuery& tasks, IMemberQuery& members, IAssignmentStrategy& strategy,
                   EventLog& log, IClock& clock);
-    // The event log keeps a pointer to weights_, so a copy would leave it dangling.
     SlicerService(const SlicerService&) = delete;
     SlicerService& operator=(const SlicerService&) = delete;
 
-    // Throws std::invalid_argument if the weights are invalid. Appends no events.
     std::vector<Assignment> preview(const ScoringWeights& weights) const;
-    // Appends TaskAssigned for each changed task, and SlicerWeightsChanged on first apply,
-    // changed weights, or any changed assignee. Identical re-apply appends nothing.
-    // Returns how many tasks changed assignee. Unknown tasks or members are skipped.
     int apply(const std::vector<Assignment>& assignments, const ScoringWeights& weights);
-    std::vector<Portion> portions() const;                                          // board state
-    std::vector<Portion> portions(const std::vector<Assignment>& preview) const;    // overlay on ToDo tasks
+    std::vector<Portion> portions() const;
+    std::vector<Portion> portions(const std::vector<Assignment>& preview) const;
 
 private:
     ITaskQuery& tasks_;
@@ -35,7 +30,7 @@ private:
     IAssignmentStrategy& strategy_;
     EventLog& log_;
     IClock& clock_;
-    SlicerWeightsProjection weights_;  // registered with the log; tracks the last applied weights
+    SlicerWeightsProjection weights_;
 };
 
-} // namespace planova::slicer
+}

@@ -16,4 +16,4 @@ void SlicerWeightsProjection::apply(const Event& event) {
     last_ = w;
 }
 
-} // namespace planova::slicer
+}

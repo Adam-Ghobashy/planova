@@ -8,14 +8,13 @@
 namespace planova::slicer {
 
 WeightSlidersPanel::WeightSlidersPanel(QWidget* parent) : QWidget(parent) {
-    setObjectName("WeightSlidersPanel");        // styled as a card by slicer.qss
-    setAttribute(Qt::WA_StyledBackground, true);  // a plain QWidget ignores its stylesheet background otherwise
+    setObjectName("WeightSlidersPanel");
+    setAttribute(Qt::WA_StyledBackground, true);
 
     auto* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(20, 16, 20, 16);
     mainLayout->setSpacing(14);
 
-    // Header row: Card Title on left, Sum label on right
     auto* headerLayout = new QHBoxLayout();
     auto* cardTitle = new QLabel("Assignment Strategy Weights", this);
     cardTitle->setObjectName("cardTitle");
@@ -27,13 +26,11 @@ WeightSlidersPanel::WeightSlidersPanel(QWidget* parent) : QWidget(parent) {
     headerLayout->addWidget(sumLabel_);
     mainLayout->addLayout(headerLayout);
 
-    // Horizontal sliders row across the card
     auto* slidersRow = new QHBoxLayout();
     slidersRow->setSpacing(24);
 
     const char* names[3] = {"Skill Match (α)", "Workload Leveling (β)", "Priority Weight (γ)"};
     for (int i = 0; i < 3; ++i) {
-        // Name and value on one line, the slider under them.
         auto* itemLayout = new QVBoxLayout();
         itemLayout->setSpacing(6);
 
@@ -70,18 +67,17 @@ void WeightSlidersPanel::onSliderMoved(int index, int value) {
     weights_ = rebalance(weights_, index, value);
     syncWidgets();
     emit weightsChanged(weights_);
-    // While dragging, wait for the release; keyboard and wheel steps are final immediately.
     if (!sliders_[index]->isSliderDown()) emit weightsCommitted(weights_);
 }
 
 void WeightSlidersPanel::syncWidgets() {
     const int values[3] = {weights_.skill, weights_.workload, weights_.priority};
     for (int i = 0; i < 3; ++i) {
-        QSignalBlocker blocker(sliders_[i]);  // avoid recursion while we move the other sliders
+        QSignalBlocker blocker(sliders_[i]);
         sliders_[i]->setValue(values[i]);
         valueLabels_[i]->setText(QString::number(values[i]) + "%");
     }
     sumLabel_->setText(QString("Sum: %1%").arg(weights_.skill + weights_.workload + weights_.priority));
 }
 
-} // namespace planova::slicer
+}
