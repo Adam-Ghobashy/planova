@@ -38,7 +38,7 @@ QLabel#cardSubtitle {
 }
 
 /* Buttons */
-QPushButton#primaryButton {
+QPushButton#primaryButton, QPushButton#applyButton {
     background-color: #5438DC;
     color: #FFFFFF;
     border: none;
@@ -48,15 +48,15 @@ QPushButton#primaryButton {
     font-weight: 600;
 }
 
-QPushButton#primaryButton:hover {
-    background-color: #4529CA;
+QPushButton#primaryButton:hover, QPushButton#applyButton:hover {
+    background-color: #4526CB;
 }
 
-QPushButton#primaryButton:pressed {
-    background-color: #381EB8;
+QPushButton#primaryButton:pressed, QPushButton#applyButton:pressed {
+    background-color: #381BAF;
 }
 
-QPushButton#secondaryButton {
+QPushButton#secondaryButton, QPushButton#recalculateButton {
     background-color: #FFFFFF;
     color: #1A1A1F;
     border: 1px solid #E7E2D6;
@@ -66,12 +66,18 @@ QPushButton#secondaryButton {
     font-weight: 500;
 }
 
-QPushButton#secondaryButton:hover {
+QPushButton#secondaryButton:hover, QPushButton#recalculateButton:hover {
     background-color: #F5F2EA;
 }
 
-QPushButton#secondaryButton:pressed {
-    background-color: #EDE8DC;
+QPushButton#secondaryButton:pressed, QPushButton#recalculateButton:pressed {
+    background-color: #ECE7DC;
+}
+
+QLabel#statusLabel {
+    color: #6B6B73;
+    font-size: 12px;
+    font-weight: 500;
 }
 
 /* Sliders */

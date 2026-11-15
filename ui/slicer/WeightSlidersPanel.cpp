@@ -51,6 +51,9 @@ WeightSlidersPanel::WeightSlidersPanel(QWidget* parent) : QWidget(parent) {
         connect(sliders_[i], &QSlider::valueChanged, this, [this, i](int v) {
             onSliderMoved(i, v);
         });
+        connect(sliders_[i], &QSlider::sliderReleased, this, [this] {
+            emit weightsCommitted(weights_);
+        });
 
         slidersRow->addLayout(itemLayout, 1);
     }
@@ -69,6 +72,8 @@ void WeightSlidersPanel::onSliderMoved(int index, int value) {
     weights_ = rebalance(weights_, index, value);
     syncWidgets();
     emit weightsChanged(weights_);
+    // While dragging, wait for the release; keyboard and wheel steps are final immediately.
+    if (!sliders_[index]->isSliderDown()) emit weightsCommitted(weights_);
 }
 
 void WeightSlidersPanel::syncWidgets() {
