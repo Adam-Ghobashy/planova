@@ -15,5 +15,6 @@ target_sources(planova_core PRIVATE
     src/slicer/WeightedScoringStrategy.cpp
     src/slicer/PizzaPortionCalculator.cpp
     src/slicer/SlicerService.cpp
+    src/slicer/SlicerWeightsProjection.cpp
 )
 # --- end S4 ---

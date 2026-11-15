@@ -16,7 +16,9 @@ void requireValid(const ScoringWeights& w) {
 
 SlicerService::SlicerService(ITaskQuery& tasks, IMemberQuery& members, IAssignmentStrategy& strategy,
                              EventLog& log, IClock& clock)
-    : tasks_(tasks), members_(members), strategy_(strategy), log_(log), clock_(clock) {}
+    : tasks_(tasks), members_(members), strategy_(strategy), log_(log), clock_(clock) {
+    log_.add(weights_);
+}
 
 std::vector<Assignment> SlicerService::preview(const ScoringWeights& weights) const {
     requireValid(weights);
@@ -49,7 +51,8 @@ int SlicerService::apply(const std::vector<Assignment>& assignments, const Scori
         ++changed;
     }
 
-    if (changed > 0 || !lastWeights_ || *lastWeights_ != weights) {
+    const auto lastWeights = weights_.last();
+    if (changed > 0 || !lastWeights || *lastWeights != weights) {
         QJsonObject payload;
         payload["skill"] = weights.skill;
         payload["workload"] = weights.workload;
@@ -61,8 +64,7 @@ int SlicerService::apply(const std::vector<Assignment>& assignments, const Scori
         e.type = SlicerWeightsChanged;
         e.payload = payload;
         e.id = makeEventId(e.ts, e.author, e.payload);
-        log_.append(e);
-        lastWeights_ = weights;
+        log_.append(e);  // the projection records the new weights as the event is appended
     }
     return changed;
 }

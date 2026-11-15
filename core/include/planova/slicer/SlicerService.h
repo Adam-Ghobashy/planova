@@ -4,8 +4,8 @@
 #include "planova/slicer/IAssignmentStrategy.h"
 #include "planova/slicer/ScoringWeights.h"
 #include "planova/slicer/SlicerTypes.h"
+#include "planova/slicer/SlicerWeightsProjection.h"
 #include "planova/store/EventLog.h"
-#include <optional>
 #include <vector>
 
 namespace planova::slicer {
@@ -32,7 +32,7 @@ private:
     IAssignmentStrategy& strategy_;
     EventLog& log_;
     IClock& clock_;
-    std::optional<ScoringWeights> lastWeights_ = std::nullopt;
+    SlicerWeightsProjection weights_;  // registered with the log; tracks the last applied weights
 };
 
 } // namespace planova::slicer

@@ -80,6 +80,27 @@ private slots:
         QCOMPARE(f.svc.apply({bad}, ScoringWeights{}), 0);
         for (const auto& e : f.store.events) QVERIFY(e.type != "TaskAssigned");
     }
+    void weightsSurviveRestart() {
+        Fixture f;
+        ScoringWeights w;
+        auto preview = f.svc.preview(w);
+        f.svc.apply(preview, w);
+        const int eventCount = int(f.store.events.size());
+
+        // Simulated restart: new log and service over the same stored events.
+        FakeTaskQuery tq2;
+        FakeMemberQuery mq2;
+        tq2.addTask(TaskDto{"t1", "Task 1", SkillCategory::Backend, Priority::Medium, 3, 5,
+                            TaskStatus::ToDo, Id("1"), {}});
+        mq2.addMember(MemberDto{"1", "Alice", "Dev", false, {{SkillCategory::Backend, 5}}, 100, 1.0});
+        EventLog log2{f.store};
+        WeightedScoringStrategy strategy2;
+        SlicerService svc2{tq2, mq2, strategy2, log2, f.clock};
+        log2.rebuild();
+
+        svc2.apply(preview, w);
+        QCOMPARE(int(f.store.events.size()), eventCount);
+    }
     void changedWeightsAppendOnlyWeightsEvent() {
         Fixture f;
         ScoringWeights w;
