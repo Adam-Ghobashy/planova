@@ -18,8 +18,10 @@ struct SliceFrame {
 // cut. When every cut is done the slices spread apart. Pure maths, so it is easy to test.
 class SliceTimeline {
 public:
-    static constexpr int kCutMs = 400;     // time for one cut, including the move to the next
-    static constexpr int kSpreadMs = 700;  // time for the slices to spread apart
+    static constexpr int kCutMs = 400;           // longest time for one cut, including the move to the next
+    static constexpr int kMinCutMs = 150;        // shortest time for one cut
+    static constexpr int kMaxCuttingMs = 3000;   // all cuts together; with many cuts each one is sped up
+    static constexpr int kSpreadMs = 700;        // time for the slices to spread apart
 
     // One angle per cut (clockwise from 12 o'clock), in the order they are cut.
     explicit SliceTimeline(std::vector<double> cutAnglesDeg);
@@ -29,6 +31,7 @@ public:
 
 private:
     std::vector<double> cutAngles_;
+    int cutMs_ = kCutMs;  // time per cut for this timeline
 };
 
 } // namespace planova::slicer

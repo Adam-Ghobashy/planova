@@ -1,5 +1,6 @@
 #include "slicer/AssignmentTableModel.h"
 #include "theme/ThemeManager.h"
+#include <QSignalSpy>
 #include <QTest>
 
 using namespace planova::slicer;
@@ -73,6 +74,18 @@ private slots:
         QVERIFY(model.data(model.index(0, 3), AssignmentTableModel::ManualOverrideRole).toBool());
         model.setAssignments({Assignment{"t1", "1", 85, "Initial", false}}, {task(false)}, members());
         QVERIFY(!model.data(model.index(0, 3), AssignmentTableModel::ManualOverrideRole).toBool());
+    }
+    void pickingTheSameMemberIsNotAnOverride() {
+        AssignmentTableModel model;
+        model.setAssignments({Assignment{"t1", "1", 85, "Initial", false}}, {task(false)}, members());
+        QSignalSpy edited(&model, &AssignmentTableModel::assignmentEdited);
+
+        QVERIFY(model.setData(model.index(0, 6), QString("1"), Qt::EditRole));  // same member again
+
+        QCOMPARE(edited.count(), 0);
+        QVERIFY(!model.data(model.index(0, 3), AssignmentTableModel::ManualOverrideRole).toBool());
+        QCOMPARE(QString::fromStdString(model.currentAssignments()[0].rationale), QString("Initial"));
+        QCOMPARE(model.currentAssignments()[0].matchPct, 85);
     }
     void unknownMemberIsRejected() {
         AssignmentTableModel model;

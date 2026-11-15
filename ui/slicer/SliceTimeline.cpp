@@ -17,26 +17,30 @@ double normalizeDegrees(double deg) {
 }
 } // namespace
 
-SliceTimeline::SliceTimeline(std::vector<double> cutAnglesDeg) : cutAngles_(std::move(cutAnglesDeg)) {}
+SliceTimeline::SliceTimeline(std::vector<double> cutAnglesDeg) : cutAngles_(std::move(cutAnglesDeg)) {
+    if (!cutAngles_.empty()) {
+        cutMs_ = std::clamp(kMaxCuttingMs / static_cast<int>(cutAngles_.size()), kMinCutMs, kCutMs);
+    }
+}
 
 int SliceTimeline::totalMs() const {
-    return static_cast<int>(cutAngles_.size()) * kCutMs + kSpreadMs;
+    return static_cast<int>(cutAngles_.size()) * cutMs_ + kSpreadMs;
 }
 
 SliceFrame SliceTimeline::at(int elapsedMs) const {
     const int cuts = static_cast<int>(cutAngles_.size());
-    const int cuttingMs = cuts * kCutMs;
+    const int cuttingMs = cuts * cutMs_;
 
     SliceFrame frame;
     frame.cutProgress.assign(cutAngles_.size(), 0.0);
     for (int i = 0; i < cuts; ++i) {
-        const double u = clamp01(static_cast<double>(elapsedMs - i * kCutMs) / kCutMs);
+        const double u = clamp01(static_cast<double>(elapsedMs - i * cutMs_) / cutMs_);
         frame.cutProgress[i] = (std::min)(1.0, u / kCuttingEnd);
     }
 
     if (cuts > 0 && elapsedMs < cuttingMs) {
-        const int i = std::clamp(elapsedMs / kCutMs, 0, cuts - 1);
-        const double u = clamp01(static_cast<double>(elapsedMs - i * kCutMs) / kCutMs);
+        const int i = std::clamp(elapsedMs / cutMs_, 0, cuts - 1);
+        const double u = clamp01(static_cast<double>(elapsedMs - i * cutMs_) / cutMs_);
         frame.wheelVisible = true;
         frame.wheelAngleDeg = cutAngles_[i];
         if (u < kCuttingEnd) {

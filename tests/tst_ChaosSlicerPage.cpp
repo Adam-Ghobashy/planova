@@ -83,6 +83,49 @@ private slots:
 
         QCOMPARE(page.findChild<QLabel*>("statusLabel")->text(), QString("Recalculated"));
     }
+    void externalBoardChangeRefreshesTheTable() {
+        Board b;
+        b.addAlice();
+        b.addTask("t1");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        auto* table = page.findChild<QTableView*>("assignmentsTable");
+        QCOMPARE(table->model()->rowCount(), 1);
+
+        b.addTask("t2");  // another part of the app adds a task
+        page.refreshFromBoard();
+
+        QCOMPARE(table->model()->rowCount(), 2);
+    }
+    void applyKeepsManualOverridesAndWritesThem() {
+        Board b;
+        b.addAlice();
+        b.members.addMember(MemberDto{"2", "Bob", "Dev", false, {{SkillCategory::Backend, 5}}, 100, 1.0});
+        b.addTask("t1");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        // Like the real app: every event on the bus makes the page refresh.
+        b.log.bus().subscribe([&page](const std::string&) { page.refreshFromBoard(); });
+        auto* table = page.findChild<QTableView*>("assignmentsTable");
+
+        const QModelIndex row = table->model()->index(0, AssignmentTableModel::Assignee);
+        const bool aliceHasIt = row.data(AssignmentTableModel::AssigneeNameRole).toString() == "Alice";
+        const QString chosen = aliceHasIt ? "2" : "1";
+        QVERIFY(table->model()->setData(table->model()->index(0, AssignmentTableModel::ActionOverride), chosen,
+                                        Qt::EditRole));
+        page.findChild<QPushButton*>("applyButton")->click();
+
+        // The user's choice was written to the event log ...
+        int assigned = 0;
+        for (const auto& e : b.store.events) {
+            if (e.type == "TaskAssigned") {
+                ++assigned;
+                QCOMPARE(e.payload["memberId"].toString(), chosen);
+            }
+        }
+        QCOMPARE(assigned, 1);
+        // ... and the refresh triggered by our own events did not overwrite it in the table.
+        QCOMPARE(table->model()->index(0, AssignmentTableModel::ActionOverride).data(Qt::EditRole).toString(),
+                 chosen);
+    }
     void failedSaveIsShownNotThrown() {
         FakeTaskQuery tasks;
         FakeMemberQuery members;

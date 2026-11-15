@@ -9,6 +9,27 @@ using namespace planova::slicer;
 class tst_AssigneeDelegate : public QObject {
     Q_OBJECT
 private slots:
+    void membersAddedLaterAppearInTheCombo() {
+        std::vector<MemberDto> members = {MemberDto{"1", "Alice", "Dev", false, {}, 100, 1.0}};
+        TaskDto task{"t1", "Auth API", SkillCategory::Backend, Priority::High, 3, 4, TaskStatus::ToDo,
+                     std::nullopt, {}};
+        AssignmentTableModel model;
+        model.setAssignments({Assignment{"t1", "1", 85, "Initial", false}}, {task}, members);
+
+        QTableView view;
+        view.setModel(&model);
+        auto* delegate = new AssigneeDelegate(members, &view);
+        view.setItemDelegateForColumn(AssignmentTableModel::ActionOverride, delegate);
+        view.show();
+
+        members.push_back(MemberDto{"2", "Bob", "Dev", false, {}, 100, 1.0});
+        delegate->setMembers(members);
+
+        view.edit(model.index(0, AssignmentTableModel::ActionOverride));
+        auto* combo = view.findChild<QComboBox*>("overrideCombo");
+        QVERIFY(combo != nullptr);
+        QCOMPARE(combo->count(), 2);
+    }
     void choosingAMemberCommitsTheOverride() {
         std::vector<MemberDto> members = {MemberDto{"1", "Alice", "Dev", false, {}, 100, 1.0},
                                           MemberDto{"2", "Bob", "Dev", false, {}, 100, 1.0}};

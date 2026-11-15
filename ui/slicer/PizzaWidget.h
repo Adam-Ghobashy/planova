@@ -29,7 +29,7 @@ public:
     double pieRadius() const;
     // Index into the portions of the slice under `pos`, or -1 (outside, empty slice, empty pizza).
     int sliceAt(const QPointF& pos) const;
-    void setSelectedMember(const QString& memberId);  // empty string clears the selection
+    double legendBottom() const;  // y of the bottom edge of the legend pills (for tests)
 
 signals:
     // Emitted when the user clicks a slice or legend pill. An empty id means the selection was cleared.
@@ -39,8 +39,17 @@ protected:
     void paintEvent(QPaintEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
+    struct LegendLayout {
+        std::vector<QRectF> rects;  // one pill per portion
+        double bottom = 0.0;        // bottom edge of the last row
+    };
+    LegendLayout layoutLegend(double top) const;  // pure geometry from the portions and the width
+    double legendTop() const;
+    double legendHeight() const;
+    void updateMinimumHeight();                   // the wrapped legend must always fit
     bool hasAssignedSlices() const;
     bool hasCuts() const;                    // two or more slices: there is something to cut
     std::vector<double> cutAngles() const;   // where the knife goes: the start of every slice, if there are 2+
@@ -48,17 +57,17 @@ private:
     double cutProgress(int cut) const;       // 0 .. 1 for the cut with this index
     int legendIndexAt(const QPointF& pos) const;
     void toggleSelection(int portionIndex);
+    bool hasMember(const QString& memberId) const;
 
     void drawEmptyState(QPainter& painter) const;
     void drawWholePizza(QPainter& painter) const;
     void drawSlice(QPainter& painter, int index) const;
     void drawCutLines(QPainter& painter, bool onTopOfPizza) const;
     void drawCutter(QPainter& painter) const;
-    double drawLegend(QPainter& painter);    // returns the bottom edge of the legend
+    double drawLegend(QPainter& painter) const;  // returns the bottom edge of the legend
 
     std::vector<planova::slicer::Portion> portions_;
     QString selectedMemberId_;
-    std::vector<QRectF> legendRects_;  // filled while painting, used for clicks
     bool sliced_ = false;
     bool animating_ = false;
     SliceTimeline timeline_ = SliceTimeline(std::vector<double>());

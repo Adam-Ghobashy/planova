@@ -1,5 +1,6 @@
 #include "slicer/PizzaWidget.h"
 #include <QSignalSpy>
+#include <string>
 #include <QTest>
 #include <QtMath>
 
@@ -109,6 +110,46 @@ private slots:
         w.setPortions({portion("1", "Alice Smith", 3, 0, 270), portion("2", "Bob Jones", 1, 270, 90)});
         QVERIFY(!w.isAnimating());
         QVERIFY(!w.isSliced());
+    }
+    void wrappedLegendStaysInsideTheWidget() {
+        PizzaWidget w;
+        std::vector<Portion> eight;
+        for (int i = 0; i < 8; ++i) {
+            const std::string id = std::to_string(i + 1);
+            eight.push_back(portion(id.c_str(), ("Member Number" + id).c_str(), 1, i * 45.0, 45.0));
+        }
+        w.resize(700, 420);
+        w.setPortions(eight);  // eight pills do not fit on one row at this width
+        QVERIFY(w.legendBottom() <= w.height());
+        w.resize(400, 420);    // narrower: more rows
+        QVERIFY(w.legendBottom() <= w.height());
+    }
+    void selectionIsClearedWhenThatMemberGoesAway() {
+        PizzaWidget w;
+        w.resize(400, 500);
+        w.setPortions({portion("1", "Alice Smith", 2, 0, 180), portion("2", "Bob Jones", 2, 180, 180)});
+        w.setSliced(true);
+        QSignalSpy spy(&w, &PizzaWidget::memberSelected);
+        QTest::mouseClick(&w, Qt::LeftButton, Qt::NoModifier, pointAt(w, 270, 0.5).toPoint());  // Bob
+        QCOMPARE(spy.at(0).at(0).toString(), QString("2"));
+
+        w.setPortions({portion("1", "Alice Smith", 4, 0, 360)});  // Bob is gone
+
+        QCOMPARE(spy.count(), 2);
+        QCOMPARE(spy.at(1).at(0).toString(), QString());  // cleared, so the table highlight goes too
+    }
+    void slicedSlicesAreHitWhereTheyAreDrawn() {
+        PizzaWidget w;
+        w.resize(400, 500);
+        w.setPortions({portion("1", "Alice Smith", 2, 0, 180), portion("2", "Bob Jones", 2, 180, 180)});
+        // Whole pizza: the point just right of the vertical centre line is on slice 0.
+        const QPointF nearLine(w.pieCenter().x() + 3, w.pieCenter().y() - w.pieRadius() * 0.5);
+        QCOMPARE(w.sliceAt(nearLine), 0);
+        // Sliced: the slices are pulled apart, so that point now lies in the gap between them.
+        w.setSliced(true);
+        QCOMPARE(w.sliceAt(nearLine), -1);
+        QCOMPARE(w.sliceAt(QPointF(w.pieCenter().x() + 12, nearLine.y())), 0);
+        QCOMPARE(w.sliceAt(QPointF(w.pieCenter().x() - 12, nearLine.y())), 1);
     }
     void oneSliceOnlyHasNothingToCut() {
         PizzaWidget w;

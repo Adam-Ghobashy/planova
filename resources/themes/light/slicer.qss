@@ -123,7 +123,7 @@ QSlider::handle:horizontal {
 }
 
 QSlider::handle:horizontal:hover {
-    background: #4529CA;
+    background: #4526CB;
 }
 
 QLabel#sliderNameLabel {

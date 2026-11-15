@@ -12,7 +12,6 @@ class WeightSlidersPanel : public QWidget {
 public:
     explicit WeightSlidersPanel(QWidget* parent = nullptr);
     ScoringWeights weights() const { return weights_; }
-    void setWeights(const ScoringWeights& w);
 signals:
     // Fires continuously while a slider moves (use for live labels).
     void weightsChanged(const planova::slicer::ScoringWeights& weights);

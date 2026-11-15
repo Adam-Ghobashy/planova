@@ -23,6 +23,7 @@ planova_add_ui_test(tst_AssigneeDelegate)
 planova_add_ui_test(tst_PizzaWidget)
 planova_add_ui_test(tst_ChaosSlicerPage)
 planova_add_ui_test(tst_SliceTimeline)
+planova_add_ui_test(tst_WeightSlidersPanel)
 # --- end S4 ---
 
 planova_add_test(tst_Skeleton)

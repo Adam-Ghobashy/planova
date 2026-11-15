@@ -159,9 +159,8 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     table_->setEditTriggers(QAbstractItemView::AllEditTriggers);  // only the override column is editable
 
     table_->setItemDelegate(new SlicerTableDelegate(table_));
-    auto allMembers = members_.all();
-    table_->setItemDelegateForColumn(AssignmentTableModel::ActionOverride,
-                                     new AssigneeDelegate(allMembers, table_));
+    assigneeDelegate_ = new AssigneeDelegate(members_.all(), table_);  // kept up to date in recalculate()
+    table_->setItemDelegateForColumn(AssignmentTableModel::ActionOverride, assigneeDelegate_);
 
     auto* header = table_->horizontalHeader();
     header->setStretchLastSection(false);
@@ -191,11 +190,13 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
 bool ChaosSlicerPage::recalculate() {
     try {
         preview_ = slicer_.preview(sliders_->weights());
-    } catch (const std::invalid_argument& e) {
+    } catch (const std::exception& e) {  // invalid weights, or anything a strategy or query throws
         showStatus(QString::fromUtf8(e.what()));
         return false;
     }
-    model_->setAssignments(preview_, tasks_.all(), members_.all());
+    const std::vector<MemberDto> members = members_.all();
+    assigneeDelegate_->setMembers(members);  // members may have been added since the page was built
+    model_->setAssignments(preview_, tasks_.all(), members);
     fitTableHeight();
     // New assignments give new slices, so the pizza goes back to whole until "Slice" is pressed.
     pizza_->setPortions(slicer_.portions(preview_));
@@ -208,15 +209,18 @@ void ChaosSlicerPage::onRecalculate() {
 
 void ChaosSlicerPage::onApply() {
     int changed = 0;
+    applying_ = true;  // the events we write must not make the page re-preview and drop the user's overrides
     try {
         changed = slicer_.apply(model_->currentAssignments(), sliders_->weights());
     } catch (const std::exception& e) {
         // Invalid weights, or the event store could not write (disk full, file locked).
         // An exception must never leave a slot, so show it instead.
+        applying_ = false;
         showStatus(QString("Could not apply: %1").arg(QString::fromUtf8(e.what())));
         return;
     }
-    refreshFromBoard();
+    applying_ = false;
+    pizza_->setPortions(slicer_.portions());  // the board now holds what the table showed
     showStatus(changed == 1 ? QString("Applied 1 assignment") : QString("Applied %1 assignments").arg(changed));
     emit assignmentsApplied(changed);
 }
@@ -236,7 +240,9 @@ void ChaosSlicerPage::fitTableHeight() {
 }
 
 void ChaosSlicerPage::refreshFromBoard() {
-    pizza_->setPortions(slicer_.portions());
+    if (applying_) return;  // our own Apply is running; onApply refreshes the pizza itself
+    // Something else changed the board: the old preview is out of date.
+    if (recalculate()) showStatus("Board changed: assignments recalculated");
 }
 
 } // namespace planova::slicer

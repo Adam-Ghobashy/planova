@@ -11,6 +11,7 @@ class QTimer;
 
 namespace planova::slicer {
 
+class AssigneeDelegate;
 class WeightSlidersPanel;
 class AssignmentTableModel;
 class PizzaWidget;
@@ -48,6 +49,8 @@ private:
     AssignmentTableModel* model_ = nullptr;
     QPushButton* recalculateBtn_ = nullptr;
     QPushButton* applyBtn_ = nullptr;
+    AssigneeDelegate* assigneeDelegate_ = nullptr;
+    bool applying_ = false;  // true while onApply writes events
     QLabel* statusLabel_ = nullptr;
     QLabel* emptyLabel_ = nullptr;
     QTimer* statusTimer_ = nullptr;

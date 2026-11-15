@@ -58,6 +58,12 @@ private slots:
         QCOMPARE(f.spread, 1.0);
         QCOMPARE(t.totalMs(), 3 * SliceTimeline::kCutMs + SliceTimeline::kSpreadMs);
     }
+    void manyCutsAreSpedUpToStayUnderThreeSeconds() {
+        SliceTimeline twelve(std::vector<double>{0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330});
+        QVERIFY(twelve.totalMs() <= 3000 + SliceTimeline::kSpreadMs);
+        QCOMPARE(twelve.at(twelve.totalMs()).spread, 1.0);
+        QVERIFY(!twelve.at(twelve.totalMs()).wheelVisible);
+    }
     void noCutsMeansOnlyTheSpread() {
         SliceTimeline t({});
         QCOMPARE(t.totalMs(), SliceTimeline::kSpreadMs);

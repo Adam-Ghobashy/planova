@@ -152,6 +152,7 @@ bool AssignmentTableModel::setData(const QModelIndex& index, const QVariant& val
     }
 
     auto& a = assignments_[index.row()];
+    if (a.memberId == newMemberId) return true;  // the same member again: not an override
     a.memberId = newMemberId;
     a.matchPct = 0;
     a.rationale = "Manual override";

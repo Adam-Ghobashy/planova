@@ -114,6 +114,36 @@ private slots:
         svc2.apply(preview, w);
         QCOMPARE(int(f.store.events.size()), eventCount);
     }
+    void applyWritesOneEventPerChangedTaskOnly() {
+        FakeTaskQuery tq;
+        FakeMemberQuery mq;
+        FakeEventStore store;
+        EventLog log{store};
+        FakeClock clock{1000};
+        WeightedScoringStrategy strategy;
+        SlicerService svc{tq, mq, strategy, log, clock};
+        mq.addMember(MemberDto{"1", "Alice", "Dev", false, {}, 100, 1.0});
+        mq.addMember(MemberDto{"2", "Bob", "Dev", false, {}, 100, 1.0});
+        auto todo = [](const char* id, std::optional<Id> assignee) {
+            return TaskDto{id, id, SkillCategory::Backend, Priority::Medium, 3, 4, TaskStatus::ToDo,
+                           std::move(assignee), {}};
+        };
+        tq.addTask(todo("t1", Id("1")));       // already with Alice: unchanged
+        tq.addTask(todo("t2", std::nullopt));  // unassigned: changes
+        tq.addTask(todo("t3", Id("1")));       // moves from Alice to Bob: changes
+
+        const std::vector<Assignment> plan = {{"t1", "1", 80, "r", false}, {"t2", "2", 70, "r", false},
+                                              {"t3", "2", 60, "r", false}};
+        QCOMPARE(svc.apply(plan, ScoringWeights{}), 2);
+
+        std::vector<std::pair<QString, QString>> assigned;  // (taskId, memberId)
+        for (const auto& e : store.events)
+            if (e.type == "TaskAssigned")
+                assigned.push_back({e.payload["taskId"].toString(), e.payload["memberId"].toString()});
+        QCOMPARE(int(assigned.size()), 2);
+        QCOMPARE(assigned[0], (std::pair<QString, QString>{"t2", "2"}));
+        QCOMPARE(assigned[1], (std::pair<QString, QString>{"t3", "2"}));
+    }
     void strategyIsSwappable() {
         FakeTaskQuery tq;
         FakeMemberQuery mq;

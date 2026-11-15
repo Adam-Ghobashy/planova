@@ -164,6 +164,36 @@ private slots:
                  QString("High Backend proficiency (5/5) with above-average load (5h)."));
     }
 
+    void finishedDependencyDoesNotWait() {
+        WeightedScoringStrategy strat;
+        auto res = strat.assign({task("dep", Priority::Medium, 1, 2, TaskStatus::Done, Id("1")),
+                                 task("t1", Priority::Medium, 3, 5, TaskStatus::ToDo, std::nullopt, {"dep"})},
+                                {member("1", "Alice", {{SkillCategory::Backend, 5}})}, ScoringWeights{});
+        QCOMPARE(int(res.size()), 1);
+        QVERIFY(!res[0].waitingOnDep);
+    }
+
+    void inputOrderDoesNotChangeTheResult() {
+        WeightedScoringStrategy strat;
+        std::vector<TaskDto> ts = {task("a", Priority::High, 4, 6), task("b", Priority::Medium, 3, 4),
+                                   task("c", Priority::Medium, 3, 4), task("d", Priority::Low, 2, 2)};
+        std::vector<MemberDto> ms = {member("1", "Alice", {{SkillCategory::Backend, 4}}, 2.0),
+                                     member("2", "Bob", {{SkillCategory::Backend, 4}}, 2.0),
+                                     member("3", "Cara", {{SkillCategory::Backend, 2}}, 3.0)};
+        auto forward = strat.assign(ts, ms, ScoringWeights{});
+
+        std::reverse(ts.begin(), ts.end());
+        std::reverse(ms.begin(), ms.end());
+        auto backward = strat.assign(ts, ms, ScoringWeights{});
+
+        QCOMPARE(int(forward.size()), int(backward.size()));
+        for (size_t i = 0; i < forward.size(); ++i) {
+            QCOMPARE(forward[i].taskId, backward[i].taskId);
+            QCOMPARE(forward[i].memberId, backward[i].memberId);
+            QCOMPARE(forward[i].matchPct, backward[i].matchPct);
+        }
+    }
+
     void determinism() {
         WeightedScoringStrategy strat;
         std::vector<MemberDto> ms = {member("1", "Alice", {{SkillCategory::Backend, 4}}, 2.0),
