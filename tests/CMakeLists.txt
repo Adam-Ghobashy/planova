@@ -20,6 +20,7 @@ planova_add_test(tst_SlicerService)
 planova_add_ui_test(tst_WeightRebalance)
 planova_add_ui_test(tst_AssignmentTableModel)
 planova_add_ui_test(tst_AssigneeDelegate)
+planova_add_ui_test(tst_PizzaWidget)
 # --- end S4 ---
 
 planova_add_test(tst_Skeleton)

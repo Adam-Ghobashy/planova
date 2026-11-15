@@ -2,41 +2,62 @@
 #include "theme/ThemeManager.h"
 #include <QEasingCurve>
 #include <QFont>
-#include <QPaintEvent>
+#include <QFontMetrics>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QVariantAnimation>
+#include <QtMath>
 #include <algorithm>
 #include <cmath>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 namespace planova::slicer {
 
 namespace {
-QString extractInitials(const std::string& name) {
-    QString qname = QString::fromStdString(name).trimmed();
-    if (qname.isEmpty()) return {};
-    auto parts = qname.split(' ', Qt::SkipEmptyParts);
+
+constexpr double kPi = 3.14159265358979323846;
+constexpr double kMargin = 20.0;
+constexpr double kLegendReserve = 90.0;  // space kept under the pie for the legend
+constexpr double kRestOffset = 6.0;      // gap between slices when idle
+constexpr double kSpreadOffset = 10.0;   // extra gap at the peak of the animation
+constexpr double kThinSliceDegrees = 3.0;
+constexpr double kMinBadgeSpan = 25.0;   // slices narrower than this get no initials or toppings
+
+QString initialsOf(const std::string& name) {
+    const QStringList parts = QString::fromStdString(name).trimmed().split(' ', Qt::SkipEmptyParts);
     if (parts.isEmpty()) return {};
     if (parts.size() == 1) return parts[0].left(1).toUpper();
     return (parts.first().left(1) + parts.last().left(1)).toUpper();
 }
+
+QString firstNameOf(const std::string& name) {
+    const QStringList parts = QString::fromStdString(name).trimmed().split(' ', Qt::SkipEmptyParts);
+    return parts.isEmpty() ? QString() : parts.first();
 }
+
+// Member1..Member6 repeat for teams larger than six.
+QColor memberColor(int index) {
+    return ThemeManager::instance().color(static_cast<Token>(static_cast<int>(Token::Member1) + (index % 6)));
+}
+
+// A point at `distance` from `center` in direction `angleDeg` (clockwise from 12 o'clock).
+QPointF pointOnCircle(const QPointF& center, double distance, double angleDeg) {
+    const double rad = qDegreesToRadians(angleDeg);
+    return QPointF(center.x() + distance * std::sin(rad), center.y() - distance * std::cos(rad));
+}
+
+} // namespace
 
 PizzaWidget::PizzaWidget(QWidget* parent) : QWidget(parent) {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    setMinimumSize(280, 360);
+    setMinimumSize(280, 400);
 
     anim_ = new QVariantAnimation(this);
-    anim_->setDuration(400);
+    anim_->setDuration(700);
     anim_->setStartValue(0.0);
-    anim_->setKeyValueAt(0.5, 1.0);
-    anim_->setEndValue(0.0);
-    anim_->setEasingCurve(QEasingCurve::OutQuad);
+    anim_->setEndValue(1.0);
+    anim_->setEasingCurve(QEasingCurve::InOutQuad);
     connect(anim_, &QVariantAnimation::valueChanged, this, [this](const QVariant& v) {
-        explode_ = v.toDouble();
+        animT_ = v.toDouble();
         update();
     });
 }
@@ -47,179 +68,221 @@ void PizzaWidget::setPortions(const std::vector<planova::slicer::Portion>& porti
 }
 
 void PizzaWidget::sliceAnimated() {
-    if (anim_->state() == QVariantAnimation::Running) {
-        anim_->stop();
-    }
+    anim_->stop();
     anim_->start();
 }
 
+void PizzaWidget::setSelectedMember(const QString& memberId) {
+    if (selectedMemberId_ == memberId) return;
+    selectedMemberId_ = memberId;
+    update();
+}
+
+double PizzaWidget::pieRadius() const {
+    const double byWidth = (width() - 2 * kMargin) / 2.0;
+    const double byHeight = (height() - kLegendReserve - 2 * kMargin) / 2.0;
+    return std::max(40.0, std::min(byWidth, byHeight));
+}
+
+QPointF PizzaWidget::pieCenter() const {
+    return QPointF(width() / 2.0, kMargin + pieRadius());
+}
+
+bool PizzaWidget::hasAssignedSlices() const {
+    return std::any_of(portions_.begin(), portions_.end(), [](const Portion& p) { return !p.thinSlice; });
+}
+
+int PizzaWidget::sliceAt(const QPointF& pos) const {
+    if (!hasAssignedSlices()) return -1;
+    const double dx = pos.x() - pieCenter().x();
+    const double dy = pos.y() - pieCenter().y();
+    if (std::hypot(dx, dy) > pieRadius()) return -1;
+
+    // Clockwise angle from 12 o'clock, 0..360
+    double angle = qRadiansToDegrees(std::atan2(dx, -dy));
+    if (angle < 0.0) angle += 360.0;
+
+    for (size_t i = 0; i < portions_.size(); ++i) {
+        const Portion& p = portions_[i];
+        if (p.thinSlice) continue;
+        if (angle >= p.startAngle && angle < p.startAngle + p.spanAngle) return static_cast<int>(i);
+    }
+    // The last slice owns the 360 degree edge.
+    for (size_t i = portions_.size(); i-- > 0;) {
+        if (!portions_[i].thinSlice) return static_cast<int>(i);
+    }
+    return -1;
+}
+
+void PizzaWidget::toggleSelection(int portionIndex) {
+    const QString id = QString::fromStdString(portions_[portionIndex].memberId);
+    selectedMemberId_ = (selectedMemberId_ == id) ? QString() : id;
+    update();
+    emit memberSelected(selectedMemberId_);
+}
+
+void PizzaWidget::mousePressEvent(QMouseEvent* event) {
+    if (event->button() != Qt::LeftButton) {
+        QWidget::mousePressEvent(event);
+        return;
+    }
+    const QPointF pos = event->position();
+    for (size_t i = 0; i < legendRects_.size() && i < portions_.size(); ++i) {
+        if (legendRects_[i].contains(pos)) {
+            toggleSelection(static_cast<int>(i));
+            return;
+        }
+    }
+    const int slice = sliceAt(pos);
+    if (slice >= 0) {
+        toggleSelection(slice);
+    } else if (!selectedMemberId_.isEmpty()) {
+        selectedMemberId_.clear();
+        update();
+        emit memberSelected(QString());
+    }
+}
+
 void PizzaWidget::paintEvent(QPaintEvent* /*event*/) {
-    QPainter p(this);
-    p.setRenderHint(QPainter::Antialiasing);
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    auto& tm = ThemeManager::instance();
 
     if (portions_.empty()) {
-        p.setPen(ThemeManager::instance().color(Token::TextMuted));
-        p.drawText(rect(), Qt::AlignCenter, "No workload data");
+        painter.setPen(tm.color(Token::TextMuted));
+        painter.drawText(rect(), Qt::AlignCenter, "No workload data");
+        legendRects_.clear();
         return;
     }
 
+    if (!hasAssignedSlices()) {
+        drawEmptyState(painter);
+    } else {
+        // Cut lines first, so they show in the gaps between spread slices. They grow out of the
+        // centre during the first part of the animation.
+        const double cutLength = pieRadius() * std::min(1.0, animT_ * 2.5);
+        painter.setPen(QPen(tm.color(Token::Border), 3.0, Qt::SolidLine, Qt::RoundCap));
+        for (const Portion& p : portions_) {
+            if (p.thinSlice) continue;
+            painter.drawLine(pieCenter(), pointOnCircle(pieCenter(), cutLength, p.startAngle));
+        }
+        for (size_t i = 0; i < portions_.size(); ++i) drawSlice(painter, static_cast<int>(i));
+    }
+    drawLegend(painter);
+}
+
+void PizzaWidget::drawEmptyState(QPainter& painter) const {
+    auto& tm = ThemeManager::instance();
+    const QPointF c = pieCenter();
+    const double r = pieRadius();
+    painter.setPen(QPen(tm.color(Token::Border), 2.0));
+    painter.setBrush(tm.color(Token::SurfaceAlt));
+    painter.drawEllipse(c, r, r);
+    painter.setPen(tm.color(Token::TextMuted));
+    painter.drawText(QRectF(c.x() - r, c.y() - 20, 2 * r, 40), Qt::AlignCenter, "No assigned tasks");
+}
+
+void PizzaWidget::drawSlice(QPainter& painter, int index) const {
+    const Portion& p = portions_[index];
     auto& tm = ThemeManager::instance();
 
-    const double radius = 120.0;
-    const double pieDiameter = radius * 2.0;
-    const QPointF center(width() / 2.0, 16.0 + radius);
-    const QRectF basePieRect(center.x() - radius, center.y() - radius, pieDiameter, pieDiameter);
+    const double span = p.thinSlice ? kThinSliceDegrees : p.spanAngle;
+    const double bisector = p.startAngle + span / 2.0;
+    const double offset = kRestOffset + kSpreadOffset * std::sin(kPi * animT_);
+    const QPointF c = pieCenter() + (pointOnCircle(QPointF(0, 0), offset, bisector));
+    const double r = pieRadius();
+    const bool selected = !selectedMemberId_.isEmpty() && selectedMemberId_ == QString::fromStdString(p.memberId);
 
-    // 1. Draw slices with crust, toppings, borders and member avatar badges
-    for (size_t i = 0; i < portions_.size(); ++i) {
-        const auto& portion = portions_[i];
-        QColor sliceColor = tm.color(static_cast<Token>(static_cast<int>(Token::Member1) + (i % 6)));
+    // Qt angles are counter-clockwise from 3 o'clock in 1/16 degree.
+    const int qtStart = static_cast<int>(std::round((90.0 - p.startAngle) * 16.0));
+    const int qtSpan = static_cast<int>(std::round(-span * 16.0));
 
-        double span = portion.thinSlice ? 3.0 : portion.spanAngle;
-        if (span <= 0.0) continue;
+    // Crust, then the cheese surface inset from the rim.
+    const QRectF outer(c.x() - r, c.y() - r, 2 * r, 2 * r);
+    painter.setPen(QPen(tm.color(selected ? Token::TextPrimary : Token::PizzaEdge), selected ? 3.0 : 1.5));
+    painter.setBrush(tm.color(Token::PizzaCrust));
+    painter.drawPie(outer, qtStart, qtSpan);
+    if (p.thinSlice) return;
 
-        double bisectorDeg = portion.startAngle + span / 2.0;
-        double rad = bisectorDeg * M_PI / 180.0;
-        double offsetDist = explode_ * 12.0;
-        double dx = offsetDist * std::sin(rad);
-        double dy = -offsetDist * std::cos(rad);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(tm.color(Token::PizzaCheese));
+    painter.drawPie(outer.adjusted(12, 12, -12, -12), qtStart, qtSpan);
 
-        QRectF sliceRect = basePieRect.translated(dx, dy);
+    if (span < kMinBadgeSpan) return;
 
-        int qtStart = static_cast<int>(std::round((90.0 - portion.startAngle) * 16.0));
-        int qtSpan = static_cast<int>(std::round(-span * 16.0));
+    // Toppings
+    painter.setBrush(tm.color(Token::PizzaSauce));
+    painter.drawEllipse(pointOnCircle(c, r * 0.62, p.startAngle + span * 0.35), 8, 8);
+    painter.drawEllipse(pointOnCircle(c, r * 0.74, p.startAngle + span * 0.72), 6, 6);
+    painter.setBrush(tm.color(Token::PizzaBasil));
+    painter.drawEllipse(pointOnCircle(c, r * 0.80, p.startAngle + span * 0.52), 4, 4);
 
-        // Draw base slice
-        p.setPen(QPen(tm.color(Token::TextPrimary), 1.5));
-        p.setBrush(sliceColor);
-        p.drawPie(sliceRect, qtStart, qtSpan);
+    // Initials badge in the member's colour (matches the legend dot)
+    const QPointF badge = pointOnCircle(c, r * 0.35, bisector);
+    painter.setPen(QPen(tm.color(Token::Surface), 2.0));
+    painter.setBrush(memberColor(index));
+    painter.drawEllipse(badge, 14, 14);
+    QFont font = painter.font();
+    font.setBold(true);
+    font.setPointSize(9);
+    painter.setFont(font);
+    painter.setPen(tm.color(Token::AccentText));
+    painter.drawText(QRectF(badge.x() - 14, badge.y() - 14, 28, 28), Qt::AlignCenter, initialsOf(p.memberName));
+}
 
-        // Draw crust outer rim
-        p.setPen(QPen(tm.color(Token::Border), 8.0, Qt::SolidLine, Qt::FlatCap));
-        p.setBrush(Qt::NoBrush);
-        p.drawArc(sliceRect.adjusted(4, 4, -4, -4), qtStart, qtSpan);
+void PizzaWidget::drawLegend(QPainter& painter) {
+    auto& tm = ThemeManager::instance();
+    QFont font = painter.font();
+    font.setPointSize(9);
+    font.setBold(false);
+    painter.setFont(font);
+    const QFontMetrics fm(font);
 
-        if (!portion.thinSlice && portion.spanAngle >= 25.0) {
-            // Toppings: pepperoni circles
-            double p1Rad = (portion.startAngle + span * 0.35) * M_PI / 180.0;
-            double p1Dist = radius * 0.72;
-            double px1 = center.x() + dx + p1Dist * std::sin(p1Rad);
-            double py1 = center.y() + dy - p1Dist * std::cos(p1Rad);
-            p.setPen(QPen(tm.color(Token::TextPrimary), 1.0));
-            p.setBrush(tm.color(Token::Member1));
-            p.drawEllipse(QPointF(px1, py1), 7, 7);
+    constexpr double pillHeight = 26.0;
+    constexpr double spacing = 10.0;
+    const double maxRowWidth = width() - 2 * kMargin;
 
-            double p2Rad = (portion.startAngle + span * 0.72) * M_PI / 180.0;
-            double p2Dist = radius * 0.76;
-            double px2 = center.x() + dx + p2Dist * std::sin(p2Rad);
-            double py2 = center.y() + dy - p2Dist * std::cos(p2Rad);
-            p.drawEllipse(QPointF(px2, py2), 6, 6);
-
-            // Toppings: basil green dots
-            double bRad = (portion.startAngle + span * 0.52) * M_PI / 180.0;
-            double bDist = radius * 0.84;
-            p.setPen(Qt::NoPen);
-            p.setBrush(tm.color(Token::Member3));
-            p.drawEllipse(QPointF(center.x() + dx + bDist * std::sin(bRad),
-                                  center.y() + dy - bDist * std::cos(bRad)), 3, 3);
-
-            // Center avatar circle with member initials
-            double centroidRadius = radius * 0.50;
-            double cx = center.x() + dx + centroidRadius * std::sin(rad);
-            double cy = center.y() + dy - centroidRadius * std::cos(rad);
-
-            QString initials = extractInitials(portion.memberName);
-            p.setPen(QPen(tm.color(Token::Surface), 2.0));
-            p.setBrush(tm.color(Token::TextPrimary));
-            p.drawEllipse(QPointF(cx, cy), 13, 13);
-
-            p.setPen(tm.color(Token::AccentText));
-            QFont font = p.font();
-            font.setBold(true);
-            font.setPointSize(9);
-            p.setFont(font);
-
-            QRectF textRect(cx - 13, cy - 13, 26, 26);
-            p.drawText(textRect, Qt::AlignCenter, initials);
-        }
+    struct Pill { QString text; double width; };
+    std::vector<Pill> pills;
+    for (const Portion& p : portions_) {
+        const QString text = QString("%1  %2 tasks").arg(firstNameOf(p.memberName)).arg(p.taskCount);
+        pills.push_back({text, fm.horizontalAdvance(text) + 34.0});
     }
 
-    // 2. Draw Legend below as horizontal centered pill tags
-    const int legendTop = static_cast<int>(center.y() + radius + 22);
-
-    QFont legendFont = p.font();
-    legendFont.setBold(false);
-    legendFont.setPointSize(9);
-    p.setFont(legendFont);
-    QFontMetrics fm(legendFont);
-
-    struct PillInfo {
-        QString text;
-        QColor dotColor;
-        int width;
-    };
-    std::vector<PillInfo> pills;
-    pills.reserve(portions_.size());
-
-    for (size_t i = 0; i < portions_.size(); ++i) {
-        const auto& portion = portions_[i];
-        QColor dotColor = tm.color(static_cast<Token>(static_cast<int>(Token::Member1) + (i % 6)));
-        QString text = QString("%1  %2 tasks")
-                           .arg(QString::fromStdString(portion.memberName))
-                           .arg(portion.taskCount);
-        int w = fm.horizontalAdvance(text) + 32;
-        pills.push_back({text, dotColor, w});
+    // Pack pills into centred rows.
+    legendRects_.assign(pills.size(), QRectF());
+    double y = pieCenter().y() + pieRadius() + kRestOffset + kSpreadOffset + 22.0;
+    size_t rowStart = 0;
+    while (rowStart < pills.size()) {
+        size_t rowEnd = rowStart;
+        double rowWidth = 0.0;
+        while (rowEnd < pills.size() &&
+               (rowEnd == rowStart || rowWidth + spacing + pills[rowEnd].width <= maxRowWidth)) {
+            rowWidth += (rowEnd == rowStart ? 0.0 : spacing) + pills[rowEnd].width;
+            ++rowEnd;
+        }
+        double x = (width() - rowWidth) / 2.0;
+        for (size_t i = rowStart; i < rowEnd; ++i) {
+            legendRects_[i] = QRectF(x, y, pills[i].width, pillHeight);
+            x += pills[i].width + spacing;
+        }
+        y += pillHeight + 8.0;
+        rowStart = rowEnd;
     }
 
-    // Arrange pills into rows that fit widget width
-    std::vector<std::vector<PillInfo>> rows;
-    std::vector<PillInfo> currentRow;
-    int currentWidth = 0;
-    const int pillSpacing = 10;
-    const int maxRowWidth = width() - 40;
-
-    for (const auto& pill : pills) {
-        if (!currentRow.empty() && currentWidth + pillSpacing + pill.width > maxRowWidth) {
-            rows.push_back(currentRow);
-            currentRow.clear();
-            currentWidth = 0;
-        }
-        currentRow.push_back(pill);
-        currentWidth += (currentRow.size() == 1 ? 0 : pillSpacing) + pill.width;
-    }
-    if (!currentRow.empty()) {
-        rows.push_back(currentRow);
-    }
-
-    int y = legendTop;
-    const int pillHeight = 26;
-    for (const auto& row : rows) {
-        int rowTotalWidth = 0;
-        for (size_t k = 0; k < row.size(); ++k) {
-            rowTotalWidth += row[k].width + (k > 0 ? pillSpacing : 0);
-        }
-        int startX = (width() - rowTotalWidth) / 2;
-        int x = startX;
-
-        for (const auto& pill : row) {
-            QRectF pillRect(x, y, pill.width, pillHeight);
-            p.setPen(QPen(tm.color(Token::Border), 1.0));
-            p.setBrush(tm.color(Token::Surface));
-            p.drawRoundedRect(pillRect, 13, 13);
-
-            // Dot
-            p.setPen(Qt::NoPen);
-            p.setBrush(pill.dotColor);
-            p.drawEllipse(QPointF(x + 11, y + 13), 4, 4);
-
-            // Text
-            p.setPen(tm.color(Token::TextPrimary));
-            p.drawText(QRectF(x + 20, y, pill.width - 24, pillHeight),
-                       Qt::AlignLeft | Qt::AlignVCenter, pill.text);
-
-            x += pill.width + pillSpacing;
-        }
-        y += pillHeight + 8;
+    for (size_t i = 0; i < pills.size(); ++i) {
+        const QRectF r = legendRects_[i];
+        const bool selected = !selectedMemberId_.isEmpty() &&
+                              selectedMemberId_ == QString::fromStdString(portions_[i].memberId);
+        painter.setPen(QPen(tm.color(selected ? Token::Accent : Token::Border), 1.0));
+        painter.setBrush(tm.color(selected ? Token::AccentSoft : Token::Surface));
+        painter.drawRoundedRect(r, pillHeight / 2, pillHeight / 2);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(memberColor(static_cast<int>(i)));
+        painter.drawEllipse(QPointF(r.left() + 13, r.center().y()), 4, 4);
+        painter.setPen(tm.color(Token::TextPrimary));
+        painter.drawText(QRectF(r.left() + 24, r.top(), r.width() - 28, r.height()),
+                         Qt::AlignLeft | Qt::AlignVCenter, pills[i].text);
     }
 }
 
