@@ -26,7 +26,17 @@ void AssignmentTableModel::setAssignments(const std::vector<Assignment>& assignm
     assignments_ = assignments;
     tasks_ = tasks;
     members_ = members;
+    manualTaskIds_.clear();
     endResetModel();
+}
+
+void AssignmentTableModel::setHighlightedMember(const Id& memberId) {
+    if (highlightedMember_ == memberId) return;
+    highlightedMember_ = memberId;
+    if (!assignments_.empty()) {
+        emit dataChanged(index(0, 0), index(static_cast<int>(assignments_.size()) - 1, ColCount - 1),
+                         {HighlightedRole});
+    }
 }
 
 int AssignmentTableModel::rowCount(const QModelIndex& parent) const {
@@ -72,6 +82,8 @@ QVariant AssignmentTableModel::data(const QModelIndex& index, int role) const {
     if (role == MatchPctRole) return a.matchPct;
     if (role == WaitingOnDepRole) return a.waitingOnDep;
     if (role == RationaleRole) return QString::fromStdString(a.rationale);
+    if (role == HighlightedRole) return !highlightedMember_.empty() && a.memberId == highlightedMember_;
+    if (role == ManualOverrideRole) return manualTaskIds_.count(a.taskId) > 0;
 
     switch (index.column()) {
         case Column::TaskComplexity:
@@ -143,6 +155,7 @@ bool AssignmentTableModel::setData(const QModelIndex& index, const QVariant& val
     a.memberId = newMemberId;
     a.matchPct = 0;
     a.rationale = "Manual override";
+    manualTaskIds_.insert(a.taskId);
 
     emit dataChanged(this->index(index.row(), 0), this->index(index.row(), Column::ColCount - 1));
     return true;

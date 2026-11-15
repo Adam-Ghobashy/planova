@@ -2,6 +2,7 @@
 #include "planova/common/Dtos.h"
 #include "planova/slicer/SlicerTypes.h"
 #include <QAbstractTableModel>
+#include <set>
 #include <vector>
 
 namespace planova::slicer {
@@ -20,13 +21,17 @@ public:
         AssigneeInitialsRole,
         MatchPctRole,
         WaitingOnDepRole,
-        RationaleRole
+        RationaleRole,
+        HighlightedRole,     // bool: the row belongs to the member selected on the pizza
+        ManualOverrideRole   // bool: the assignee was changed by the user
     };
 
     explicit AssignmentTableModel(QObject* parent = nullptr);
     void setAssignments(const std::vector<Assignment>& assignments, const std::vector<TaskDto>& tasks,
                         const std::vector<MemberDto>& members);
     std::vector<Assignment> currentAssignments() const { return assignments_; }
+    // Rows assigned to this member get HighlightedRole = true. An empty id clears the highlight.
+    void setHighlightedMember(const Id& memberId);
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
     int columnCount(const QModelIndex& parent = QModelIndex()) const override;
@@ -41,6 +46,8 @@ private:
     std::vector<Assignment> assignments_;
     std::vector<TaskDto> tasks_;
     std::vector<MemberDto> members_;
+    Id highlightedMember_;
+    std::set<Id> manualTaskIds_;
 };
 
 } // namespace planova::slicer

@@ -47,6 +47,33 @@ private slots:
         QCOMPARE(result[0].matchPct, 0);
         QCOMPARE(QString::fromStdString(result[0].rationale), QString("Manual override"));
     }
+    void highlightMarksOnlyThatMembersRows() {
+        AssignmentTableModel model;
+        TaskDto t2 = task(false);
+        t2.id = "t2";
+        model.setAssignments({Assignment{"t1", "1", 85, "R", false}, Assignment{"t2", "2", 70, "R", false}},
+                             {task(false), t2}, members());
+        model.setHighlightedMember("2");
+        QVERIFY(!model.data(model.index(0, 0), AssignmentTableModel::HighlightedRole).toBool());
+        QVERIFY(model.data(model.index(1, 0), AssignmentTableModel::HighlightedRole).toBool());
+    }
+    void clearingHighlightRemovesIt() {
+        AssignmentTableModel model;
+        model.setAssignments({Assignment{"t1", "1", 85, "R", false}}, {task(false)}, members());
+        model.setHighlightedMember("1");
+        QVERIFY(model.data(model.index(0, 0), AssignmentTableModel::HighlightedRole).toBool());
+        model.setHighlightedMember("");
+        QVERIFY(!model.data(model.index(0, 0), AssignmentTableModel::HighlightedRole).toBool());
+    }
+    void overrideSetsManualFlag() {
+        AssignmentTableModel model;
+        model.setAssignments({Assignment{"t1", "1", 85, "Initial", false}}, {task(false)}, members());
+        QVERIFY(!model.data(model.index(0, 3), AssignmentTableModel::ManualOverrideRole).toBool());
+        QVERIFY(model.setData(model.index(0, 6), QString("2"), Qt::EditRole));
+        QVERIFY(model.data(model.index(0, 3), AssignmentTableModel::ManualOverrideRole).toBool());
+        model.setAssignments({Assignment{"t1", "1", 85, "Initial", false}}, {task(false)}, members());
+        QVERIFY(!model.data(model.index(0, 3), AssignmentTableModel::ManualOverrideRole).toBool());
+    }
     void unknownMemberIsRejected() {
         AssignmentTableModel model;
         model.setAssignments({Assignment{"t1", "1", 85, "Initial", false}}, {task(false)}, members());
