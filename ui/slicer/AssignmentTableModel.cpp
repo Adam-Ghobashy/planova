@@ -171,6 +171,9 @@ Qt::ItemFlags AssignmentTableModel::flags(const QModelIndex& index) const {
 }
 
 QVariant AssignmentTableModel::headerData(int section, Qt::Orientation orientation, int role) const {
+    if (orientation == Qt::Horizontal && role == Qt::TextAlignmentRole) {
+        return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
+    }
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
         switch (section) {
             case Column::TaskComplexity: return QString("Task & Complexity");

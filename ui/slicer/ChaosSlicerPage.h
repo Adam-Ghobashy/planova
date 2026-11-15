@@ -30,6 +30,7 @@ private slots:
     void onApply();
 
 private:
+    void fitTableHeight();
     planova::slicer::SlicerService& slicer_;
     ITaskQuery& tasks_;
     IMemberQuery& members_;

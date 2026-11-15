@@ -135,7 +135,11 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     table_->setShowGrid(false);
     table_->setSelectionBehavior(QAbstractItemView::SelectRows);
     table_->setSelectionMode(QAbstractItemView::SingleSelection);
-    table_->setMinimumHeight(440);
+    // The page scrolls, not the table: its height follows its rows (see fitTableHeight).
+    table_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    table_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    table_->setMouseTracking(true);  // row hover highlight
+    table_->setEditTriggers(QAbstractItemView::AllEditTriggers);  // only the override column is editable
 
     table_->setItemDelegate(new SlicerTableDelegate(table_));
     auto allMembers = members_.all();
@@ -169,6 +173,7 @@ void ChaosSlicerPage::onRecalculate() {
         return;
     }
     model_->setAssignments(preview_, tasks_.all(), members_.all());
+    fitTableHeight();
     if (pizza_) {
         pizza_->setPortions(slicer_.portions(preview_));
         pizza_->sliceAnimated();
@@ -182,6 +187,12 @@ void ChaosSlicerPage::onApply() {
         return;
     }
     refreshFromBoard();
+}
+
+void ChaosSlicerPage::fitTableHeight() {
+    const int rows = model_->rowCount();
+    const int rowHeight = table_->verticalHeader()->defaultSectionSize();
+    table_->setFixedHeight(table_->horizontalHeader()->height() + rows * rowHeight + 2);
 }
 
 void ChaosSlicerPage::refreshFromBoard() {

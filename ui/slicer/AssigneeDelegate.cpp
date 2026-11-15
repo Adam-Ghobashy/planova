@@ -1,7 +1,9 @@
 #include "slicer/AssigneeDelegate.h"
+#include "slicer/SlicerTableDelegate.h"
 #include "theme/ThemeManager.h"
 #include <QComboBox>
 #include <QPainter>
+#include <QTimer>
 
 namespace planova::slicer {
 
@@ -15,6 +17,14 @@ QWidget* AssigneeDelegate::createEditor(QWidget* parent, const QStyleOptionViewI
     for (const auto& m : members_) {
         combo->addItem(QString::fromStdString(m.name), QString::fromStdString(m.id));
     }
+    // Picking a member saves it straight away and closes the editor. The signals need a
+    // non-const delegate, which is safe here because the view owns it.
+    auto* self = const_cast<AssigneeDelegate*>(this);
+    connect(combo, QOverload<int>::of(&QComboBox::activated), self, [self, combo] {
+        emit self->commitData(combo);
+        emit self->closeEditor(combo);
+    });
+    QTimer::singleShot(0, combo, &QComboBox::showPopup);  // one click opens the list
     return combo;
 }
 
@@ -45,12 +55,7 @@ void AssigneeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     auto& tm = ThemeManager::instance();
     const QRect rect = option.rect;
 
-    // Row Background
-    if (option.state & QStyle::State_Selected) {
-        painter->fillRect(rect, tm.color(Token::AccentSoft));
-    } else {
-        painter->fillRect(rect, tm.color(Token::Surface));
-    }
+    painter->fillRect(rect, slicerRowBackground(option, index));
     painter->setPen(QPen(tm.color(Token::SurfaceAlt), 1));
     painter->drawLine(rect.bottomLeft(), rect.bottomRight());
 

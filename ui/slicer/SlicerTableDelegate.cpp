@@ -4,8 +4,56 @@
 #include <QFont>
 #include <QFontMetrics>
 #include <QPainter>
+#include <algorithm>
 
 namespace planova::slicer {
+
+namespace {
+
+constexpr int kPillHeight = 22;
+
+// Draws a rounded label centred in `rect`. The painter font must already be set.
+void drawPill(QPainter* painter, const QRectF& rect, const QString& text, const QColor& background,
+              const QColor& foreground, const QColor& border, qreal radius) {
+    painter->setPen(QPen(border, 1));
+    painter->setBrush(background);
+    painter->drawRoundedRect(rect, radius, radius);
+    painter->setPen(foreground);
+    painter->drawText(rect, Qt::AlignCenter, text);
+}
+
+// A pill sized to its text and vertically centred in the cell, starting 8px from the left.
+QRectF pillRectFor(const QRect& cell, const QFontMetrics& fm, const QString& text, int height = kPillHeight) {
+    const int width = fm.horizontalAdvance(text) + 16;
+    return QRectF(cell.left() + 8, cell.top() + (cell.height() - height) / 2.0, width, height);
+}
+
+QFont boldFont(const QFont& base, int pointSize) {
+    QFont font = base;
+    font.setPointSize(pointSize);
+    font.setBold(true);
+    return font;
+}
+
+// Active complexity dots all take the colour of the task's level (1 = green ... 5 = accent).
+QColor complexityColor(int complexity) {
+    static const Token ramp[5] = {Token::Member3, Token::Complexity2, Token::PizzaCheese,
+                                  Token::Complexity4, Token::Accent};
+    const int level = std::clamp(complexity, 1, 5);
+    return ThemeManager::instance().color(ramp[level - 1]);
+}
+
+} // namespace
+
+QColor slicerRowBackground(const QStyleOptionViewItem& option, const QModelIndex& index) {
+    auto& tm = ThemeManager::instance();
+    if ((option.state & QStyle::State_Selected) ||
+        index.data(AssignmentTableModel::HighlightedRole).toBool()) {
+        return tm.color(Token::AccentSoft);
+    }
+    if (option.state & QStyle::State_MouseOver) return tm.color(Token::SurfaceAlt);
+    return tm.color(Token::Surface);
+}
 
 SlicerTableDelegate::SlicerTableDelegate(QObject* parent)
     : QStyledItemDelegate(parent) {}
@@ -37,121 +85,84 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     auto& tm = ThemeManager::instance();
     const QRect rect = option.rect;
 
-    // Row Background
-    if (option.state & QStyle::State_Selected) {
-        painter->fillRect(rect, tm.color(Token::AccentSoft));
-    } else {
-        painter->fillRect(rect, tm.color(Token::Surface));
-    }
-
-    // Divider line at bottom
+    painter->fillRect(rect, slicerRowBackground(option, index));
     painter->setPen(QPen(tm.color(Token::SurfaceAlt), 1));
     painter->drawLine(rect.bottomLeft(), rect.bottomRight());
 
     const int col = index.column();
 
     if (col == AssignmentTableModel::TaskComplexity) {
-        // Line 1: Title
-        QString title = index.data(AssignmentTableModel::TaskTitleRole).toString();
+        // Line 1: title
         QFont titleFont = painter->font();
         titleFont.setPointSize(10);
         titleFont.setBold(true);
         painter->setFont(titleFont);
         painter->setPen(tm.color(Token::TextPrimary));
         painter->drawText(QRect(rect.left() + 12, rect.top() + 8, rect.width() - 20, 20),
-                          Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine, title);
+                          Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine,
+                          index.data(AssignmentTableModel::TaskTitleRole).toString());
 
-        // Line 2: 5 dots + C<level>
-        int complexity = index.data(AssignmentTableModel::TaskComplexityRole).toInt();
-        int dotY = rect.top() + 36;
-        int dotX = rect.left() + 14;
-
+        // Line 2: five dots and the level label
+        const int complexity = index.data(AssignmentTableModel::TaskComplexityRole).toInt();
+        const int dotY = rect.top() + 36;
+        const int dotX = rect.left() + 14;
+        painter->setPen(Qt::NoPen);
         for (int d = 0; d < 5; ++d) {
-            painter->setPen(Qt::NoPen);
-            painter->setBrush(d < complexity ? tm.color(Token::Member5) : tm.color(Token::Track));
+            painter->setBrush(d < complexity ? complexityColor(complexity) : tm.color(Token::Track));
             painter->drawEllipse(QPointF(dotX + d * 10, dotY), 3, 3);
         }
 
-        QFont cFont = painter->font();
-        cFont.setPointSize(9);
-        cFont.setBold(false);
-        painter->setFont(cFont);
+        QFont levelFont = painter->font();
+        levelFont.setPointSize(9);
+        levelFont.setBold(false);
+        painter->setFont(levelFont);
         painter->setPen(tm.color(Token::TextMuted));
-        painter->drawText(QRect(dotX + 54, dotY - 8, 40, 16),
-                          Qt::AlignLeft | Qt::AlignVCenter, QString("C%1").arg(complexity));
+        painter->drawText(QRect(dotX + 54, dotY - 8, 40, 16), Qt::AlignLeft | Qt::AlignVCenter,
+                          QString("C%1").arg(complexity));
 
     } else if (col == AssignmentTableModel::Skill) {
-        QString skill = index.data(AssignmentTableModel::RequiredSkillRole).toString();
-        QFont font = painter->font();
-        font.setPointSize(9);
-        font.setBold(true);
+        const QFont font = boldFont(painter->font(), 9);
         painter->setFont(font);
-        QFontMetrics fm(font);
-
-        int pillW = fm.horizontalAdvance(skill) + 16;
-        int pillH = 22;
-        QRectF pillRect(rect.left() + 8, rect.top() + (rect.height() - pillH) / 2.0, pillW, pillH);
-
-        painter->setPen(QPen(tm.color(Token::Accent), 1));
-        painter->setBrush(tm.color(Token::AccentSoft));
-        painter->drawRoundedRect(pillRect, 4, 4);
-
-        painter->setPen(tm.color(Token::Accent));
-        painter->drawText(pillRect, Qt::AlignCenter, skill);
+        const QString skill = index.data(AssignmentTableModel::RequiredSkillRole).toString();
+        drawPill(painter, pillRectFor(rect, QFontMetrics(font), skill), skill,
+                 tm.color(Token::AccentSoft), tm.color(Token::Accent), tm.color(Token::Accent), 4);
 
     } else if (col == AssignmentTableModel::Priority) {
-        QString prio = index.data(AssignmentTableModel::PriorityRole).toString();
-        QFont font = painter->font();
-        font.setPointSize(9);
-        font.setBold(true);
+        const QFont font = boldFont(painter->font(), 9);
         painter->setFont(font);
-        QFontMetrics fm(font);
+        const QString priority = index.data(AssignmentTableModel::PriorityRole).toString();
 
-        int pillW = fm.horizontalAdvance(prio) + 16;
-        int pillH = 22;
-        QRectF pillRect(rect.left() + 8, rect.top() + (rect.height() - pillH) / 2.0, pillW, pillH);
-
-        QColor bg = tm.color(Token::SurfaceAlt);
-        QColor textCol = tm.color(Token::TextMuted);
+        QColor background = tm.color(Token::SurfaceAlt);
+        QColor foreground = tm.color(Token::TextMuted);
         QColor border = tm.color(Token::Border);
-
-        if (prio == "CRITICAL") {
-            bg = tm.color(Token::DangerSoft);
-            textCol = tm.color(Token::Member1);
+        if (priority == "CRITICAL") {
+            background = tm.color(Token::DangerSoft);
+            foreground = tm.color(Token::DangerText);
             border = tm.color(Token::DangerSoft);
-        } else if (prio == "HIGH") {
-            bg = tm.color(Token::AccentSoft);
-            textCol = tm.color(Token::Accent);
+        } else if (priority == "HIGH") {
+            background = tm.color(Token::AccentSoft);
+            foreground = tm.color(Token::Accent);
             border = tm.color(Token::Accent);
-        } else if (prio == "MEDIUM") {
-            bg = tm.color(Token::StatusBar);
-            textCol = tm.color(Token::TextMuted);
+        } else if (priority == "MEDIUM") {
+            background = tm.color(Token::StatusBar);
         }
-
-        painter->setPen(QPen(border, 1));
-        painter->setBrush(bg);
-        painter->drawRoundedRect(pillRect, 4, 4);
-
-        painter->setPen(textCol);
-        painter->drawText(pillRect, Qt::AlignCenter, prio);
+        drawPill(painter, pillRectFor(rect, QFontMetrics(font), priority), priority, background, foreground,
+                 border, 4);
 
     } else if (col == AssignmentTableModel::Assignee) {
-        QString initials = index.data(AssignmentTableModel::AssigneeInitialsRole).toString();
-        QString name = index.data(AssignmentTableModel::AssigneeNameRole).toString();
-        int matchPct = index.data(AssignmentTableModel::MatchPctRole).toInt();
+        const QString initials = index.data(AssignmentTableModel::AssigneeInitialsRole).toString();
+        const QString name = index.data(AssignmentTableModel::AssigneeNameRole).toString();
+        const int matchPct = index.data(AssignmentTableModel::MatchPctRole).toInt();
+        const bool manual = index.data(AssignmentTableModel::ManualOverrideRole).toBool();
 
-        int cy = rect.top() + rect.height() / 2;
-        int avatarX = rect.left() + 16;
+        const int cy = rect.top() + rect.height() / 2;
+        const int avatarX = rect.left() + 16;
 
-        // Avatar circle
+        // Avatar circle with initials
         painter->setPen(Qt::NoPen);
         painter->setBrush(tm.color(Token::TextPrimary));
         painter->drawEllipse(QPointF(avatarX, cy), 11, 11);
-
-        QFont avFont = painter->font();
-        avFont.setPointSize(8);
-        avFont.setBold(true);
-        painter->setFont(avFont);
+        painter->setFont(boldFont(painter->font(), 8));
         painter->setPen(tm.color(Token::AccentText));
         painter->drawText(QRectF(avatarX - 11, cy - 11, 22, 22), Qt::AlignCenter, initials);
 
@@ -160,67 +171,42 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         nameFont.setPointSize(10);
         nameFont.setBold(false);
         painter->setFont(nameFont);
-        QFontMetrics fm(nameFont);
-        int nameW = fm.horizontalAdvance(name);
-
+        const int nameWidth = QFontMetrics(nameFont).horizontalAdvance(name);
         painter->setPen(tm.color(Token::TextPrimary));
-        painter->drawText(QRect(avatarX + 16, cy - 10, nameW, 20),
-                          Qt::AlignLeft | Qt::AlignVCenter, name);
+        painter->drawText(QRect(avatarX + 16, cy - 10, nameWidth, 20), Qt::AlignLeft | Qt::AlignVCenter, name);
 
-        // Match Pct Badge
-        if (matchPct > 0) {
-            QString pctStr = QString("%1%").arg(matchPct);
-            QFont pctFont = painter->font();
-            pctFont.setPointSize(9);
-            pctFont.setBold(true);
-            painter->setFont(pctFont);
-            QFontMetrics pfm(pctFont);
-
-            int pillW = pfm.horizontalAdvance(pctStr) + 12;
-            int pillH = 18;
-            int pillX = avatarX + 22 + nameW;
-            QRectF pillRect(pillX, cy - pillH / 2.0, pillW, pillH);
-
-            painter->setPen(Qt::NoPen);
-            painter->setBrush(tm.color(Token::SuccessSoft));
-            painter->drawRoundedRect(pillRect, 9, 9);
-
-            painter->setPen(tm.color(Token::TextPrimary));
-            painter->drawText(pillRect, Qt::AlignCenter, pctStr);
+        // Badge: "Manual" after an override, otherwise the match percentage
+        if (manual || matchPct > 0) {
+            const QString badge = manual ? QString("Manual") : QString("%1%").arg(matchPct);
+            const QFont badgeFont = boldFont(painter->font(), 9);
+            painter->setFont(badgeFont);
+            const int badgeWidth = QFontMetrics(badgeFont).horizontalAdvance(badge) + 12;
+            const QRectF badgeRect(avatarX + 22 + nameWidth, cy - 9, badgeWidth, 18);
+            if (manual) {
+                drawPill(painter, badgeRect, badge, tm.color(Token::SurfaceAlt), tm.color(Token::TextMuted),
+                         tm.color(Token::Border), 9);
+            } else {
+                drawPill(painter, badgeRect, badge, tm.color(Token::SuccessSoft), tm.color(Token::TextPrimary),
+                         tm.color(Token::SuccessSoft), 9);
+            }
         }
 
     } else if (col == AssignmentTableModel::Rationale) {
-        QString rat = index.data(AssignmentTableModel::RationaleRole).toString();
         QFont font = painter->font();
         font.setPointSize(9);
         painter->setFont(font);
         painter->setPen(tm.color(Token::TextPrimary));
-        painter->drawText(rect.adjusted(10, 6, -10, -6),
-                          Qt::AlignLeft | Qt::AlignVCenter | Qt::TextWordWrap, rat);
+        painter->drawText(rect.adjusted(10, 6, -10, -6), Qt::AlignLeft | Qt::AlignVCenter | Qt::TextWordWrap,
+                          index.data(AssignmentTableModel::RationaleRole).toString());
 
     } else if (col == AssignmentTableModel::Status) {
-        bool waiting = index.data(AssignmentTableModel::WaitingOnDepRole).toBool();
-        QString text = waiting ? QString::fromUtf8("\u25B2 Waiting on Dep") : "Ready";
-
-        QFont font = painter->font();
-        font.setPointSize(9);
-        font.setBold(true);
+        const bool waiting = index.data(AssignmentTableModel::WaitingOnDepRole).toBool();
+        const QString text = waiting ? QString::fromUtf8("▲ Waiting on Dep") : QString("Ready");
+        const QFont font = boldFont(painter->font(), 9);
         painter->setFont(font);
-        QFontMetrics fm(font);
-
-        int pillW = fm.horizontalAdvance(text) + 16;
-        int pillH = 22;
-        QRectF pillRect(rect.left() + 8, rect.top() + (rect.height() - pillH) / 2.0, pillW, pillH);
-
-        QColor bg = waiting ? tm.color(Token::WarningSoft) : tm.color(Token::SuccessSoft);
-        QColor textCol = waiting ? tm.color(Token::TextPrimary) : tm.color(Token::Member3);
-
-        painter->setPen(Qt::NoPen);
-        painter->setBrush(bg);
-        painter->drawRoundedRect(pillRect, 11, 11);
-
-        painter->setPen(textCol);
-        painter->drawText(pillRect, Qt::AlignCenter, text);
+        const QColor background = tm.color(waiting ? Token::WarningSoft : Token::SuccessSoft);
+        const QColor foreground = tm.color(waiting ? Token::WarningText : Token::TextPrimary);
+        drawPill(painter, pillRectFor(rect, QFontMetrics(font), text), text, background, foreground, background, 11);
     }
 
     painter->restore();
