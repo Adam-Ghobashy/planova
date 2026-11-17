@@ -1,10 +1,14 @@
 #include "SetupWizard.h"
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QPlainTextEdit>
+#include <QPushButton>
 #include <QVBoxLayout>
 #include <QWizardPage>
 
@@ -55,16 +59,92 @@ public:
     }
 };
 
+// --- S2: Step 4 Team Skills Wizard Page ---
+class TeamSkillsWizardPage : public QWizardPage {
+public:
+    explicit TeamSkillsWizardPage(PlanovaCore& core, QWidget* parent)
+        : QWizardPage(parent), core_(core)
+    {
+        setTitle("Step 4: Team & Skills Setup");
+        setSubTitle("Add your initial project team members and their primary roles.");
+
+        auto* layout = new QVBoxLayout(this);
+
+        auto* row = new QHBoxLayout();
+        nameEdit_ = new QLineEdit(this);
+        nameEdit_->setPlaceholderText("Member Name (e.g., Adam)");
+        roleEdit_ = new QLineEdit(this);
+        roleEdit_->setPlaceholderText("Role (e.g., Backend / Lead)");
+        leadCheck_ = new QCheckBox("Lead", this);
+        auto* addBtn = new QPushButton("+ Add", this);
+
+        row->addWidget(nameEdit_, 2);
+        row->addWidget(roleEdit_, 2);
+        row->addWidget(leadCheck_);
+        row->addWidget(addBtn);
+        layout->addLayout(row);
+
+        list_ = new QListWidget(this);
+        layout->addWidget(list_);
+
+        connect(addBtn, &QPushButton::clicked, this, [this] {
+            const QString name = nameEdit_->text().trimmed();
+            if (name.isEmpty()) return;
+            QString role = roleEdit_->text().trimmed();
+            if (role.isEmpty()) role = "Developer";
+            const bool isLead = leadCheck_->isChecked();
+
+            core_.members().add(name.toStdString(), role.toStdString(), isLead);
+            list_->addItem(name + " — " + role + (isLead ? " [Team Lead]" : ""));
+            nameEdit_->clear();
+            roleEdit_->clear();
+            leadCheck_->setChecked(false);
+        });
+    }
+
+private:
+    PlanovaCore& core_;
+    QLineEdit* nameEdit_ = nullptr;
+    QLineEdit* roleEdit_ = nullptr;
+    QCheckBox* leadCheck_ = nullptr;
+    QListWidget* list_ = nullptr;
+};
+
+// --- S2: Step 8 Git Sync Wizard Page ---
+class GitSyncWizardPage : public QWizardPage {
+public:
+    explicit GitSyncWizardPage(QWidget* parent)
+        : QWizardPage(parent)
+    {
+        setTitle("Step 8: Git Sync Configuration");
+        setSubTitle("Connect a GitHub repository for peer event store synchronization (optional).");
+
+        auto* repoUrl = new QLineEdit(this);
+        repoUrl->setPlaceholderText("https://github.com/Zeyad-101/planova.git");
+        auto* branch = new QLineEdit("main", this);
+
+        auto* form = new QFormLayout(this);
+        form->addRow("Repository URL", repoUrl);
+        form->addRow("Default branch", branch);
+
+        registerField("gitRepoUrl", repoUrl);
+        registerField("gitBranch", branch);
+    }
+};
+
 class ReviewPage : public QWizardPage {
 public:
     using QWizardPage::QWizardPage;
 
     void initializePage() override
     {
+        QString gitInfo = field("gitRepoUrl").toString().trimmed();
+        if (gitInfo.isEmpty()) gitInfo = "Not connected";
         summary_->setText(
             "Project: " + field("projectName").toString() + "\n"
                                                             "Team: " + field("teamName").toString() + "\n"
-                                             "Process model: " + field("seModel").toString());
+                                             "Process model: " + field("seModel").toString() + "\n"
+                                            "Git repository: " + gitInfo);
     }
 
     void setSummaryLabel(QLabel* label) { summary_ = label; }
@@ -93,11 +173,11 @@ SetupWizard::SetupWizard(PlanovaCore& core, QWidget* parent)
     addPage(new TimelinePage(this));
     addPage(new ModelPage(this));
 
-    addPage(placeholderPage("Step 4: Team Skills", "S2", this));
+    addPage(new TeamSkillsWizardPage(core_, this));
     addPage(placeholderPage("Step 5: Components", "team decision needed", this));
     addPage(placeholderPage("Step 6: Constraints", "team decision needed", this));
     addPage(placeholderPage("Step 7: Slicer Weights", "S4", this));
-    addPage(placeholderPage("Step 8: Git Sync", "S2", this));
+    addPage(new GitSyncWizardPage(this));
 
     auto* review = new ReviewPage(this);
     review->setTitle("Step 9: Launch & Final Review");
@@ -117,5 +197,13 @@ void SetupWizard::accept()
         field("teamName").toString().toStdString(),
         field("seModel").toString().toStdString(),
         field("idea").toString().toStdString());
+
+    const QString repoUrl = field("gitRepoUrl").toString().trimmed();
+    if (!repoUrl.isEmpty()) {
+        QString branch = field("gitBranch").toString().trimmed();
+        if (branch.isEmpty()) branch = "main";
+        core_.git().connect(repoUrl.toStdString(), branch.toStdString());
+    }
+
     QWizard::accept();
 }

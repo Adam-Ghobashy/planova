@@ -1,0 +1,392 @@
+#include "git/GitHubIntegrationPage.h"
+#include "theme/ThemeManager.h"
+#include "theme/Tokens.h"
+#include <QDateTime>
+#include <QFile>
+#include <QFont>
+#include <QHBoxLayout>
+#include <QHeaderView>
+#include <QPalette>
+#include <QScrollArea>
+#include <exception>
+
+namespace planova::git {
+
+GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
+                                             GitProjection& gitProjection,
+                                             IMemberQuery& members,
+                                             CoreBridge& bridge,
+                                             QWidget* parent)
+    : QWidget(parent),
+    gitService_(gitService),
+    gitProjection_(gitProjection),
+    members_(members),
+    bridge_(bridge) {
+    setObjectName("ChaosSlicerPage");
+
+    auto& tm = ThemeManager::instance();
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, tm.color(Token::Background));
+    pal.setColor(QPalette::WindowText, tm.color(Token::TextPrimary));
+    pal.setColor(QPalette::Base, tm.color(Token::Surface));
+    pal.setColor(QPalette::AlternateBase, tm.color(Token::SurfaceAlt));
+    pal.setColor(QPalette::Text, tm.color(Token::TextPrimary));
+    setPalette(pal);
+    setAutoFillBackground(true);
+
+    QFile qss(":/themes/light/slicer.qss");
+    if (qss.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QString style = QString::fromUtf8(qss.readAll());
+        style += R"(
+            QLineEdit#lightInput {
+                background-color: #FAF8F5;
+                color: #1A1A1F;
+                border: 1px solid #E7E2D6;
+                border-radius: 8px;
+                padding: 7px 12px;
+                font-size: 13px;
+            }
+            QLineEdit#lightInput:focus {
+                border: 1px solid #5438DC;
+                background-color: #FFFFFF;
+            }
+        )";
+        setStyleSheet(style);
+    }
+
+    auto* rootLayout = new QVBoxLayout(this);
+    rootLayout->setContentsMargins(0, 0, 0, 0);
+    rootLayout->setSpacing(0);
+
+    auto* scrollArea = new QScrollArea(this);
+    scrollArea->setObjectName("slicerScrollArea");
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+
+    auto* contentWidget = new QWidget(scrollArea);
+    contentWidget->setObjectName("slicerScrollContent");
+    auto* mainLayout = new QVBoxLayout(contentWidget);
+    mainLayout->setContentsMargins(24, 20, 24, 24);
+    mainLayout->setSpacing(16);
+
+    // --- Header Row ---
+    auto* headerLayout = new QHBoxLayout();
+    headerLayout->setContentsMargins(0, 0, 0, 4);
+
+    auto* titleLayout = new QVBoxLayout();
+    titleLayout->setSpacing(4);
+    auto* pageTitle = new QLabel("GitHub Integration & Peer Event Sync", contentWidget);
+    pageTitle->setObjectName("pageTitle");
+    QFont titleFont = pageTitle->font();
+    titleFont.setPointSize(16);
+    titleFont.setBold(true);
+    pageTitle->setFont(titleFont);
+
+    auto* pageSubtitle = new QLabel(
+        "Connect your repository, track team commits and issues, and detect merge conflicts across active members.",
+        contentWidget);
+    pageSubtitle->setObjectName("cardSubtitle");
+    titleLayout->addWidget(pageTitle);
+    titleLayout->addWidget(pageSubtitle);
+    headerLayout->addLayout(titleLayout);
+    headerLayout->addStretch();
+
+    statusLabel_ = new QLabel(contentWidget);
+    statusLabel_->setObjectName("statusLabel");
+    statusLabel_->hide();
+    headerLayout->addWidget(statusLabel_);
+
+    statusTimer_ = new QTimer(this);
+    statusTimer_->setSingleShot(true);
+    statusTimer_->setInterval(4000);
+    connect(statusTimer_, &QTimer::timeout, statusLabel_, &QLabel::hide);
+
+    syncBtn_ = new QPushButton("Simulate Git Sync", contentWidget);
+    syncBtn_->setObjectName("primaryButton");
+    connect(syncBtn_, &QPushButton::clicked, this, &GitHubIntegrationPage::onSimulateSyncClicked);
+    headerLayout->addWidget(syncBtn_);
+
+    mainLayout->addLayout(headerLayout);
+
+    // --- Repository Connection Card ---
+    auto* connCard = new QFrame(contentWidget);
+    connCard->setObjectName("card");
+    auto* connLayout = new QVBoxLayout(connCard);
+    connLayout->setContentsMargins(20, 16, 20, 16);
+    connLayout->setSpacing(12);
+
+    auto* connHeader = new QHBoxLayout();
+    auto* connTitleCol = new QVBoxLayout();
+    connTitleCol->setSpacing(2);
+    auto* connTitle = new QLabel("Repository Connection", connCard);
+    connTitle->setObjectName("cardTitle");
+    auto* connSub = new QLabel("Link a GitHub repository URL and target branch for event-log synchronization.", connCard);
+    connSub->setObjectName("cardSubtitle");
+    connTitleCol->addWidget(connTitle);
+    connTitleCol->addWidget(connSub);
+    connHeader->addLayout(connTitleCol);
+    connHeader->addStretch();
+
+    connectionBadge_ = new QLabel("Disconnected", connCard);
+    connHeader->addWidget(connectionBadge_);
+    connLayout->addLayout(connHeader);
+
+    auto* formRow = new QHBoxLayout();
+    formRow->setSpacing(12);
+
+    repoInput_ = new QLineEdit(connCard);
+    repoInput_->setObjectName("lightInput");
+    repoInput_->setPlaceholderText("https://github.com/Zeyad-101/planova.git");
+    repoInput_->setText("https://github.com/Zeyad-101/planova.git");
+
+    branchInput_ = new QLineEdit(connCard);
+    branchInput_->setObjectName("lightInput");
+    branchInput_->setPlaceholderText("Branch (e.g., main)");
+    branchInput_->setText("main");
+    branchInput_->setFixedWidth(180);
+
+    connectBtn_ = new QPushButton("Connect Repo", connCard);
+    connectBtn_->setObjectName("primaryButton");
+    connect(connectBtn_, &QPushButton::clicked, this, &GitHubIntegrationPage::onConnectClicked);
+
+    disconnectBtn_ = new QPushButton("Disconnect", connCard);
+    disconnectBtn_->setObjectName("secondaryButton");
+    connect(disconnectBtn_, &QPushButton::clicked, this, &GitHubIntegrationPage::onDisconnectClicked);
+
+    formRow->addWidget(repoInput_, 1);
+    formRow->addWidget(branchInput_);
+    formRow->addWidget(connectBtn_);
+    formRow->addWidget(disconnectBtn_);
+    connLayout->addLayout(formRow);
+
+    mainLayout->addWidget(connCard);
+
+    // --- Telemetry Summary Row ---
+    auto* metricsCard = new QFrame(contentWidget);
+    metricsCard->setObjectName("card");
+    auto* metricsLayout = new QHBoxLayout(metricsCard);
+    metricsLayout->setContentsMargins(20, 14, 20, 14);
+    metricsLayout->setSpacing(24);
+
+    auto makeMetric = [&](const QString& label, QLabel*& valueOut) {
+        auto* col = new QVBoxLayout();
+        col->setSpacing(2);
+        auto* lbl = new QLabel(label, metricsCard);
+        lbl->setObjectName("cardSubtitle");
+        valueOut = new QLabel("—", metricsCard);
+        valueOut->setObjectName("cardTitle");
+        QFont vf = valueOut->font();
+        vf.setPointSize(15);
+        vf.setBold(true);
+        valueOut->setFont(vf);
+        col->addWidget(lbl);
+        col->addWidget(valueOut);
+        metricsLayout->addLayout(col, 1);
+    };
+
+    makeMetric("Active Branch", branchValue_);
+    makeMetric("Synced Commits", commitsValue_);
+    makeMetric("Open Issues", openIssuesValue_);
+    makeMetric("Conflict Alerts", conflictsValue_);
+
+    mainLayout->addWidget(metricsCard);
+
+    // --- Commits History Card ---
+    auto* commitsCard = new QFrame(contentWidget);
+    commitsCard->setObjectName("card");
+    auto* commitsLayout = new QVBoxLayout(commitsCard);
+    commitsLayout->setContentsMargins(20, 16, 20, 16);
+    commitsLayout->setSpacing(10);
+
+    auto* commitsTitle = new QLabel("Recent Commits", commitsCard);
+    commitsTitle->setObjectName("cardTitle");
+    auto* commitsSub = new QLabel("Latest commits recorded in the GitProjection state.", commitsCard);
+    commitsSub->setObjectName("cardSubtitle");
+    commitsLayout->addWidget(commitsTitle);
+    commitsLayout->addWidget(commitsSub);
+
+    commitsTable_ = new QTableWidget(0, 4, commitsCard);
+    commitsTable_->setObjectName("assignmentsTable");
+    commitsTable_->setHorizontalHeaderLabels({"Hash", "Commit Message", "Author", "Timestamp"});
+    commitsTable_->verticalHeader()->setVisible(false);
+    commitsTable_->setShowGrid(false);
+    commitsTable_->setSelectionBehavior(QAbstractItemView::SelectRows);
+    commitsTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    commitsTable_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    commitsTable_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+    commitsTable_->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    commitsTable_->horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+    commitsTable_->setMinimumHeight(180);
+    commitsLayout->addWidget(commitsTable_);
+
+    mainLayout->addWidget(commitsCard);
+
+    // --- Issues List Card ---
+    auto* issuesCard = new QFrame(contentWidget);
+    issuesCard->setObjectName("card");
+    auto* issuesLayout = new QVBoxLayout(issuesCard);
+    issuesLayout->setContentsMargins(20, 16, 20, 16);
+    issuesLayout->setSpacing(10);
+
+    auto* issuesTitle = new QLabel("GitHub Issues", issuesCard);
+    issuesTitle->setObjectName("cardTitle");
+    auto* issuesSub = new QLabel("Tracked repository issues and open/closed status.", issuesCard);
+    issuesSub->setObjectName("cardSubtitle");
+    issuesLayout->addWidget(issuesTitle);
+    issuesLayout->addWidget(issuesSub);
+
+    issuesTable_ = new QTableWidget(0, 3, issuesCard);
+    issuesTable_->setObjectName("assignmentsTable");
+    issuesTable_->setHorizontalHeaderLabels({"Issue #", "Title", "State"});
+    issuesTable_->verticalHeader()->setVisible(false);
+    issuesTable_->setShowGrid(false);
+    issuesTable_->setSelectionBehavior(QAbstractItemView::SelectRows);
+    issuesTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    issuesTable_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    issuesTable_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+    issuesTable_->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    issuesTable_->setMinimumHeight(150);
+    issuesLayout->addWidget(issuesTable_);
+
+    mainLayout->addWidget(issuesCard);
+
+    mainLayout->addStretch();
+    scrollArea->setWidget(contentWidget);
+    rootLayout->addWidget(scrollArea);
+
+    connect(&bridge_, &CoreBridge::changed, this, [this](const QString&) {
+        if (!updating_) refresh();
+    });
+
+    refresh();
+}
+
+void GitHubIntegrationPage::onConnectClicked() {
+    const std::string url = repoInput_->text().trimmed().toStdString();
+    std::string branch = branchInput_->text().trimmed().toStdString();
+    if (url.empty()) {
+        showStatus("Please enter a valid GitHub repository URL");
+        return;
+    }
+    if (branch.empty()) branch = "main";
+
+    updating_ = true;
+    try {
+        gitService_.connect(url, branch);
+    } catch (const std::exception& e) {
+        updating_ = false;
+        showStatus(QString("Connect failed: %1").arg(QString::fromUtf8(e.what())));
+        return;
+    }
+    updating_ = false;
+    refresh();
+    showStatus("Repository connected");
+}
+
+void GitHubIntegrationPage::onDisconnectClicked() {
+    if (!gitProjection_.isConnected()) {
+        showStatus("Repository is already disconnected");
+        return;
+    }
+    updating_ = true;
+    try {
+        gitService_.disconnect();
+    } catch (const std::exception& e) {
+        updating_ = false;
+        showStatus(QString("Disconnect failed: %1").arg(QString::fromUtf8(e.what())));
+        return;
+    }
+    updating_ = false;
+    refresh();
+    showStatus("Repository disconnected");
+}
+
+void GitHubIntegrationPage::onSimulateSyncClicked() {
+    updating_ = true;
+    try {
+        if (!gitProjection_.isConnected()) {
+            std::string url = repoInput_->text().trimmed().toStdString();
+            if (url.empty()) url = "https://github.com/Zeyad-101/planova.git";
+            std::string branch = branchInput_->text().trimmed().toStdString();
+            if (branch.empty()) branch = "main";
+            gitService_.connect(url, branch);
+        }
+        gitService_.simulateSync(members_.all());
+    } catch (const std::exception& e) {
+        updating_ = false;
+        showStatus(QString("Sync failed: %1").arg(QString::fromUtf8(e.what())));
+        return;
+    }
+    updating_ = false;
+    refresh();
+    showStatus("Synced commits and issues from Git");
+}
+
+void GitHubIntegrationPage::refresh() {
+    const bool connected = gitProjection_.isConnected();
+
+    if (connected) {
+        connectionBadge_->setText("● Connected");
+        connectionBadge_->setStyleSheet(
+            "background-color: #D4F981; color: #1A1A1F; border-radius: 10px; "
+            "padding: 4px 12px; font-size: 12px; font-weight: 700;");
+        repoInput_->setText(QString::fromStdString(gitProjection_.repoUrl()));
+        branchInput_->setText(QString::fromStdString(gitProjection_.branch()));
+        branchValue_->setText(QString::fromStdString(gitProjection_.branch()));
+    } else {
+        connectionBadge_->setText("○ Disconnected");
+        connectionBadge_->setStyleSheet(
+            "background-color: #F5F2EA; color: #6B6B73; border: 1px solid #E7E2D6; "
+            "border-radius: 10px; padding: 4px 12px; font-size: 12px; font-weight: 600;");
+        branchValue_->setText("—");
+    }
+
+    const auto commits = gitProjection_.commits();
+    const auto issues = gitProjection_.issues();
+    const auto team = members_.all();
+
+    commitsValue_->setText(QString::number(commits.size()));
+    openIssuesValue_->setText(QString::number(gitProjection_.openIssueCount()));
+
+    int conflictCount = 0;
+    for (const auto& m : team) {
+        if (gitProjection_.hasOpenConflict(m.id)) {
+            ++conflictCount;
+        }
+    }
+    conflictsValue_->setText(conflictCount == 0
+                                 ? QString("None")
+                                 : QString("%1 Member(s)").arg(conflictCount));
+
+    // Populate Commits Table
+    commitsTable_->setRowCount(static_cast<int>(commits.size()));
+    for (int i = 0; i < static_cast<int>(commits.size()); ++i) {
+        const auto& c = commits[i];
+        commitsTable_->setItem(i, 0, new QTableWidgetItem(QString::fromStdString(c.hash)));
+        commitsTable_->setItem(i, 1, new QTableWidgetItem(QString::fromStdString(c.message)));
+        commitsTable_->setItem(i, 2, new QTableWidgetItem(QString::fromStdString(c.author)));
+        const QString timeStr = c.ts > 0
+                                    ? QDateTime::fromSecsSinceEpoch(c.ts).toString("yyyy-MM-dd HH:mm")
+                                    : QString("Just now");
+        commitsTable_->setItem(i, 3, new QTableWidgetItem(timeStr));
+    }
+
+    // Populate Issues Table
+    issuesTable_->setRowCount(static_cast<int>(issues.size()));
+    for (int i = 0; i < static_cast<int>(issues.size()); ++i) {
+        const auto& iss = issues[i];
+        issuesTable_->setItem(i, 0, new QTableWidgetItem(QString("#%1").arg(iss.number)));
+        issuesTable_->setItem(i, 1, new QTableWidgetItem(QString::fromStdString(iss.title)));
+        auto* stateItem = new QTableWidgetItem(iss.open ? "OPEN" : "CLOSED");
+        stateItem->setForeground(QColor(iss.open ? "#5438DC" : "#6B6B73"));
+        issuesTable_->setItem(i, 2, stateItem);
+    }
+}
+
+void GitHubIntegrationPage::showStatus(const QString& text) {
+    statusLabel_->setText(text);
+    statusLabel_->setVisible(!text.isEmpty());
+    statusTimer_->start();
+}
+
+} // namespace planova::git
