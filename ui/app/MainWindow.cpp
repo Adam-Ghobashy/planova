@@ -1,7 +1,10 @@
 #include "MainWindow.h"
-#include "welcome/WelcomePage.h"
+#include "git/GitHubIntegrationPage.h"
+#include "team/TeamSkillsPage.h"
 #include "welcome/ProjectsHubPage.h"
 #include "welcome/SetupWizard.h"
+#include "welcome/WelcomePage.h"
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -20,7 +23,7 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     : QMainWindow(parent), core_(core), bridge_(bridge), pages_(new QStackedWidget(this))
 {
     setWindowTitle("Planova");
-    resize(1200, 760);
+    resize(1280, 820);
 
     auto* central = new QWidget(this);
     auto* layout = new QHBoxLayout(central);
@@ -32,10 +35,22 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
 
     buildPages();
 
-    connect(&bridge_, &CoreBridge::changed, this, [this](const QString& eventType) {
-        statusBar()->showMessage("Last change: " + eventType, 3000);
+    auto updateTelemetry = [this](const QString& lastEvent = QString()) {
+        const size_t memberCount = core_.memberProjection().all().size();
+        const QString gitState = core_.gitProjection().isConnected() ? "Synced" : "Disconnected";
+        QString msg = QString("Workspace: Ready  •  Git: %1  •  Core Engine: C++17  •  %2 Team Members")
+                          .arg(gitState)
+                          .arg(memberCount);
+        if (!lastEvent.isEmpty()) {
+            msg += "  •  Last Event: " + lastEvent;
+        }
+        statusBar()->showMessage(msg);
+    };
+
+    connect(&bridge_, &CoreBridge::changed, this, [updateTelemetry](const QString& eventType) {
+        updateTelemetry(eventType);
     });
-    statusBar()->showMessage("Workspace: Ready  |  Core Engine: C++17");
+    updateTelemetry();
 }
 
 void MainWindow::buildPages()
@@ -55,26 +70,99 @@ void MainWindow::buildPages()
     });
 
     for (int i = 2; i < kScreens.size(); ++i) {
-        auto* page = new QLabel(kScreens[i] + " - Coming soon", pages_);
-        page->setAlignment(Qt::AlignCenter);
-        pages_->addWidget(page);
+        if (i == 4) {
+            auto* teamPage = new planova::team::TeamSkillsPage(
+                core_.members(), const_cast<MemberProjection&>(core_.memberProjection()), bridge_, pages_);
+            pages_->addWidget(teamPage);
+        } else if (i == 7) {
+            auto* gitPage = new planova::git::GitHubIntegrationPage(
+                core_.git(), const_cast<GitProjection&>(core_.gitProjection()), const_cast<MemberProjection&>(core_.memberProjection()), bridge_, pages_);
+            pages_->addWidget(gitPage);
+        } else {
+            auto* page = new QLabel(kScreens[i] + " - Coming soon", pages_);
+            page->setAlignment(Qt::AlignCenter);
+            pages_->addWidget(page);
+        }
     }
-}
+    }
+
 
 QWidget* MainWindow::buildSidebar()
 {
     auto* sidebar = new QWidget(this);
-    sidebar->setFixedWidth(220);
+    sidebar->setFixedWidth(230);
+    sidebar->setStyleSheet("background-color: #F5F1E8; border-right: 1px solid #E7E2D6;");
     auto* layout = new QVBoxLayout(sidebar);
     layout->setContentsMargins(12, 16, 12, 16);
+    layout->setSpacing(6);
 
     for (int i = 0; i < kScreens.size(); ++i) {
         auto* button = new QPushButton(kScreens[i], sidebar);
+        button->setCursor(Qt::PointingHandCursor);
         connect(button, &QPushButton::clicked, this, [this, i] {
             pages_->setCurrentIndex(i);
         });
         layout->addWidget(button);
     }
     layout->addStretch();
+
+    // --- S2 Sidebar Git Sync Status Card ---
+    auto* gitCard = new QFrame(sidebar);
+    gitCard->setStyleSheet(
+        "QFrame { background-color: #FFFFFF; border: 1px solid #E7E2D6; border-radius: 10px; }");
+    auto* gitLayout = new QHBoxLayout(gitCard);
+    gitLayout->setContentsMargins(12, 10, 12, 10);
+    gitLayout->setSpacing(8);
+
+    auto* dotLbl = new QLabel("●", gitCard);
+    dotLbl->setStyleSheet("color: #10B981; font-size: 14px; border: none; background: transparent;");
+    gitLayout->addWidget(dotLbl);
+
+    auto* textCol = new QVBoxLayout();
+    textCol->setSpacing(1);
+    auto* syncTitle = new QLabel("Synced with Git", gitCard);
+    syncTitle->setStyleSheet("color: #1A1A1F; font-size: 12px; font-weight: 700; border: none; background: transparent;");
+    auto* syncSub = new QLabel("Peer Event Store", gitCard);
+    syncSub->setStyleSheet("color: #6B6B73; font-size: 11px; border: none; background: transparent;");
+    textCol->addWidget(syncTitle);
+    textCol->addWidget(syncSub);
+    gitLayout->addLayout(textCol, 1);
+
+    auto* syncBtn = new QPushButton("⟳", gitCard);
+    syncBtn->setFixedSize(28, 28);
+    syncBtn->setCursor(Qt::PointingHandCursor);
+    syncBtn->setToolTip("Simulate Git Sync");
+    syncBtn->setStyleSheet(
+        "QPushButton { background-color: #FAF8F5; color: #5438DC; border: 1px solid #E7E2D6; "
+        "border-radius: 6px; padding: 0px; font-size: 14px; font-weight: 700; }"
+        "QPushButton:hover { background-color: #F3F0FF; border-color: #5438DC; }");
+    connect(syncBtn, &QPushButton::clicked, this, [this] {
+        if (!core_.gitProjection().isConnected()) {
+            core_.git().connect("https://github.com/Zeyad-101/planova.git", "main");
+        }
+        core_.git().simulateSync(core_.memberProjection().all());
+        pages_->setCurrentIndex(7);
+    });
+    gitLayout->addWidget(syncBtn);
+
+    auto updateGitCard = [this, dotLbl, syncTitle, syncSub]() {
+        if (core_.gitProjection().isConnected()) {
+            dotLbl->setStyleSheet("color: #10B981; font-size: 14px; border: none; background: transparent;");
+            syncTitle->setText("Synced with Git");
+            syncSub->setText(QString::fromStdString(
+                "Branch: " + core_.gitProjection().branch() + " (" +
+                std::to_string(core_.gitProjection().commits().size()) + " commits)"));
+        } else {
+            dotLbl->setStyleSheet("color: #6B6B73; font-size: 14px; border: none; background: transparent;");
+            syncTitle->setText("Git Disconnected");
+            syncSub->setText("Click ⟳ to sync");
+        }
+    };
+    connect(&bridge_, &CoreBridge::changed, this, [updateGitCard](const QString&) {
+        updateGitCard();
+    });
+    updateGitCard();
+
+    layout->addWidget(gitCard);
     return sidebar;
 }
