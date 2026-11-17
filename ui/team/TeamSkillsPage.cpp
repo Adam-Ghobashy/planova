@@ -5,6 +5,7 @@
 #include <QFont>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QMessageBox>
 #include <QPalette>
 #include <QScrollArea>
 #include <QSlider>
@@ -35,6 +36,19 @@ constexpr SkillMeta kAllSkills[] = {
 constexpr Token kMemberTokens[] = {
     Token::Member1, Token::Member2, Token::Member3,
     Token::Member4, Token::Member5, Token::Member6
+};
+
+const QStringList kKnownRoles = {
+    "Backend Developer",
+    "Frontend Developer",
+    "Full Stack Developer",
+    "UI / UX Designer",
+    "Database Architect",
+    "QA / Testing Engineer",
+    "Integration & DevOps",
+    "Technical Documentation",
+    "Team & Systems Lead",
+    "Other..."
 };
 
 QString initialsFor(const string& name) {
@@ -88,6 +102,31 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
                 font-weight: 500;
                 spacing: 6px;
                 background: transparent;
+            }
+            QComboBox#roleCombo {
+                background-color: #FAF8F5;
+                color: #1A1A1F;
+                border: 1px solid #E7E2D6;
+                border-radius: 8px;
+                padding: 6px 12px;
+                font-size: 13px;
+                min-width: 160px;
+            }
+            QComboBox#roleCombo:hover, QComboBox#roleCombo:focus {
+                border: 1px solid #5438DC;
+                background-color: #FFFFFF;
+            }
+            QComboBox#roleCombo::drop-down {
+                border: none;
+                width: 24px;
+            }
+            QComboBox#roleCombo QAbstractItemView {
+                background-color: #FFFFFF;
+                color: #1A1A1F;
+                border: 1px solid #E7E2D6;
+                selection-background-color: #F3F0FF;
+                selection-color: #5438DC;
+                padding: 4px;
             }
         )";
         setStyleSheet(style);
@@ -200,9 +239,23 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     nameInput_->setObjectName("lightInput");
     nameInput_->setPlaceholderText("Member Name (e.g., Adam Ghobashy)");
 
-    roleInput_ = new QLineEdit(addCard);
-    roleInput_->setObjectName("lightInput");
-    roleInput_->setPlaceholderText("Role (e.g., Software Engineer, Backend, UI/UX)");
+    roleCombo_ = new QComboBox(addCard);
+    roleCombo_->setObjectName("roleCombo");
+    roleCombo_->addItems(kKnownRoles);
+
+    customRoleInput_ = new QLineEdit(addCard);
+    customRoleInput_->setObjectName("lightInput");
+    customRoleInput_->setPlaceholderText("Write custom role...");
+    customRoleInput_->hide();
+
+    connect(roleCombo_, &QComboBox::currentTextChanged, this, [this](const QString& text) {
+        if (text == "Other..." || text == "Other") {
+            customRoleInput_->show();
+            customRoleInput_->setFocus();
+        } else {
+            customRoleInput_->hide();
+        }
+    });
 
     leadCheck_ = new QCheckBox("Team Lead", addCard);
     leadCheck_->setObjectName("leadCheck");
@@ -211,10 +264,11 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     addBtn->setObjectName("primaryButton");
     connect(addBtn, &QPushButton::clicked, this, &TeamSkillsPage::onAddMember);
     connect(nameInput_, &QLineEdit::returnPressed, this, &TeamSkillsPage::onAddMember);
-    connect(roleInput_, &QLineEdit::returnPressed, this, &TeamSkillsPage::onAddMember);
+    connect(customRoleInput_, &QLineEdit::returnPressed, this, &TeamSkillsPage::onAddMember);
 
     formRow->addWidget(nameInput_, 2);
-    formRow->addWidget(roleInput_, 2);
+    formRow->addWidget(roleCombo_, 2);
+    formRow->addWidget(customRoleInput_, 2);
     formRow->addWidget(leadCheck_);
     formRow->addWidget(addBtn);
     addCardLayout->addLayout(formRow);
@@ -246,14 +300,19 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
 
 void TeamSkillsPage::onAddMember() {
     const string name = nameInput_->text().trimmed().toStdString();
-    string role = roleInput_->text().trimmed().toStdString();
     if (name.empty()) {
         showStatus("Please enter a member name");
         return;
     }
-    if (role.empty()) {
-        role = "Developer";
+
+    QString qRole = roleCombo_->currentText();
+    if (qRole == "Other..." || qRole == "Other") {
+        qRole = customRoleInput_->text().trimmed();
     }
+    if (qRole.isEmpty()) {
+        qRole = "Developer";
+    }
+    string role = qRole.toStdString();
 
     updating_ = true;
     try {
@@ -266,7 +325,9 @@ void TeamSkillsPage::onAddMember() {
     updating_ = false;
 
     nameInput_->clear();
-    roleInput_->clear();
+    roleCombo_->setCurrentIndex(0);
+    customRoleInput_->clear();
+    customRoleInput_->hide();
     leadCheck_->setChecked(false);
     refresh();
     showStatus(QString("Added %1 to the team").arg(QString::fromStdString(name)));
@@ -367,11 +428,168 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
     nameRow->addWidget(velBadge);
     nameRow->addStretch();
 
+    auto* roleRow = new QHBoxLayout();
+    roleRow->setSpacing(8);
+    roleRow->setContentsMargins(0, 0, 0, 0);
+
     auto* roleLbl = new QLabel(QString::fromStdString(member.role), card);
     roleLbl->setObjectName("cardSubtitle");
+    roleRow->addWidget(roleLbl);
+
+    auto* editRoleBtn = new QPushButton("✎ Edit Role", card);
+    editRoleBtn->setCursor(Qt::PointingHandCursor);
+    editRoleBtn->setToolTip("Change this member's role");
+    editRoleBtn->setStyleSheet(
+        "QPushButton { background-color: #FAF8F5; color: #5438DC; border: 1px solid #E7E2D6; "
+        "border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }"
+        "QPushButton:hover { background-color: #F3F0FF; border-color: #5438DC; }");
+    roleRow->addWidget(editRoleBtn);
+
+    auto* removeBtn = new QPushButton("✕ Remove", card);
+    removeBtn->setCursor(Qt::PointingHandCursor);
+    removeBtn->setToolTip("Remove member from the team");
+    removeBtn->setStyleSheet(
+        "QPushButton { background-color: #FAF8F5; color: #DC2626; border: 1px solid #FEE2E2; "
+        "border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }"
+        "QPushButton:hover { background-color: #FEE2E2; color: #991B1B; border-color: #EF4444; }");
+    roleRow->addWidget(removeBtn);
+
+    // Inline edit widgets: Dropdown of known roles + custom text input
+    auto* editRoleCombo = new QComboBox(card);
+    editRoleCombo->setObjectName("roleCombo");
+    editRoleCombo->addItems(kKnownRoles);
+    editRoleCombo->hide();
+    roleRow->addWidget(editRoleCombo);
+
+    auto* editCustomRoleInput = new QLineEdit(card);
+    editCustomRoleInput->setObjectName("lightInput");
+    editCustomRoleInput->setPlaceholderText("Write custom role...");
+    editCustomRoleInput->setFixedWidth(180);
+    editCustomRoleInput->hide();
+    roleRow->addWidget(editCustomRoleInput);
+
+    connect(editRoleCombo, &QComboBox::currentTextChanged, [editCustomRoleInput](const QString& text) {
+        if (text == "Other..." || text == "Other") {
+            editCustomRoleInput->show();
+            editCustomRoleInput->setFocus();
+            editCustomRoleInput->selectAll();
+        } else {
+            editCustomRoleInput->hide();
+        }
+    });
+
+    auto* saveRoleBtn = new QPushButton("Save", card);
+    saveRoleBtn->setCursor(Qt::PointingHandCursor);
+    saveRoleBtn->setStyleSheet(
+        "QPushButton { background-color: #5438DC; color: #FFFFFF; border: none; "
+        "border-radius: 6px; padding: 2px 10px; font-size: 11px; font-weight: 600; }"
+        "QPushButton:hover { background-color: #4526CB; }");
+    saveRoleBtn->hide();
+    roleRow->addWidget(saveRoleBtn);
+
+    auto* cancelRoleBtn = new QPushButton("Cancel", card);
+    cancelRoleBtn->setCursor(Qt::PointingHandCursor);
+    cancelRoleBtn->setStyleSheet(
+        "QPushButton { background-color: #FAF8F5; color: #6B6B73; border: 1px solid #E7E2D6; "
+        "border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }"
+        "QPushButton:hover { background-color: #F5F2EA; }");
+    cancelRoleBtn->hide();
+    roleRow->addWidget(cancelRoleBtn);
+
+    roleRow->addStretch();
+
+    connect(editRoleBtn, &QPushButton::clicked, this, [=]() {
+        roleLbl->hide();
+        editRoleBtn->hide();
+        removeBtn->hide();
+
+        const QString currentRole = QString::fromStdString(member.role);
+        int idx = editRoleCombo->findText(currentRole, Qt::MatchFixedString);
+        if (idx >= 0 && currentRole != "Other..." && currentRole != "Other") {
+            editRoleCombo->setCurrentIndex(idx);
+            editCustomRoleInput->hide();
+        } else {
+            int otherIdx = editRoleCombo->findText("Other...");
+            if (otherIdx >= 0) editRoleCombo->setCurrentIndex(otherIdx);
+            editCustomRoleInput->setText(currentRole);
+            editCustomRoleInput->show();
+        }
+
+        editRoleCombo->show();
+        saveRoleBtn->show();
+        cancelRoleBtn->show();
+        if (editCustomRoleInput->isVisible()) {
+            editCustomRoleInput->setFocus();
+            editCustomRoleInput->selectAll();
+        } else {
+            editRoleCombo->setFocus();
+        }
+    });
+
+    connect(cancelRoleBtn, &QPushButton::clicked, this, [=]() {
+        editRoleCombo->hide();
+        editCustomRoleInput->hide();
+        saveRoleBtn->hide();
+        cancelRoleBtn->hide();
+        roleLbl->show();
+        editRoleBtn->show();
+        removeBtn->show();
+    });
+
+    auto doSaveRole = [this, id = member.id, und = member.understanding, name = member.name, editRoleCombo, editCustomRoleInput]() {
+        QString newRole = editRoleCombo->currentText();
+        if (newRole == "Other..." || newRole == "Other") {
+            newRole = editCustomRoleInput->text().trimmed();
+        }
+        if (newRole.isEmpty()) {
+            newRole = "Developer";
+        }
+        updating_ = true;
+        try {
+            service_.update(id, newRole.toStdString(), und);
+        } catch (const exception& e) {
+            updating_ = false;
+            showStatus(QString::fromUtf8(e.what()));
+            return;
+        }
+        updating_ = false;
+        refresh();
+        showStatus(QString("Updated %1's role to %2")
+                       .arg(QString::fromStdString(name))
+                       .arg(newRole));
+    };
+
+    connect(saveRoleBtn, &QPushButton::clicked, this, doSaveRole);
+    connect(editCustomRoleInput, &QLineEdit::returnPressed, this, doSaveRole);
+
+    connect(removeBtn, &QPushButton::clicked, this, [this, id = member.id, name = QString::fromStdString(member.name)]() {
+        auto reply = QMessageBox::question(
+            this,
+            "Remove Team Member",
+            QString("Are you sure you want to remove %1 from the team?\n\nThis action will record a MemberRemoved event in the event log.")
+                .arg(name),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No);
+
+        if (reply != QMessageBox::Yes) {
+            return;
+        }
+
+        updating_ = true;
+        try {
+            service_.remove(id);
+        } catch (const exception& e) {
+            updating_ = false;
+            showStatus(QString("Error removing member: %1").arg(QString::fromUtf8(e.what())));
+            return;
+        }
+        updating_ = false;
+        refresh();
+        showStatus(QString("Removed %1 from the team").arg(name));
+    });
 
     infoCol->addLayout(nameRow);
-    infoCol->addWidget(roleLbl);
+    infoCol->addLayout(roleRow);
     topRow->addLayout(infoCol, 1);
 
     // Understanding Slider (0 - 100%)

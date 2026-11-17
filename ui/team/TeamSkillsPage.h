@@ -5,6 +5,7 @@
 #include "planova/common/Queries.h"
 #include "planova/team/MemberService.h"
 #include <QCheckBox>
+#include <QComboBox>
 #include <QFrame>
 #include <QLabel>
 #include <QLineEdit>
@@ -41,7 +42,8 @@ private:
     QTimer* statusTimer_ = nullptr;
 
     QLineEdit* nameInput_ = nullptr;
-    QLineEdit* roleInput_ = nullptr;
+    QComboBox* roleCombo_ = nullptr;
+    QLineEdit* customRoleInput_ = nullptr;
     QCheckBox* leadCheck_ = nullptr;
 
     QLabel* totalMembersValue_ = nullptr;
