@@ -157,6 +157,36 @@ private slots:
         log.rebuild();
         QCOMPARE(proj.getSetting("auto_assign", false), true);
     }
+
+    void removeMemberAndRebuild()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock(1000);
+
+        MemberProjection proj;
+        log.add(proj);
+
+        MemberService svc(log, clock);
+        Id id1 = svc.add("Adam", "Lead", true);
+        clock.advance(10);
+        Id id2 = svc.add("Zeyad", "UI", false);
+        QCOMPARE(proj.all().size(), size_t(2));
+
+        clock.advance(10);
+        svc.remove(id1);
+        QCOMPARE(proj.all().size(), size_t(1));
+        QCOMPARE(proj.byId(id1).has_value(), false);
+        QCOMPARE(proj.all()[0].id, id2);
+
+        // Out-of-bounds / empty ID must throw invalid_argument
+        QVERIFY_THROWS_EXCEPTION(invalid_argument, svc.remove(""));
+
+        // Rebuild and verify removal persists
+        log.rebuild();
+        QCOMPARE(proj.all().size(), size_t(1));
+        QCOMPARE(proj.byId(id1).has_value(), false);
+    }
 };
 
 QTEST_MAIN(tst_MemberService)

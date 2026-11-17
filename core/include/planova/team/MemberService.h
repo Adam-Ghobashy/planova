@@ -11,6 +11,7 @@ public:
 
     Id add(const std::string& name, const std::string& role, bool isLead);
     void update(const Id& id, const std::string& role, int understanding);
+    void remove(const Id& id);
     void rate(const Id& id, SkillCategory category, int rating);
     void setSetting(const std::string& key, bool value);
 

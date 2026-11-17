@@ -63,6 +63,27 @@ void MemberService::update(const Id& id, const string& role, int understanding)
     log_.append(event);
 }
 
+void MemberService::remove(const string& id)
+{
+    if (id.empty()) {
+        throw invalid_argument("Member ID cannot be empty");
+    }
+
+    const int64_t ts = clock_.nowMs();
+
+    QJsonObject payload;
+    payload["memberId"] = QString::fromStdString(id);
+
+    Event event;
+    event.id = makeEventId(ts, id, payload);
+    event.ts = ts;
+    event.author = id;
+    event.type = MemberRemoved;
+    event.payload = payload;
+
+    log_.append(event);
+}
+
 void MemberService::rate(const Id& id, SkillCategory category, int rating)
 {
     if (rating < 1 || rating > 5) {

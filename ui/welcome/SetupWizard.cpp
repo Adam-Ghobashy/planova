@@ -60,6 +60,19 @@ public:
 };
 
 // --- S2: Step 4 Team Skills Wizard Page ---
+const QStringList kKnownWizardRoles = {
+    "Backend Developer",
+    "Frontend Developer",
+    "Full Stack Developer",
+    "UI / UX Designer",
+    "Database Architect",
+    "QA / Testing Engineer",
+    "Integration & DevOps",
+    "Technical Documentation",
+    "Team & Systems Lead",
+    "Other..."
+};
+
 class TeamSkillsWizardPage : public QWizardPage {
 public:
     explicit TeamSkillsWizardPage(PlanovaCore& core, QWidget* parent)
@@ -73,13 +86,29 @@ public:
         auto* row = new QHBoxLayout();
         nameEdit_ = new QLineEdit(this);
         nameEdit_->setPlaceholderText("Member Name (e.g., Adam)");
-        roleEdit_ = new QLineEdit(this);
-        roleEdit_->setPlaceholderText("Role (e.g., Backend / Lead)");
+
+        roleCombo_ = new QComboBox(this);
+        roleCombo_->addItems(kKnownWizardRoles);
+
+        customRoleEdit_ = new QLineEdit(this);
+        customRoleEdit_->setPlaceholderText("Write custom role...");
+        customRoleEdit_->hide();
+
+        connect(roleCombo_, &QComboBox::currentTextChanged, this, [this](const QString& text) {
+            if (text == "Other..." || text == "Other") {
+                customRoleEdit_->show();
+                customRoleEdit_->setFocus();
+            } else {
+                customRoleEdit_->hide();
+            }
+        });
+
         leadCheck_ = new QCheckBox("Lead", this);
         auto* addBtn = new QPushButton("+ Add", this);
 
         row->addWidget(nameEdit_, 2);
-        row->addWidget(roleEdit_, 2);
+        row->addWidget(roleCombo_, 2);
+        row->addWidget(customRoleEdit_, 2);
         row->addWidget(leadCheck_);
         row->addWidget(addBtn);
         layout->addLayout(row);
@@ -90,14 +119,19 @@ public:
         connect(addBtn, &QPushButton::clicked, this, [this] {
             const QString name = nameEdit_->text().trimmed();
             if (name.isEmpty()) return;
-            QString role = roleEdit_->text().trimmed();
+            QString role = roleCombo_->currentText();
+            if (role == "Other..." || role == "Other") {
+                role = customRoleEdit_->text().trimmed();
+            }
             if (role.isEmpty()) role = "Developer";
             const bool isLead = leadCheck_->isChecked();
 
             core_.members().add(name.toStdString(), role.toStdString(), isLead);
             list_->addItem(name + " — " + role + (isLead ? " [Team Lead]" : ""));
             nameEdit_->clear();
-            roleEdit_->clear();
+            roleCombo_->setCurrentIndex(0);
+            customRoleEdit_->clear();
+            customRoleEdit_->hide();
             leadCheck_->setChecked(false);
         });
     }
@@ -105,7 +139,8 @@ public:
 private:
     PlanovaCore& core_;
     QLineEdit* nameEdit_ = nullptr;
-    QLineEdit* roleEdit_ = nullptr;
+    QComboBox* roleCombo_ = nullptr;
+    QLineEdit* customRoleEdit_ = nullptr;
     QCheckBox* leadCheck_ = nullptr;
     QListWidget* list_ = nullptr;
 };

@@ -5,6 +5,7 @@
 
 #include <QJsonObject>
 #include <QString>
+#include <algorithm>
 
 using namespace std;
 
@@ -38,6 +39,11 @@ void MemberProjection::apply(const Event& event)
             memberOrder_.push_back(id);
         }
         members_[id] = m;
+    }
+    else if (event.type == MemberRemoved) {
+        Id id = p["memberId"].toString().toStdString();
+        members_.erase(id);
+        memberOrder_.erase(std::remove(memberOrder_.begin(), memberOrder_.end(), id), memberOrder_.end());
     }
     else if (event.type == MemberUpdated) {
         Id id = p["memberId"].toString().toStdString();
