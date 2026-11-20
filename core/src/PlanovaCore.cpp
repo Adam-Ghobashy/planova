@@ -17,10 +17,18 @@ PlanovaCore::PlanovaCore(std::filesystem::path workspaceDir)
     memberProjection_(),
     members_(log_, clock_),
     gitProjection_(),
-    git_(log_, clock_)
+    git_(log_, clock_),
+    taskProjection_(),
+    tasks_(log_, taskProjection_, clock_),
+    strategy_(),
+    slicer_(taskProjection_, memberProjection_, strategy_, log_, clock_),
+    noPins_(),
+    stats_(taskProjection_, memberProjection_),
+    home_(taskProjection_, memberProjection_, noPins_)
 {
     log_.add(memberProjection_);
     log_.add(gitProjection_);
+    log_.add(taskProjection_);
     log_.rebuild();
 }
 
@@ -58,4 +66,34 @@ const GitProjection& PlanovaCore::gitProjection() const
 ChangeBus& PlanovaCore::bus()
 {
     return log_.bus();
+}
+
+TaskService& PlanovaCore::tasks()
+{
+    return tasks_;
+}
+
+ITaskQuery& PlanovaCore::taskQuery()
+{
+    return taskProjection_;
+}
+
+IMemberQuery& PlanovaCore::memberQuery()
+{
+    return memberProjection_;
+}
+
+planova::slicer::SlicerService& PlanovaCore::slicer()
+{
+    return slicer_;
+}
+
+planova::s6::StatsService& PlanovaCore::stats()
+{
+    return stats_;
+}
+
+planova::s6::HomeService& PlanovaCore::home()
+{
+    return home_;
 }

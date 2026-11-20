@@ -26,6 +26,7 @@ planova_add_test(tst_TaskFactory)
 planova_add_test(tst_TaskStateMachine)
 planova_add_test(tst_TaskGraph)
 planova_add_test(tst_TaskService)
+planova_add_test(tst_PlanovaCoreTasks)
 # --- end S3 ---
 # --- S4 ---
 planova_add_test(tst_ScoringWeights)
@@ -39,6 +40,7 @@ planova_add_ui_test(tst_PizzaWidget)
 planova_add_ui_test(tst_ChaosSlicerPage)
 planova_add_ui_test(tst_SliceTimeline)
 planova_add_ui_test(tst_WeightSlidersPanel)
+planova_add_test(tst_PlanovaCoreSlicer)
 # --- end S4 ---
 # --- S6 ---
 planova_add_test(tst_ProgressCalculator)
