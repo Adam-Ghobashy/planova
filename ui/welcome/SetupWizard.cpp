@@ -75,8 +75,8 @@ const QStringList kKnownWizardRoles = {
 
 class TeamSkillsWizardPage : public QWizardPage {
 public:
-    explicit TeamSkillsWizardPage(PlanovaCore& core, QWidget* parent)
-        : QWizardPage(parent), core_(core)
+    TeamSkillsWizardPage(std::vector<PendingMember>& pending, QWidget* parent)
+        : QWizardPage(parent), pending_(pending)
     {
         setTitle("Step 4: Team & Skills Setup");
         setSubTitle("Add your initial project team members and their primary roles.");
@@ -126,7 +126,7 @@ public:
             if (role.isEmpty()) role = "Developer";
             const bool isLead = leadCheck_->isChecked();
 
-            core_.members().add(name.toStdString(), role.toStdString(), isLead);
+            pending_.push_back({name.toStdString(), role.toStdString(), isLead});
             list_->addItem(name + " — " + role + (isLead ? " [Team Lead]" : ""));
             nameEdit_->clear();
             roleCombo_->setCurrentIndex(0);
@@ -137,7 +137,7 @@ public:
     }
 
 private:
-    PlanovaCore& core_;
+    std::vector<PendingMember>& pending_;
     QLineEdit* nameEdit_ = nullptr;
     QComboBox* roleCombo_ = nullptr;
     QLineEdit* customRoleEdit_ = nullptr;
@@ -208,7 +208,7 @@ SetupWizard::SetupWizard(PlanovaCore& core, QWidget* parent)
     addPage(new TimelinePage(this));
     addPage(new ModelPage(this));
 
-    addPage(new TeamSkillsWizardPage(core_, this));
+    addPage(new TeamSkillsWizardPage(pendingMembers_, this));
     addPage(placeholderPage("Step 5: Components", "team decision needed", this));
     addPage(placeholderPage("Step 6: Constraints", "team decision needed", this));
     addPage(placeholderPage("Step 7: Slicer Weights", "S4", this));
@@ -227,11 +227,16 @@ SetupWizard::SetupWizard(PlanovaCore& core, QWidget* parent)
 
 void SetupWizard::accept()
 {
-    core_.projects().create(
+    const Id newId = core_.projects().create(
         field("projectName").toString().toStdString(),
         field("teamName").toString().toStdString(),
         field("seModel").toString().toStdString(),
         field("idea").toString().toStdString());
+
+    // Open first so members and git events are saved inside the new project.
+    core_.openProject(newId);
+    for (const auto& member : pendingMembers_)
+        core_.members().add(member.name, member.role, member.isLead);
 
     const QString repoUrl = field("gitRepoUrl").toString().trimmed();
     if (!repoUrl.isEmpty()) {

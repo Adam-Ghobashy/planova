@@ -14,6 +14,12 @@ int main(int argc, char* argv[])
 
     const QString documents = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     PlanovaCore core(std::filesystem::path(documents.toStdString()) / "Planova");
+
+    // Reopen the most recent project so its data shows right away.
+    const auto projects = core.projects().list();
+    if (!projects.empty())
+        core.openProject(projects.back().id);
+
     CoreBridge bridge(core);
     MainWindow window(core, bridge);
     window.show();

@@ -12,12 +12,19 @@ ProjectsHubPage::ProjectsHubPage(PlanovaCore& core, CoreBridge& bridge, QWidget*
     layout->addWidget(list_);
 
     connect(&bridge, &CoreBridge::changed, this, &ProjectsHubPage::refresh);
+    connect(list_, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem* item) {
+        const QString id = item->data(Qt::UserRole).toString();
+        core_.openProject(id.toStdString());
+        emit projectOpened();
+    });
     refresh();
 }
 
 void ProjectsHubPage::refresh()
 {
     list_->clear();
-    for (const auto& project : core_.projects().list())
-        list_->addItem(QString::fromStdString(project.name));
+    for (const auto& project : core_.projects().list()) {
+        auto* item = new QListWidgetItem(QString::fromStdString(project.name), list_);
+        item->setData(Qt::UserRole, QString::fromStdString(project.id));
+    }
 }

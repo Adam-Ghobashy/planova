@@ -10,6 +10,9 @@ class ProjectsHubPage : public QWidget {
 public:
     ProjectsHubPage(PlanovaCore& core, CoreBridge& bridge, QWidget* parent = nullptr);
 
+signals:
+    void projectOpened();
+
 private:
     void refresh();
 

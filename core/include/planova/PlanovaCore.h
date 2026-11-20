@@ -16,6 +16,7 @@
 #include "planova/team/MemberProjection.h"
 #include "planova/team/MemberService.h"
 #include <filesystem>
+#include <optional>
 
 class SystemClock : public IClock {
 public:
@@ -26,6 +27,7 @@ class PlanovaCore {
 public:
     explicit PlanovaCore(std::filesystem::path workspaceDir);
     void openProject(const Id& projectId);
+    std::optional<Id> currentProject() const;
 
     ProjectService& projects();
     MemberService& members();
@@ -48,9 +50,14 @@ private:
         std::vector<PinDto> latest(int) const override { return {}; }
     };
 
+    // Members are initialised in this order: the workspace log must exist
+    // before projects_ (ProjectService registers its projection on it).
     std::filesystem::path workspaceDir_;
-    FileEventStore store_;
+    FileEventStore workspaceStore_; // project list, always at the workspace root
+    EventLog workspaceLog_;
+    FileEventStore store_;          // current project's events (root until a project is opened)
     EventLog log_;
+    std::optional<Id> currentProject_;
     SystemClock clock_;
     ProjectService projects_;
     MemberProjection memberProjection_;

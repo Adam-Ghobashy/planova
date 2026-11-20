@@ -16,6 +16,7 @@ planova_add_test(tst_Skeleton)
 planova_add_test(tst_FileEventStore)
 planova_add_test(tst_EventLog)
 planova_add_test(tst_ProjectService)
+planova_add_test(tst_PlanovaCoreProjects)
 # --- S2 ---
 planova_add_test(tst_MemberService)
 planova_add_test(tst_Velocity)
