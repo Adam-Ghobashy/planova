@@ -18,6 +18,8 @@ void ChangeBus::unsubscribe(int token)
 
 void ChangeBus::publish(const std::string& eventType)
 {
-    for (const auto& s : subs_)
+    // Iterate a copy: a handler may subscribe, unsubscribe or publish again.
+    const auto subs = subs_;
+    for (const auto& s : subs)
         s.second(eventType);
 }
