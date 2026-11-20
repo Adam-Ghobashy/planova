@@ -40,6 +40,8 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     setCentralWidget(central);
 
     buildPages();
+    if (core_.currentProject())
+        showHomeForCurrentProject(); // a project was auto-opened at start-up
 
     auto updateTelemetry = [this](const QString& lastEvent = QString()) {
         const size_t memberCount = core_.memberProjection().all().size();
