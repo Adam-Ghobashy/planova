@@ -28,4 +28,5 @@ private:
     std::vector<Id> memberOrder_;
     std::map<std::string, bool> settings_;
     std::map<Id, int64_t> taskInProgressTs_;
+    std::map<Id, Id> taskAssignee_; // taskId -> memberId, from TaskAssigned
 };

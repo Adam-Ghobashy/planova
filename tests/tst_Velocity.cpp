@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "planova/common/Clock.h"
+#include "planova/common/EventTypes.h"
 #include "planova/store/EventLog.h"
 #include "planova/team/MemberProjection.h"
 #include "planova/team/MemberService.h"
@@ -46,13 +47,13 @@ private slots:
 
     void clampToBounds()
     {
-        // Finishing a 100h task in 1h -> ratio = 100.0 -> must clamp to 2.0
-        double fast = VelocityCalculator::update(1.8, 100.0, 1.0);
-        QCOMPARE(fast, 2.0);
+        // Finishing a 100h task in 1h -> ratio = 100.0 -> must clamp to 5.0
+        double fast = VelocityCalculator::update(4.8, 100.0, 1.0);
+        QCOMPARE(fast, 5.0);
 
-        // Taking 100h on a 1h task -> ratio = 0.01 -> must clamp to 0.5
-        double slow = VelocityCalculator::update(0.6, 1.0, 100.0);
-        QCOMPARE(slow, 0.5);
+        // Taking 100h on a 1h task -> ratio = 0.01 -> must clamp to 0.25
+        double slow = VelocityCalculator::update(0.3, 1.0, 100.0);
+        QCOMPARE(slow, 0.25);
     }
 
     void zeroOrNegativeHoursIgnored()
@@ -77,38 +78,68 @@ private slots:
         // Initial velocity starts at 1.0
         QCOMPARE(proj.byId(memberId)->velocity, 1.0);
 
-        // 1. Move task_1 to InProgress at t = 1000 ms
-        Event startEvt;
-        startEvt.id = "evt-start";
-        startEvt.ts = clock.nowMs();
-        startEvt.author = memberId;
-        startEvt.type = "TaskMoved";
-        QJsonObject startPayload;
-        startPayload["taskId"] = "task_1";
-        startPayload["toStatus"] = "InProgress";
-        startEvt.payload = startPayload;
-        log.append(startEvt);
+        // 1. The task is assigned to Adam (contract: taskId, memberId, by)
+        appendEvent(log, "evt-assign", clock.nowMs(), TaskAssigned,
+                    {{"taskId", "task_1"},
+                     {"memberId", QString::fromStdString(memberId)},
+                     {"by", "board"}});
 
-        // 2. Advance clock by 2 hours (2 * 3,600,000 ms = 7,200,000 ms)
+        // 2. Move to InProgress at t = 1000 ms
+        appendEvent(log, "evt-start", clock.nowMs(), TaskMoved,
+                    {{"taskId", "task_1"}, {"from", "ToDo"},
+                     {"to", "InProgress"}, {"estHours", 4}});
+
+        // 3. Two hours later the task is Done (estimated 4h, took 2h)
         clock.advance(2 * 3600000LL);
-
-        // 3. Move task_1 (estimated 4.0 hours) to Done -> finished in 2.0 hours!
-        Event doneEvt;
-        doneEvt.id = "evt-done";
-        doneEvt.ts = clock.nowMs();
-        doneEvt.author = memberId;
-        doneEvt.type = "TaskMoved";
-        QJsonObject donePayload;
-        donePayload["taskId"] = "task_1";
-        donePayload["toStatus"] = "Done";
-        donePayload["assigneeId"] = QString::fromStdString(memberId);
-        donePayload["estimatedHours"] = 4.0;
-        doneEvt.payload = donePayload;
-        log.append(doneEvt);
+        appendEvent(log, "evt-done", clock.nowMs(), TaskMoved,
+                    {{"taskId", "task_1"}, {"from", "Review"},
+                     {"to", "Done"}, {"estHours", 4}});
 
         // Expected velocity: 0.7 * 1.0 + 0.3 * (4.0 / 2.0) = 1.3
         double updatedVel = proj.byId(memberId)->velocity;
         QVERIFY(std::abs(updatedVel - 1.3) < 1e-6);
+    }
+
+    void doneWithoutAssigneeChangesNothing()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock(1000);
+
+        MemberProjection proj;
+        log.add(proj);
+
+        MemberService svc(log, clock);
+        svc.add("Adam", "Backend Lead", true);
+        clock.advance(10);
+        svc.add("Zeyad", "UI Designer", false);
+
+        // Same moves as above, but nobody was ever assigned to task_1
+        appendEvent(log, "evt-start", clock.nowMs(), TaskMoved,
+                    {{"taskId", "task_1"}, {"from", "ToDo"},
+                     {"to", "InProgress"}, {"estHours", 4}});
+        clock.advance(2 * 3600000LL);
+        QVERIFY_THROWS_NO_EXCEPTION(
+            appendEvent(log, "evt-done", clock.nowMs(), TaskMoved,
+                        {{"taskId", "task_1"}, {"from", "Review"},
+                         {"to", "Done"}, {"estHours", 4}}));
+
+        for (const MemberDto& m : proj.all()) {
+            QCOMPARE(m.velocity, 1.0);
+        }
+    }
+
+private:
+    static void appendEvent(EventLog& log, const char* id, int64_t ts,
+                            const char* type, const QJsonObject& payload)
+    {
+        Event e;
+        e.id = id;
+        e.ts = ts;
+        e.author = "test";
+        e.type = type;
+        e.payload = payload;
+        log.append(e);
     }
 };
 

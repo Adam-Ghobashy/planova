@@ -4,12 +4,12 @@
 
 class VelocityCalculator {
 public:
-    static constexpr double kMinVelocity = 0.5;
-    static constexpr double kMaxVelocity = 2.0;
+    static constexpr double kMinVelocity = 0.25;
+    static constexpr double kMaxVelocity = 5.0;
     static constexpr double kDefaultAlpha = 0.3;
 
     // Calculates updated velocity using Exponential Moving Average (EMA)
-    // clamped to [0.5, 2.0].
+    // clamped to [0.25, 5.0].
     static double update(double currentVelocity,
                          double estimatedHours,
                          double actualHours,

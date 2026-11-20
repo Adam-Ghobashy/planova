@@ -1,8 +1,10 @@
 #include <QtTest>
+#include <QJsonObject>
 #include <stdexcept>
 #include <vector>
 
 #include "planova/common/Clock.h"
+#include "planova/common/EventTypes.h"
 #include "planova/store/EventLog.h"
 #include "planova/team/MemberProjection.h"
 #include "planova/team/MemberService.h"
@@ -156,6 +158,33 @@ private slots:
         // Rebuild from EventLog store and verify state matches
         log.rebuild();
         QCOMPARE(proj.getSetting("auto_assign", false), true);
+    }
+
+    void unknownSkillCategoryIsIgnored()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock(1000);
+
+        MemberProjection proj;
+        log.add(proj);
+
+        MemberService svc(log, clock);
+        Id id = svc.add("Adam", "Backend", true);
+
+        // A hand-edited or newer-build event with a skill name we do not know
+        Event e;
+        e.id = "evt-quantum";
+        e.ts = clock.nowMs() + 10;
+        e.author = id;
+        e.type = SkillRated;
+        e.payload = QJsonObject{{"memberId", QString::fromStdString(id)},
+                                {"category", "Quantum"},
+                                {"rating", 3}};
+        store.append(e);
+
+        QVERIFY_THROWS_NO_EXCEPTION(log.rebuild());
+        QVERIFY(proj.byId(id)->ratings.empty());
     }
 
     void removeMemberAndRebuild()
