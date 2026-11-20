@@ -25,4 +25,6 @@ Data is stored in `Documents/Planova`. The workspace root keeps the project list
 
 ## Sync data with the team
 
-Commit the `events/*.json` files of a project folder and push them. A teammate copies them into the same folder under their own `Documents/Planova`. When they restart the app, it replays the events and shows the same project.
+Commit the `events/*.json` files of a project folder and push them. A teammate copies them into the same folder under their own `Documents/Planova`. The teammate must also copy the project's `ProjectCreated` event file from the workspace root (its payload `projectId` equals the folder name), otherwise the project does not appear in the hub. When they restart the app, it replays the events and shows the same project.
+
+Data from an older version of the app (members, git and task events in the workspace root) is copied into a project folder once, the first time that project is opened and has no `events` folder yet.
