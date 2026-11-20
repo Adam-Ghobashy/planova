@@ -118,14 +118,14 @@ flowchart TD
 1. **Append-Only Immutable Event Files:** Every state mutation produces an `Event` object containing `{ id, ts, author, type, payload }`. Events are serialized as compact JSON files named `<timestamp>-<hash8>.json` where `<hash8>` is computed from `QCryptographicHash::Sha256(author + payload)`.
 2. **Conflict-Free Git Merging:** Because each event is written as an atomically created file (`.tmp` renamed to `.json`), multiple teammates committing events to git never collide in git line merges. Replaying directory entries sorted by `(ts, id)` yields identical deterministic state across all distributed nodes.
 3. **Strict CQRS Separation:** Services (`MemberService`, `GitService`) only receive write commands and append events. They never return query state. In-memory projections (`MemberProjection`, `GitProjection`) subscribe to the `EventLog`, maintain the cached runtime state, and expose read-only interfaces (`IMemberQuery`, `IConflictQuery`).
-4. **Decoupled Cross-Slice Communication:** Cross-slice reads are strictly gated through abstract interface structs declared in [Queries.h](file:///E:/College/Planova.anti/core/include/planova/common/Queries.h). No slice may directly include private headers of another slice.
+4. **Decoupled Cross-Slice Communication:** Cross-slice reads are strictly gated through abstract interface structs declared in [Queries.h](../../core/include/planova/common/Queries.h). No slice may directly include private headers of another slice.
 
 ---
 
 ### 1.2 Project Layout & Target Structure
 
 ```
-Planova.anti/
+planova/
 ├── CMakeLists.txt                      # Root configuration (find_package Qt6 Core Widgets Test)
 ├── core/                               # Backend logic (Links ONLY Qt6::Core)
 │   ├── CMakeLists.txt                  # Defines static library: planova_core
@@ -135,7 +135,10 @@ Planova.anti/
 │   │   ├── project/                    # Project domain (S1)
 │   │   ├── team/                       # Team, Member, Velocity, Skill domain (S2)
 │   │   ├── git/                        # Git connection, Commit, Issue domain (S2)
+│   │   ├── task/                       # Task, TaskService, TaskProjection, state machine (S3)
 │   │   ├── slicer/                     # Chaos Slicer algorithms & weights (S4)
+│   │   ├── pins/                       # Pin contracts (S5)
+│   │   ├── stats/                      # Home and tracking calculators (S6)
 │   │   └── PlanovaCore.h               # Top-level composition root
 │   └── src/                            # Implementation files mirroring include/
 ├── ui/                                 # GUI layer (Links planova_core, Qt6::Widgets)
@@ -146,21 +149,24 @@ Planova.anti/
 │   ├── welcome/                        # WelcomePage, ProjectsHubPage, SetupWizard
 │   ├── team/                           # S2: TeamSkillsPage.h/.cpp
 │   ├── git/                            # S2: GitHubIntegrationPage.h/.cpp
-│   └── slicer/                         # S4: ChaosSlicerPage, PizzaWidget, Tables
-├── resources/                          # Qt Resource file (planova.qrc) & Light QSS
+│   ├── slicer/                         # S4: ChaosSlicerPage, PizzaWidget, Tables
+│   ├── board/                          # S3: PhaseBoardPage, task cards, dialogs
+│   ├── pins/                           # S5: PinsPage, pin cards, dialogs
+│   ├── home/                           # S6: HomePage
+│   └── tracking/                       # S6: TrackingPage, LeaderboardModel
+├── resources/                          # Qt Resource file (planova.qrc), icons and light QSS
 │   ├── planova.qrc
-│   └── themes/light/
-│       ├── base.qss                    # Global UI styles (Fusion palette, fonts, buttons)
-│       └── slicer.qss                  # Slicer and directory card styles
+│   ├── icons/
+│   └── themes/light/                   # base, board, github, home, pins, slicer, team, tracking .qss
+├── docs/
+│   ├── README.md                       # Requirements, build, run, sync
+│   ├── architecture/                   # This audit document
+│   ├── planova/                        # Proposal and team implementation plan (PDF)
+│   └── superpowers/                    # Design specs and plans
 └── tests/                              # CTest unit & integration tests
     ├── CMakeLists.txt                  # Defines test runners linking Qt6::Test & planova_core
-    ├── fakes/                          # FakeClock.h, FakeEventStore.h
-    ├── tst_MemberService.cpp           # S2 Unit tests (Members, roles, removal, ratings)
-    ├── tst_Velocity.cpp                # S2 Unit tests (EMA calculation, bounds)
-    ├── tst_GitService.cpp              # S2 Unit tests (Connect, sync, conflict detection)
-    ├── tst_FileEventStore.cpp          # S1 Unit tests
-    ├── tst_EventLog.cpp                # S1 Unit tests
-    └── tst_ProjectService.cpp          # S1 Unit tests
+    ├── fakes/                          # FakeClock, FakeEventStore, FakeMemberQuery, FakeTaskQuery
+    └── tst_*.cpp                       # One Qt Test file per class or service (32 test targets)
 ```
 
 ---
@@ -179,7 +185,7 @@ Planova.anti/
 
 ### 1.4 Strictly Light-Mode Theme Architecture
 
-The UI styling is governed by [Tokens.h](file:///E:/College/Planova.anti/ui/theme/Tokens.h) and loaded through [ThemeManager.cpp](file:///E:/College/Planova.anti/ui/theme/ThemeManager.cpp). Planova enforces the **Light Mode First** principle:
+The UI styling is governed by [Tokens.h](../../ui/theme/Tokens.h) and loaded through [ThemeManager.cpp](../../ui/theme/ThemeManager.cpp). Planova enforces the **Light Mode First** principle:
 - `Token::Background` (`#FAF8F5`): Master background for pages.
 - `Token::Surface` (`#FFFFFF`): Member profile cards, connection frames.
 - `Token::SurfaceAlt` (`#F5F2EA`): Secondary buttons, table fills.
@@ -194,13 +200,13 @@ The UI styling is governed by [Tokens.h](file:///E:/College/Planova.anti/ui/them
 
 ### 2.1 S2 Domain & Core Layer
 
-#### 1. Skill Categories ([SkillCategory.h](file:///E:/College/Planova.anti/core/include/planova/team/SkillCategory.h))
+#### 1. Skill Categories ([SkillCategory.h](../../core/include/planova/team/SkillCategory.h))
 7 disciplines: `Backend`, `Frontend`, `Storage`, `UiUx`, `Integration`, `Testing`, `Documentation`. Bidirectional string conversions via `toString()` and `fromString()`.
 
-#### 2. Member Entity Model ([Member.h](file:///E:/College/Planova.anti/core/include/planova/team/Member.h))
+#### 2. Member Entity Model ([Member.h](../../core/include/planova/team/Member.h))
 Represents a team member: `{ id, name, role, isLead, ratings, understanding, velocity }`.
 
-#### 3. Member Service ([MemberService.h](file:///E:/College/Planova.anti/core/include/planova/team/MemberService.h) / [MemberService.cpp](file:///E:/College/Planova.anti/core/src/team/MemberService.cpp))
+#### 3. Member Service ([MemberService.h](../../core/include/planova/team/MemberService.h) / [MemberService.cpp](../../core/src/team/MemberService.cpp))
 Handles all team command mutations:
 - `Id add(name, role, isLead)`: Appends `MemberAdded`.
 - `void update(id, role, understanding)`: Appends `MemberUpdated`.
@@ -208,7 +214,7 @@ Handles all team command mutations:
 - `void rate(id, category, rating)`: Bounds check `1..5`, appends `SkillRated`.
 - `void setSetting(key, value)`: Appends `SettingChanged`.
 
-#### 4. Member Projection ([MemberProjection.h](file:///E:/College/Planova.anti/core/include/planova/team/MemberProjection.h) / [MemberProjection.cpp](file:///E:/College/Planova.anti/core/src/team/MemberProjection.cpp))
+#### 4. Member Projection ([MemberProjection.h](../../core/include/planova/team/MemberProjection.h) / [MemberProjection.cpp](../../core/src/team/MemberProjection.cpp))
 Implements `IProjection` and `IMemberQuery`. Handles:
 - `MemberAdded`: Inserts new member in `members_` and `memberOrder_`.
 - `MemberUpdated`: Updates role and understanding.
@@ -216,17 +222,17 @@ Implements `IProjection` and `IMemberQuery`. Handles:
 - `SkillRated`: Updates ratings map.
 - `TaskMoved`: Recomputes velocity.
 
-#### 5. Velocity Calculator ([VelocityCalculator.h](file:///E:/College/Planova.anti/core/include/planova/team/VelocityCalculator.h))
-Calculates rolling performance multipliers using EMA ($\alpha = 0.3$), clamped to $[0.5, 2.0]$.
+#### 5. Velocity Calculator ([VelocityCalculator.h](../../core/include/planova/team/VelocityCalculator.h))
+Calculates rolling performance multipliers using EMA ($\alpha = 0.3$), clamped to $[0.25, 5.0]$ (default 1.0).
 
-#### 6. Git Service & Projection ([GitService.h](file:///E:/College/Planova.anti/core/include/planova/git/GitService.h) / [GitProjection.h](file:///E:/College/Planova.anti/core/include/planova/git/GitProjection.h))
+#### 6. Git Service & Projection ([GitService.h](../../core/include/planova/git/GitService.h) / [GitProjection.h](../../core/include/planova/git/GitProjection.h))
 Handles repository connect/sync/disconnect operations and simulates realistic commit histories using registered team member names. Implements `IConflictQuery`.
 
 ---
 
 ### 2.2 S2 UI Layer — Deep Dive
 
-#### 1. `TeamSkillsPage` ([ui/team/TeamSkillsPage.cpp](file:///E:/College/Planova.anti/ui/team/TeamSkillsPage.cpp))
+#### 1. `TeamSkillsPage` ([ui/team/TeamSkillsPage.cpp](../../ui/team/TeamSkillsPage.cpp))
 - **Role Selection Dropdown + Custom "Other..." Input:**
   - Standardized list of known engineering roles (`Backend Developer`, `Frontend Developer`, `Full Stack Developer`, `UI / UX Designer`, `Database Architect`, `QA / Testing Engineer`, `Integration & DevOps`, `Technical Documentation`, `Team & Systems Lead`, `Other...`).
   - Selecting `Other...` reveals a companion text field to write any custom role.
@@ -241,7 +247,7 @@ Handles repository connect/sync/disconnect operations and simulates realistic co
 - **"Seed Demo Team" Shortcut:**
   - Instantly seeds 5 pre-configured team profiles (*Adam, Zeyad, Hazem, Mai, Basma*).
 
-#### 2. `GitHubIntegrationPage` ([ui/git/GitHubIntegrationPage.cpp](file:///E:/College/Planova.anti/ui/git/GitHubIntegrationPage.cpp))
+#### 2. `GitHubIntegrationPage` ([ui/git/GitHubIntegrationPage.cpp](../../ui/git/GitHubIntegrationPage.cpp))
 - Connection card with status badge.
 - Live commits table (Hash, Message, Author, Timestamp).
 - Issues table with colored state chips.
@@ -258,7 +264,7 @@ Handles repository connect/sync/disconnect operations and simulates realistic co
 
 ### 2.4 S2 Event Definitions & Payloads
 
-Declared in [EventTypes.h](file:///E:/College/Planova.anti/core/include/planova/common/EventTypes.h):
+Declared in [EventTypes.h](../../core/include/planova/common/EventTypes.h):
 - `MemberAdded`: `{"memberId", "name", "role", "isLead"}`
 - `MemberUpdated`: `{"memberId", "role", "understanding"}`
 - `MemberRemoved`: `{"memberId"}`
@@ -328,17 +334,7 @@ sequenceDiagram
 
 ## 5. Execution & Build Instructions
 
-```powershell
-# Build solution
-$env:PATH = "C:\Qt\6.8.3\mingw_64\bin;C:\Qt\Tools\mingw1310_64\bin;C:\Qt\Tools\CMake_64\bin;$env:PATH"
-cmake --build "E:\College\Planova.anti\build\Desktop_Qt_6_8_3_MinGW_64_bit_Debug" --target planova
-
-# Run application
-.\build\Desktop_Qt_6_8_3_MinGW_64_bit_Debug\ui\planova.exe
-
-# Run test suite
-ctest --test-dir "E:\College\Planova.anti\build\Desktop_Qt_6_8_3_MinGW_64_bit_Debug" --output-on-failure
-```
+Build, run and test steps are in [docs/README.md](../README.md).
 
 ---
 
