@@ -1,6 +1,11 @@
 <RCC>
   <qresource prefix="/">
     <file>themes/light/base.qss</file>
+    <file>themes/light/board.qss</file>
+    <file>themes/light/home.qss</file>
+    <file>themes/light/pins.qss</file>
     <file>themes/light/slicer.qss</file>
+    <file>themes/light/tracking.qss</file>
+    <file>icons/chevron-updown.svg</file>
   </qresource>
 </RCC>

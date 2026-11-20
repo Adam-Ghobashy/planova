@@ -5,7 +5,6 @@
 #include "slicer/SlicerTableDelegate.h"
 #include "slicer/WeightSlidersPanel.h"
 #include "theme/ThemeManager.h"
-#include <QFile>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -35,11 +34,6 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     pal.setColor(QPalette::Text, tm.color(Token::TextPrimary));
     setPalette(pal);
     setAutoFillBackground(true);
-
-    QFile qss(":/themes/light/slicer.qss");
-    if (qss.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        setStyleSheet(QString::fromUtf8(qss.readAll()));
-    }
 
     auto* rootLayout = new QVBoxLayout(this);
     rootLayout->setContentsMargins(0, 0, 0, 0);

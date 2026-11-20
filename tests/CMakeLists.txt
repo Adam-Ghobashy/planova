@@ -43,6 +43,9 @@ planova_add_ui_test(tst_SliceTimeline)
 planova_add_ui_test(tst_WeightSlidersPanel)
 planova_add_test(tst_PlanovaCoreSlicer)
 # --- end S4 ---
+# --- S1 ---
+planova_add_ui_test(tst_ThemeManager)
+# --- end S1 ---
 # --- S6 ---
 planova_add_test(tst_ProgressCalculator)
 planova_add_test(tst_Leaderboard)
