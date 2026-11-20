@@ -28,3 +28,22 @@ target_sources(planova_core PRIVATE
     src/slicer/SlicerService.cpp
     src/slicer/SlicerWeightsProjection.cpp
 )
+
+# --- S3 ---
+target_sources(planova_core PRIVATE
+    src/task/TaskFactory.cpp
+    src/task/TaskGraph.cpp
+    src/task/TaskProjection.cpp
+    src/task/TaskService.cpp
+    src/task/TaskStateMachine.cpp
+)
+# --- end S3 ---
+
+# --- S6 ---
+target_sources(planova_core PRIVATE
+    src/stats/HomeService.cpp
+    src/stats/LeaderboardCalculator.cpp
+    src/stats/ProgressCalculator.cpp
+    src/stats/StatsService.cpp
+)
+# --- end S6 ---
