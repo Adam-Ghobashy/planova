@@ -227,7 +227,7 @@ SetupWizard::SetupWizard(PlanovaCore& core, QWidget* parent)
 
 void SetupWizard::accept()
 {
-    const Id newId = core_.projects().create(
+    const Id newId = core_.createProject(
         field("projectName").toString().toStdString(),
         field("teamName").toString().toStdString(),
         field("seModel").toString().toStdString(),

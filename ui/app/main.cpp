@@ -19,8 +19,7 @@ int main(int argc, char* argv[])
     // Reopen the most recent project so its data shows right away.
     // Only if it has its own event folder; otherwise stay on the root store so legacy data stays visible.
     const auto projects = core.projects().list();
-    if (!projects.empty()
-        && std::filesystem::is_directory(workspace / projects.back().id / "events"))
+    if (!projects.empty() && core.hasProjectData(projects.back().id))
         core.openProject(projects.back().id);
 
     CoreBridge bridge(core);

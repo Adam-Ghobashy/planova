@@ -3,6 +3,9 @@
 #include "planova/common/EventTypes.h"
 
 #include <QDateTime>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <algorithm>
 #include <utility>
 
@@ -44,9 +47,43 @@ PlanovaCore::PlanovaCore(std::filesystem::path workspaceDir)
     log_.rebuild();
 }
 
+std::filesystem::path PlanovaCore::projectEventsDir(const Id& projectId) const
+{
+    return workspaceDir_ / projectId / "events";
+}
+
+Id PlanovaCore::createProject(const std::string& name, const std::string& team,
+                              const std::string& seModel, const std::string& idea)
+{
+    const Id id = projects_.create(name, team, seModel, idea);
+    std::filesystem::create_directories(projectEventsDir(id));
+    return id;
+}
+
+bool PlanovaCore::hasProjectData(const Id& projectId) const
+{
+    return std::filesystem::is_directory(projectEventsDir(projectId));
+}
+
 void PlanovaCore::openProject(const Id& projectId)
 {
-    store_.setDirectory(workspaceDir_ / projectId / "events");
+    const auto dir = projectEventsDir(projectId);
+    if (!std::filesystem::is_directory(dir)) {
+        // One-time import of data written by the pre-project app (workspace root).
+        std::filesystem::create_directories(dir);
+        for (const auto& entry : std::filesystem::directory_iterator(workspaceDir_)) {
+            if (!entry.is_regular_file() || entry.path().extension() != ".json")
+                continue;
+            QFile file(QString::fromStdString(entry.path().string()));
+            if (!file.open(QIODevice::ReadOnly))
+                continue;
+            const auto type = QJsonDocument::fromJson(file.readAll()).object()["type"].toString();
+            if (type.isEmpty() || type.startsWith("Project"))
+                continue;
+            std::filesystem::copy_file(entry.path(), dir / entry.path().filename());
+        }
+    }
+    store_.setDirectory(dir);
     log_.rebuild();
     currentProject_ = projectId;
     // Bus notification only, never stored: tells every page to refresh.

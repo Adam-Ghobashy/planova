@@ -29,6 +29,10 @@ private:
 class PlanovaCore {
 public:
     explicit PlanovaCore(std::filesystem::path workspaceDir);
+    // Creates the project record and its (empty) event folder.
+    Id createProject(const std::string& name, const std::string& team,
+                     const std::string& seModel, const std::string& idea);
+    bool hasProjectData(const Id& projectId) const;
     void openProject(const Id& projectId);
     std::optional<Id> currentProject() const;
 
@@ -52,6 +56,8 @@ private:
         int openCount() const override { return 0; }
         std::vector<PinDto> latest(int) const override { return {}; }
     };
+
+    std::filesystem::path projectEventsDir(const Id& projectId) const;
 
     // Members are initialised in this order: the workspace log must exist
     // before projects_ (ProjectService registers its projection on it).

@@ -15,6 +15,9 @@ private slots:
     void openProjectNotifiesBus();
     void creatingProjectNotifiesBus();
     void legacyRootEventsVisibleBeforeOpen();
+    void legacyDataImportedOnFirstOpen();
+    void newProjectStartsEmptyEvenWithLegacyRoot();
+    void hasProjectDataReflectsFolder();
 };
 
 namespace {
@@ -126,6 +129,46 @@ void tst_PlanovaCoreProjects::legacyRootEventsVisibleBeforeOpen()
     PlanovaCore again(ws);
     QCOMPARE(again.memberQuery().all().size(), size_t(1));
     QCOMPARE(again.memberQuery().all().front().name, std::string("Old"));
+}
+
+void tst_PlanovaCoreProjects::legacyDataImportedOnFirstOpen()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    PlanovaCore core(dir.path().toStdString());
+
+    // No project open yet, so this member lands in the workspace root.
+    core.members().add("Old", "Backend Developer", false);
+    const Id a = makeProject(core, "A"); // old style: no project folder
+
+    core.openProject(a);
+    QCOMPARE(core.memberQuery().all().size(), size_t(1));
+    QCOMPARE(core.memberQuery().all().front().name, std::string("Old"));
+}
+
+void tst_PlanovaCoreProjects::newProjectStartsEmptyEvenWithLegacyRoot()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    PlanovaCore core(dir.path().toStdString());
+
+    core.members().add("Old", "Backend Developer", false);
+    const Id id = core.createProject("A", "team", "Agile/Scrum", "idea");
+
+    core.openProject(id);
+    QVERIFY(core.memberQuery().all().empty());
+}
+
+void tst_PlanovaCoreProjects::hasProjectDataReflectsFolder()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    PlanovaCore core(dir.path().toStdString());
+
+    // Not created yet, so no folder for any id.
+    QVERIFY(!core.hasProjectData("p1"));
+    const Id id = core.createProject("A", "team", "Agile/Scrum", "idea");
+    QVERIFY(core.hasProjectData(id));
 }
 
 QTEST_APPLESS_MAIN(tst_PlanovaCoreProjects)
