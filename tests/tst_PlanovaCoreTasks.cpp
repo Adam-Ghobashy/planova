@@ -8,7 +8,33 @@ class tst_PlanovaCoreTasks : public QObject {
     Q_OBJECT
 private slots:
     void createdTaskSurvivesReopen();
+    void velocityUpdatesFromRealTaskFlow();
 };
+
+void tst_PlanovaCoreTasks::velocityUpdatesFromRealTaskFlow()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    PlanovaCore core(std::filesystem::path(dir.path().toStdString()));
+    core.openProject("p1");
+
+    const Id member = core.members().add("Ana", "Developer", false);
+    NewTask t;
+    t.title = "Build API";
+    t.skill = SkillCategory::Backend;
+    t.priority = Priority::High;
+    t.complexity = 3;
+    t.estHours = 8;
+    const Id task = core.tasks().create(t);
+
+    core.tasks().assign(task, member, "board");
+    core.tasks().move(task, TaskStatus::InProgress);
+    core.tasks().move(task, TaskStatus::Review);
+    core.tasks().move(task, TaskStatus::Done);
+
+    // The whole flow takes well under an hour, so velocity hits the 5.0 upper clamp.
+    QCOMPARE(core.memberQuery().byId(member)->velocity, 5.0);
+}
 
 void tst_PlanovaCoreTasks::createdTaskSurvivesReopen()
 {
