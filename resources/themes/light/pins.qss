@@ -1,0 +1,202 @@
+/* Planova S5 (Pins and Collab) light theme.
+   Colours live ONLY in this file. Palette = Team Implementation Plan section 1.
+   Text and border colours are estimated, not sampled: confirm in Figma.
+
+   Background  #FAF8F5   Surface   #FFFFFF   SurfaceAlt  #F5F2EA   Track  #ECE7DC
+   Border      #E7E2D6   TextPrimary #1A1A1F TextMuted   #6B6B73
+   Accent      #5438DC   AccentText #FFFFFF  AccentSoft  #F3F0FF   DangerSoft #FEE2E2
+   Pin tints   handoff #E8F8F0  blocker #FDF2F8  testing #FEFCE8  architecture #EFF6FF
+   Members 1..6  #EF4444 #6366F1 #10B981 #8B5CF6 #F59E0B #EC4899                       */
+
+/* ---------- page ---------- */
+QWidget#PinsPage { background-color: #FAF8F5; }
+QLabel#PinsTitle { color: #1A1A1F; font-size: 22px; font-weight: 700; }
+QLabel#PinsSubtitle { color: #6B6B73; font-size: 13px; }
+QLabel#DialogHint { color: #6B6B73; font-size: 12px; }
+
+QPushButton#LeavePinButton,
+QPushButton#PinPrimaryButton,
+QPushButton#PinCommentSend {
+    background-color: #5438DC; color: #FFFFFF; border: none;
+    border-radius: 8px; padding: 8px 16px; font-weight: 600;
+}
+QPushButton#LeavePinButton:hover,
+QPushButton#PinPrimaryButton:hover,
+QPushButton#PinCommentSend:hover { background-color: #4529C9; }
+QPushButton#PinPrimaryButton:disabled { background-color: #ECE7DC; color: #6B6B73; }
+QPushButton#PinCommentSend { padding: 5px 12px; }
+
+/* ---------- filter chips ---------- */
+QPushButton#PinFilterChip {
+    background-color: #FFFFFF; color: #6B6B73; border: 1px solid #E7E2D6;
+    border-radius: 14px; padding: 6px 14px; font-weight: 600;
+}
+QPushButton#PinFilterChip[dot="true"] { padding-left: 28px; }
+QPushButton#PinFilterChip:hover { border-color: #5438DC; color: #1A1A1F; }
+QPushButton#PinFilterChip:checked { background-color: #F3F0FF; color: #5438DC; border-color: #5438DC; }
+
+QLabel#ChipDot { border-radius: 4px; background-color: #6B6B73; }
+QLabel#ChipDot[member="1"] { background-color: #EF4444; }
+QLabel#ChipDot[member="2"] { background-color: #6366F1; }
+QLabel#ChipDot[member="3"] { background-color: #10B981; }
+QLabel#ChipDot[member="4"] { background-color: #8B5CF6; }
+QLabel#ChipDot[member="5"] { background-color: #F59E0B; }
+QLabel#ChipDot[member="6"] { background-color: #EC4899; }
+
+/* ---------- columns ---------- */
+QFrame#PinColumn { background-color: #FFFFFF; border: 1px solid #E7E2D6; border-radius: 12px; }
+QFrame#PinColumn[dropActive="true"] { background-color: #F3F0FF; border: 2px solid #5438DC; }
+QLabel#PinColumnTitle { color: #1A1A1F; font-size: 13px; font-weight: 700; background: transparent; }
+QLabel#PinColumnCount {
+    background-color: #ECE7DC; color: #6B6B73; border-radius: 10px;
+    min-width: 20px; max-height: 20px; padding: 0 6px; font-size: 11px; font-weight: 700;
+}
+QLabel#PinColumnEmpty { color: #6B6B73; padding: 28px 8px; background: transparent; }
+QScrollArea#PinColumnScroll, QWidget#PinColumnBody { background: transparent; }
+
+/* ---------- cards ---------- */
+QFrame#PinCard { border: 1px solid #E7E2D6; border-radius: 10px; background-color: #FFFFFF; }
+QFrame#PinCard[category="handoff"]      { background-color: #E8F8F0; }
+QFrame#PinCard[category="blocker"]      { background-color: #FDF2F8; }
+QFrame#PinCard[category="testing"]      { background-color: #FEFCE8; }
+QFrame#PinCard[category="architecture"] { background-color: #EFF6FF; }
+QFrame#PinCard:hover { border: 1px solid #5438DC; }
+QFrame#PinCard[dragging="true"] { border: 1px dashed #5438DC; background-color: #F3F0FF; }
+QFrame#PinCard QLabel { background: transparent; }
+
+QLabel#PinCardText { color: #1A1A1F; font-size: 13px; }
+QLabel#PinCardTime { color: #6B6B73; font-size: 11px; font-weight: 600; }
+QLabel#PinCardTag { color: #6B6B73; font-size: 11px; font-weight: 600; }
+QLabel#PinTaskLine { color: #6B6B73; font-size: 11px; }
+QLabel#PinAuthorName { color: #1A1A1F; font-size: 12px; font-weight: 600; }
+
+QLabel#PinAvatar {
+    border-radius: 12px; color: #FFFFFF; font-size: 10px; font-weight: 700;
+    background-color: #6B6B73;
+}
+QLabel#PinAvatar[member="1"] { background-color: #EF4444; }
+QLabel#PinAvatar[member="2"] { background-color: #6366F1; }
+QLabel#PinAvatar[member="3"] { background-color: #10B981; }
+QLabel#PinAvatar[member="4"] { background-color: #8B5CF6; }
+QLabel#PinAvatar[member="5"] { background-color: #F59E0B; }
+QLabel#PinAvatar[member="6"] { background-color: #EC4899; }
+
+QToolButton#PinMenuButton { border: none; background: transparent; color: #6B6B73; font-weight: 700; padding: 0 4px; }
+QToolButton#PinMenuButton:hover { color: #5438DC; }
+QToolButton#PinMenuButton::menu-indicator { image: none; width: 0px; }
+
+QPushButton#PinResolveButton {
+    background-color: #F5F2EA; color: #1A1A1F; border: 1px solid #E7E2D6;
+    border-radius: 8px; padding: 4px 12px; font-weight: 600;
+}
+QPushButton#PinResolveButton:hover { border-color: #5438DC; }
+
+QToolButton#PinCommentChip { border: none; background: transparent; color: #6B6B73; font-size: 11px; font-weight: 600; }
+QToolButton#PinCommentChip:hover { color: #5438DC; }
+QToolButton#PinCommentChip:checked { color: #5438DC; }
+
+QFrame#PinCommentsPanel { background-color: #FFFFFF; border: 1px solid #E7E2D6; border-radius: 8px; }
+QFrame#PinCommentsPanel QLabel { background: transparent; }
+QLabel#PinCommentMeta { color: #6B6B73; font-size: 11px; font-weight: 600; }
+QLabel#PinCommentText { color: #1A1A1F; font-size: 12px; }
+QLineEdit#PinCommentInput {
+    background-color: #F5F2EA; color: #1A1A1F; border: 1px solid #E7E2D6;
+    border-radius: 8px; padding: 5px 8px;
+}
+
+/* ---------- dialogs ---------- */
+QDialog#LeavePinDialog, QDialog#DeclineDialog { background-color: #FAF8F5; color: #1A1A1F; }
+QDialog#LeavePinDialog QLabel, QDialog#DeclineDialog QLabel { background: transparent; }
+QDialog#LeavePinDialog QPlainTextEdit, QDialog#DeclineDialog QPlainTextEdit,
+QDialog#LeavePinDialog QLineEdit {
+    background-color: #FFFFFF; color: #1A1A1F; border: 1px solid #E7E2D6;
+    border-radius: 8px; padding: 6px 8px;
+}
+QDialog#LeavePinDialog QPushButton, QDialog#DeclineDialog QPushButton {
+    background-color: #F5F2EA; color: #1A1A1F; border: 1px solid #E7E2D6;
+    border-radius: 8px; padding: 8px 16px;
+}
+QDialog#LeavePinDialog QPlainTextEdit:focus, QDialog#DeclineDialog QPlainTextEdit:focus,
+QDialog#LeavePinDialog QLineEdit:focus { border: 1px solid #5438DC; }
+QDialog#LeavePinDialog QPushButton:hover, QDialog#DeclineDialog QPushButton:hover { border-color: #5438DC; }
+QLabel#DialogFieldLabel { color: #6B6B73; font-size: 12px; font-weight: 600; }
+QDialog#LeavePinDialog QPushButton#PinPrimaryButton { background-color: #5438DC; color: #FFFFFF; border: none; }
+QDialog#LeavePinDialog QPushButton#PinPrimaryButton:hover { background-color: #4529C9; }
+QDialog#LeavePinDialog QPushButton#PinPrimaryButton:disabled { background-color: #ECE7DC; color: #6B6B73; }
+QDialog#DeclineDialog QPushButton#DangerButton {
+    background-color: #FEE2E2; color: #1A1A1F; border: 1px solid #FEE2E2; font-weight: 600;
+}
+QDialog#DeclineDialog QPushButton#DangerButton:disabled { background-color: #ECE7DC; color: #6B6B73; border-color: #ECE7DC; }
+
+/* ---------- sidebar badge (open pins, from IPinQuery::openCount) ---------- */
+QLabel#NavBadge {
+    background-color: #F3F0FF; color: #5438DC; border-radius: 9px;
+    min-width: 18px; max-height: 18px; padding: 0 5px; font-size: 11px; font-weight: 700;
+}
+
+/* ---------- combo box (StyledComboBox, object name PinCombo) ----------
+   Chevron is painted in C++ from the two qproperty colours (TextMuted, Accent). */
+QComboBox#PinCombo {
+    background-color: #FFFFFF; color: #1A1A1F; border: 1px solid #E7E2D6; border-radius: 8px;
+    padding: 6px 30px 6px 10px; min-height: 20px;
+    combobox-popup: 0;
+    qproperty-arrowColor: #6B6B73; qproperty-arrowActiveColor: #5438DC;
+}
+QComboBox#PinCombo:hover, QComboBox#PinCombo:focus, QComboBox#PinCombo:on { border: 1px solid #5438DC; }
+QComboBox#PinCombo:disabled { background-color: #F5F2EA; color: #6B6B73; border: 1px solid #E7E2D6; }
+QComboBox#PinCombo::drop-down {
+    border: none; background: transparent; width: 30px;
+    subcontrol-origin: padding; subcontrol-position: center right;
+}
+QComboBox#PinCombo::down-arrow { image: none; }
+
+/* popup: opaque white card (Surface). Square outer corners: an opaque window cannot be rounded by QSS. */
+QComboBox#PinCombo QComboBoxPrivateContainer {
+    background-color: #FFFFFF; border: 1px solid #E7E2D6; border-radius: 0;
+}
+QComboBox#PinCombo QAbstractItemView {
+    background-color: #FFFFFF; color: #1A1A1F; border: none; outline: 0; margin: 4px;
+    selection-background-color: #F3F0FF; selection-color: #5438DC;
+}
+QComboBox#PinCombo QAbstractItemView::item { min-height: 28px; padding: 2px 10px; border-radius: 6px; }
+QComboBox#PinCombo QAbstractItemView::item:selected { background-color: #F3F0FF; color: #5438DC; }
+
+/* ---------- card menu ("...") ---------- */
+QMenu#PinCardMenu { background-color: #FFFFFF; border: 1px solid #E7E2D6; border-radius: 10px; padding: 4px; }
+QMenu#PinCardMenu::item { color: #1A1A1F; padding: 7px 24px 7px 14px; border-radius: 6px; margin: 1px 0; }
+QMenu#PinCardMenu::item:selected { background-color: #F3F0FF; color: #5438DC; }
+
+/* ---------- scroll bars: thin rounded handle, TextMuted at 35% / 60%, Accent while dragging ---------- */
+QWidget#PinsPage QScrollBar:vertical,
+QDialog#LeavePinDialog QScrollBar:vertical,
+QDialog#DeclineDialog QScrollBar:vertical,
+QComboBox#PinCombo QScrollBar:vertical { background: transparent; width: 10px; margin: 0; }
+
+QWidget#PinsPage QScrollBar::handle:vertical,
+QDialog#LeavePinDialog QScrollBar::handle:vertical,
+QDialog#DeclineDialog QScrollBar::handle:vertical,
+QComboBox#PinCombo QScrollBar::handle:vertical {
+    background: rgba(107, 107, 115, 0.35); border-radius: 3px; min-height: 32px; margin: 2px;
+}
+QWidget#PinsPage QScrollBar::handle:vertical:hover,
+QDialog#LeavePinDialog QScrollBar::handle:vertical:hover,
+QDialog#DeclineDialog QScrollBar::handle:vertical:hover,
+QComboBox#PinCombo QScrollBar::handle:vertical:hover { background: rgba(107, 107, 115, 0.60); }
+
+QWidget#PinsPage QScrollBar::handle:vertical:pressed,
+QDialog#LeavePinDialog QScrollBar::handle:vertical:pressed,
+QDialog#DeclineDialog QScrollBar::handle:vertical:pressed,
+QComboBox#PinCombo QScrollBar::handle:vertical:pressed { background: #5438DC; }
+
+QWidget#PinsPage QScrollBar::add-line:vertical, QWidget#PinsPage QScrollBar::sub-line:vertical,
+QDialog#LeavePinDialog QScrollBar::add-line:vertical, QDialog#LeavePinDialog QScrollBar::sub-line:vertical,
+QDialog#DeclineDialog QScrollBar::add-line:vertical, QDialog#DeclineDialog QScrollBar::sub-line:vertical,
+QComboBox#PinCombo QScrollBar::add-line:vertical, QComboBox#PinCombo QScrollBar::sub-line:vertical {
+    height: 0; background: none; border: none;
+}
+QWidget#PinsPage QScrollBar::add-page:vertical, QWidget#PinsPage QScrollBar::sub-page:vertical,
+QDialog#LeavePinDialog QScrollBar::add-page:vertical, QDialog#LeavePinDialog QScrollBar::sub-page:vertical,
+QDialog#DeclineDialog QScrollBar::add-page:vertical, QDialog#DeclineDialog QScrollBar::sub-page:vertical,
+QComboBox#PinCombo QScrollBar::add-page:vertical, QComboBox#PinCombo QScrollBar::sub-page:vertical {
+    background: transparent;
+}
