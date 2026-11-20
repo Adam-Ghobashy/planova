@@ -3,11 +3,15 @@
 #include "planova/common/EventTypes.h"
 
 #include <QDateTime>
+#include <algorithm>
 #include <utility>
 
 int64_t SystemClock::nowMs() const
 {
-    return QDateTime::currentMSecsSinceEpoch();
+    // Never repeat a millisecond: event order is (ts, id), so two events written
+    // in the same ms could otherwise replay in hash order instead of write order.
+    last_ = std::max(QDateTime::currentMSecsSinceEpoch(), last_ + 1);
+    return last_;
 }
 
 PlanovaCore::PlanovaCore(std::filesystem::path workspaceDir)

@@ -64,10 +64,11 @@ void tst_PlanovaCoreSlicer::reapplyAfterRestartAppendsNothing()
     QVERIFY(dir.isValid());
     const std::filesystem::path ws(dir.path().toStdString());
 
+    Id anaId;
     {
         PlanovaCore core(ws);
         core.openProject("p1");
-        setUpTeamAndTask(core);
+        anaId = setUpTeamAndTask(core);
         const auto preview = core.slicer().preview(planova::slicer::ScoringWeights{});
         QCOMPARE(core.slicer().apply(preview, planova::slicer::ScoringWeights{}), 1);
     }
@@ -79,6 +80,8 @@ void tst_PlanovaCoreSlicer::reapplyAfterRestartAppendsNothing()
     const int before = countEventFiles(eventsDir);
 
     const auto preview = again.slicer().preview(planova::slicer::ScoringWeights{});
+    QVERIFY(!preview.empty()); // replay restored the team and task
+    QCOMPARE(again.taskQuery().all().front().assignee.value(), anaId);
     QCOMPARE(again.slicer().apply(preview, planova::slicer::ScoringWeights{}), 0);
     QCOMPARE(countEventFiles(eventsDir), before);
 }

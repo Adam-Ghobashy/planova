@@ -21,6 +21,9 @@
 class SystemClock : public IClock {
 public:
     int64_t nowMs() const override;
+
+private:
+    mutable int64_t last_ = 0;
 };
 
 class PlanovaCore {
