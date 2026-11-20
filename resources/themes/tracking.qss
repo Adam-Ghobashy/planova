@@ -1,23 +1,20 @@
-/* Fair Performance & Tracking (TrackingPage). Light theme.
-   Values match Tokens.h: Background, Surface, SurfaceAlt, Track, Border, TextPrimary,
-   TextMuted, Accent, AccentText, AccentSoft, SuccessSoft, Member1..Member6.
-   Stat-card styling lives in home.qss (shared widget). */
+/* Fair Performance & Tracking (TrackingPage). Stat-card styling lives in home.qss (shared widget). */
 
 #TrackingPage {
-    background: #FAF8F5;
+    background: @Background;
 }
 
 /* Reference: h2 22px / 800, p 13px */
 #TrackingTitle {
     background: transparent;
-    color: #1A1A1F;
+    color: @TextPrimary;
     font-size: 22px;
     font-weight: 800;
 }
 
 #TrackingSubtitle {
     background: transparent;
-    color: #6B6B73;
+    color: @TextMuted;
     font-size: 13px;
 }
 
@@ -25,21 +22,21 @@
 QLabel#TrackingCardCaption {
     background: transparent;
     border: none;
-    color: #6B6B73;
+    color: @TextMuted;
     font-size: 11px;
 }
 
 /* Cards */
 QFrame#TrackingCard {
-    background: #FFFFFF;
-    border: 1px solid #E7E2D6;
+    background: @Surface;
+    border: 1px solid @Border;
     border-radius: 14px;
 }
 
 QFrame#TrackingCardHeader {
     background: transparent;
     border: none;
-    border-bottom: 1px solid #E7E2D6;
+    border-bottom: 1px solid @Border;
     border-radius: 0px;
 }
 
@@ -52,17 +49,17 @@ QFrame#TrackingCardHeaderPlain {
 QLabel#TrackingCardTitle {
     background: transparent;
     border: none;
-    color: #1A1A1F;
+    color: @TextPrimary;
     font-size: 14px;
     font-weight: 700;
 }
 
 /* Reference .badge-primary: radius 6, padding 3px 8px, 11px / 600 */
 QLabel#TrackingBadge {
-    background: #F3F0FF;
-    border: 1px solid #5438DC;
+    background: @AccentSoft;
+    border: 1px solid @Accent;
     border-radius: 6px;
-    color: #5438DC;
+    color: @Accent;
     font-size: 11px;
     font-weight: 600;
     padding: 3px 8px;
@@ -70,58 +67,58 @@ QLabel#TrackingBadge {
 
 /* Metric toggle (reference .btn-sm: radius 6, padding 5px 10px, 12px / 600) */
 QPushButton#TrackingToggle {
-    background: #F5F2EA;
-    border: 1px solid #E7E2D6;
+    background: @SurfaceAlt;
+    border: 1px solid @Border;
     border-radius: 6px;
-    color: #1A1A1F;
+    color: @TextPrimary;
     font-size: 12px;
     font-weight: 600;
     padding: 5px 10px;
 }
 
 QPushButton#TrackingToggle:hover {
-    background: #ECE7DC;
+    background: @SurfaceHover;
 }
 
 QPushButton#TrackingToggle:checked {
-    background: #5438DC;
-    border: 1px solid #5438DC;
-    color: #FFFFFF;
+    background: @Accent;
+    border: 1px solid @Accent;
+    color: @AccentText;
 }
 
 /* Palette handed to the delegates through qproperty-* (LeaderboardTable). */
 #LeaderboardTable {
-    qproperty-textPrimaryColor: #1A1A1F;
-    qproperty-textMutedColor: #6B6B73;
-    qproperty-accentColor: #5438DC;
-    qproperty-accentTextColor: #FFFFFF;
-    qproperty-accentSoftColor: #F3F0FF;
-    qproperty-successSoftColor: #D4F981;
-    qproperty-trackColor: #ECE7DC;
-    qproperty-surfaceAltColor: #F5F2EA;
-    qproperty-borderColor: #E7E2D6;
-    qproperty-member1Color: #EF4444;
-    qproperty-member2Color: #6366F1;
-    qproperty-member3Color: #10B981;
-    qproperty-member4Color: #8B5CF6;
-    qproperty-member5Color: #F59E0B;
-    qproperty-member6Color: #EC4899;
+    qproperty-textPrimaryColor: @TextPrimary;
+    qproperty-textMutedColor: @TextMuted;
+    qproperty-accentColor: @Accent;
+    qproperty-accentTextColor: @Surface;
+    qproperty-accentSoftColor: @AccentSoft;
+    qproperty-successSoftColor: @SuccessSoft;
+    qproperty-trackColor: @Track;
+    qproperty-surfaceAltColor: @SurfaceAlt;
+    qproperty-borderColor: @Border;
+    qproperty-member1Color: @Member1;
+    qproperty-member2Color: @Member2;
+    qproperty-member3Color: @Member3;
+    qproperty-member4Color: @Member4;
+    qproperty-member5Color: @Member5;
+    qproperty-member6Color: @Member6;
 }
 
 /* Leaderboard table. Every cell is painted by a delegate; QSS still draws the row
    separator through ::item. Reference cell padding is 14px left and right. */
 /* Complexity chart colours (ComplexityBarChart, qproperty-*). Same values as above. */
 QWidget#ComplexityBarChart {
-    qproperty-fillColor: #5438DC;
-    qproperty-trackColor: #ECE7DC;
-    qproperty-valueColor: #1A1A1F;
-    qproperty-labelColor: #6B6B73;
+    qproperty-fillColor: @Accent;
+    qproperty-trackColor: @Track;
+    qproperty-valueColor: @TextPrimary;
+    qproperty-labelColor: @TextMuted;
 }
 
 QTableView#LeaderboardTable {
     background: transparent;
     border: none;
-    color: #6B6B73;
+    color: @TextMuted;
     font-size: 13px;
     outline: 0;
 }
@@ -129,7 +126,7 @@ QTableView#LeaderboardTable {
 QTableView#LeaderboardTable::item {
     background: transparent;
     border: none;
-    border-bottom: 1px solid #ECE7DC;
+    border-bottom: 1px solid @Track;
     padding: 0px 14px;
 }
 
@@ -141,8 +138,8 @@ QTableView#LeaderboardTable QHeaderView {
 QTableView#LeaderboardTable QHeaderView::section {
     background: transparent;
     border: none;
-    border-bottom: 1px solid #E7E2D6;
-    color: #6B6B73;
+    border-bottom: 1px solid @Border;
+    color: @TextMuted;
     font-size: 13px;
     font-weight: 600;
     padding: 10px 14px;

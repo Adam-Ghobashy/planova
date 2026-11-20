@@ -1,14 +1,14 @@
-/* Home Page, light theme. Values follow the GUI reference light theme
-   (css/theme.css [data-theme="light"], css/home.css, css/components.css). */
+/* Home Page. Values follow the GUI reference themes
+   (css/theme.css, css/home.css, css/components.css). */
 
 QWidget#homePage {
-    background-color: #FAF8F5;              /* Background */
+    background-color: @Background;              /* Background */
 }
 
 /* Header / branding */
 
 QLabel#homeEyebrow {
-    color: #5438DC;                         /* Accent */
+    color: @Accent;                         /* Accent */
     font-size: 12px;
     font-weight: 700;
     background: transparent;
@@ -16,7 +16,7 @@ QLabel#homeEyebrow {
 }
 
 QLabel#homeTitle {
-    color: #18181B;                         /* text-1 */
+    color: @TextPrimary;                         /* text-1 */
     font-size: 24px;
     font-weight: 800;
     background: transparent;
@@ -26,9 +26,9 @@ QLabel#homeTitle {
 /* .btn.btn-secondary.btn-sm */
 
 QPushButton#homeHubButton {
-    background-color: #F5F2EA;              /* surface-raised */
-    color: #18181B;
-    border: 1px solid rgba(24, 24, 27, 10%);
+    background-color: @SurfaceAlt;              /* surface-raised */
+    color: @TextPrimary;
+    border: 1px solid @BorderDefault;
     border-radius: 6px;
     padding: 5px 10px;
     font-size: 12px;
@@ -36,16 +36,16 @@ QPushButton#homeHubButton {
 }
 
 QPushButton#homeHubButton:hover {
-    background-color: #ECE7DC;              /* surface-hover */
-    border-color: rgba(24, 24, 27, 18%);
+    background-color: @SurfaceHover;
+    border-color: @BorderStrong;
 }
 
 /* .btn.btn-primary.btn-sm */
 
 QPushButton#homeSlicerButton {
-    background-color: #5438DC;
-    color: #FFFFFF;
-    border: 1px solid #5438DC;
+    background-color: @Accent;
+    color: @AccentText;
+    border: 1px solid @Accent;
     border-radius: 6px;
     padding: 5px 10px;
     font-size: 12px;
@@ -53,29 +53,29 @@ QPushButton#homeSlicerButton {
 }
 
 QPushButton#homeSlicerButton:hover {
-    background-color: #4526CB;
-    border-color: #4526CB;
+    background-color: @AccentHover;
+    border-color: @AccentHover;
 }
 
 QPushButton#homeSlicerButton:pressed {
-    background-color: #381BAF;
-    border-color: #381BAF;
+    background-color: @AccentPressed;
+    border-color: @AccentPressed;
 }
 
 /* Cards (.card) */
 
 QFrame#homePanel {
-    background-color: #FFFFFF;
-    border: 1px solid rgba(24, 24, 27, 10%);
+    background-color: @Surface;
+    border: 1px solid @BorderDefault;
     border-radius: 14px;
 }
 
 QFrame#homePanel:hover {
-    border-color: rgba(24, 24, 27, 18%);
+    border-color: @BorderStrong;
 }
 
 QLabel#homePanelTitle {
-    color: #18181B;
+    color: @TextPrimary;
     font-size: 15px;
     font-weight: 700;
     background: transparent;
@@ -85,9 +85,9 @@ QLabel#homePanelTitle {
 /* .badge.badge-primary */
 
 QLabel#homeBadge {
-    background-color: #F3F0FF;
-    color: #5438DC;
-    border: 1px solid #5438DC;
+    background-color: @AccentSoft;
+    color: @Accent;
+    border: 1px solid @Accent;
     border-radius: 6px;
     padding: 3px 8px;
     font-size: 11px;
@@ -95,7 +95,7 @@ QLabel#homeBadge {
 }
 
 QLabel#homeSectionTitle {
-    color: #52525B;                         /* text-2 */
+    color: @TextSecondary;                         /* text-2 */
     font-size: 12px;
     font-weight: 700;
     background: transparent;
@@ -103,30 +103,30 @@ QLabel#homeSectionTitle {
 }
 
 QLabel#homeEmptyLabel {
-    color: #71717A;
+    color: @TextTertiary;
     background: transparent;
     border: none;
 }
 
 QFrame#homeDivider {
-    background-color: rgba(24, 24, 27, 6%); /* border-subtle */
+    background-color: @BorderSubtle; /* border-subtle */
     border: none;
 }
 
 /* Sticky-notes panel */
 
 QFrame#homePinsPanel {
-    background-color: #FFFFFF;
-    border: 1px solid rgba(24, 24, 27, 10%);
+    background-color: @Surface;
+    border: 1px solid @BorderDefault;
     border-radius: 14px;
 }
 
 QFrame#homePinsPanel:hover {
-    border-color: #5438DC;                  /* brand-primary */
+    border-color: @Accent;                  /* brand-primary */
 }
 
 QLabel#homeStickyTitle {
-    color: #18181B;
+    color: @TextPrimary;
     font-size: 14px;
     font-weight: 700;
     background: transparent;
@@ -136,7 +136,7 @@ QLabel#homeStickyTitle {
 /* .btn-ghost.btn-sm */
 
 QPushButton#homePinsMore {
-    color: #52525B;
+    color: @TextSecondary;
     background: transparent;
     border: none;
     border-radius: 6px;
@@ -145,19 +145,19 @@ QPushButton#homePinsMore {
 }
 
 QPushButton#homePinsMore:hover {
-    background-color: #ECE7DC;
-    color: #18181B;
+    background-color: @SurfaceHover;
+    color: @TextPrimary;
 }
 
 QLabel#homePinsCount {
-    color: #71717A;                         /* text-tertiary */
+    color: @TextTertiary;                         /* text-tertiary */
     font-size: 11px;
     background: transparent;
     border: none;
 }
 
 QPushButton#homePinsLink {
-    color: #5438DC;
+    color: @Accent;
     font-size: 12px;
     font-weight: 700;
     background: transparent;
@@ -169,64 +169,64 @@ QPushButton#homePinsLink {
    Colors are applied through Q_PROPERTY. */
 
 QWidget#stickyNoteWidget {
-    qproperty-noteColor: #E8F8F0;
-    qproperty-borderColor: #86EFAC;
-    qproperty-textColor: #14532D;
-    qproperty-shadowColor: rgba(24, 24, 27, 13);
+    qproperty-noteColor: @PinHandoff;
+    qproperty-borderColor: @StickyGreenBorder;
+    qproperty-textColor: @StickyGreenText;
+    qproperty-shadowColor: @ShadowSoft;
 }
 
 QWidget#stickyNoteWidget[category="handoff"] {
-    qproperty-noteColor: #E8F8F0;
-    qproperty-borderColor: #86EFAC;
-    qproperty-textColor: #14532D;
+    qproperty-noteColor: @PinHandoff;
+    qproperty-borderColor: @StickyGreenBorder;
+    qproperty-textColor: @StickyGreenText;
 }
 
 QWidget#stickyNoteWidget[category="blocker"] {
-    qproperty-noteColor: #FDF2F8;
-    qproperty-borderColor: #F9A8D4;
-    qproperty-textColor: #831843;
+    qproperty-noteColor: @PinBlocker;
+    qproperty-borderColor: @StickyPinkBorder;
+    qproperty-textColor: @StickyPinkText;
 }
 
 QWidget#stickyNoteWidget[category="architecture"] {
-    qproperty-noteColor: #EFF6FF;
-    qproperty-borderColor: #93C5FD;
-    qproperty-textColor: #1E3A8A;
+    qproperty-noteColor: @PinArchitecture;
+    qproperty-borderColor: @StickyBlueBorder;
+    qproperty-textColor: @StickyBlueText;
 }
 
 QWidget#stickyNoteWidget[category="testing"] {
-    qproperty-noteColor: #FEFCE8;
-    qproperty-borderColor: #FDE047;
-    qproperty-textColor: #713F12;
+    qproperty-noteColor: @PinTesting;
+    qproperty-borderColor: @StickyYellowBorder;
+    qproperty-textColor: @StickyYellowText;
 }
 
 /* Quick links (.home-bottom-card) */
 
 QPushButton#quickLinkCard {
-    background-color: #FFFFFF;
-    border: 1px solid rgba(24, 24, 27, 10%);
+    background-color: @Surface;
+    border: 1px solid @BorderDefault;
     border-radius: 14px;
     text-align: left;
 }
 
 QPushButton#quickLinkCard:hover {
-    border-color: #5438DC;
+    border-color: @Accent;
 }
 
 QPushButton#quickLinkCard:pressed {
-    background-color: #F5F2EA;
+    background-color: @SurfaceAlt;
 }
 
 /* .home-bottom-icon */
 
 QLabel#quickLinkIcon {
-    background-color: #F5F2EA;              /* surface-raised */
-    border: 1px solid rgba(24, 24, 27, 6%);
+    background-color: @SurfaceAlt;              /* surface-raised */
+    border: 1px solid @BorderSubtle;
     border-radius: 10px;
     font-size: 20px;
 }
 
 QLabel#quickLinkTitle {
-    color: #18181B;
+    color: @TextPrimary;
     font-size: 13px;
     font-weight: 700;
     background: transparent;
@@ -234,7 +234,7 @@ QLabel#quickLinkTitle {
 }
 
 QLabel#quickLinkSubtitle {
-    color: #71717A;
+    color: @TextTertiary;
     font-size: 11px;
     background: transparent;
     border: none;
@@ -243,17 +243,17 @@ QLabel#quickLinkSubtitle {
 /* Stat cards (.oliver-stat-card) */
 
 QFrame#statCardWidget {
-    background-color: #FFFFFF;
-    border: 1px solid rgba(24, 24, 27, 10%);
+    background-color: @Surface;
+    border: 1px solid @BorderDefault;
     border-radius: 14px;
 }
 
 QFrame#statCardWidget:hover {
-    border-color: rgba(24, 24, 27, 18%);    /* border-strong */
+    border-color: @BorderStrong;    /* border-strong */
 }
 
 QLabel#statCardTitle {
-    color: #71717A;
+    color: @TextTertiary;
     font-size: 11px;
     font-weight: 600;
     background: transparent;
@@ -261,7 +261,7 @@ QLabel#statCardTitle {
 }
 
 QLabel#statCardValue {
-    color: #18181B;
+    color: @TextPrimary;
     font-size: 26px;
     font-weight: 800;
     background: transparent;
@@ -269,19 +269,19 @@ QLabel#statCardValue {
 }
 
 QLabel#statCardValue[valueRole="default"] {
-    color: #18181B;
+    color: @TextPrimary;
 }
 
 QLabel#statCardValue[valueRole="success"] {
-    color: #13380B;
+    color: @PositiveText;
 }
 
 QLabel#statCardValue[valueRole="accent"] {
-    color: #5438DC;
+    color: @Accent;
 }
 
 QLabel#statCardValue[valueRole="warning"] {
-    color: #92400E;
+    color: @WarningText;
 }
 
 /* Donut chart: colours reach DonutWidget through qproperty-* */
@@ -290,13 +290,13 @@ QWidget#donutWidget {
     background: transparent;
     border: none;
     font-size: 12px;
-    qproperty-doneColor: #D4F880;
-    qproperty-activeColor: #5438DC;
-    qproperty-trackColor: #ECE7DC;
-    qproperty-textColor: #18181B;
-    qproperty-secondaryColor: #52525B;
-    qproperty-mutedColor: #71717A;
-    qproperty-outlineColor: rgba(24, 24, 27, 15);
+    qproperty-doneColor: @SuccessSoft;
+    qproperty-activeColor: @Accent;
+    qproperty-trackColor: @Track;
+    qproperty-textColor: @TextPrimary;
+    qproperty-secondaryColor: @TextSecondary;
+    qproperty-mutedColor: @TextTertiary;
+    qproperty-outlineColor: @BorderSubtle;
 }
 
 /* Bar chart (contribution bars, one colour per member) */
@@ -305,14 +305,14 @@ QWidget#barChartWidget {
     background: transparent;
     border: none;
     font-size: 12px;
-    qproperty-barColor: #5438DC;
-    qproperty-trackColor: #ECE7DC;
-    qproperty-textColor: #18181B;
-    qproperty-mutedColor: #71717A;
-    qproperty-member1Color: #EF4444;
-    qproperty-member2Color: #6366F1;
-    qproperty-member3Color: #10B981;
-    qproperty-member4Color: #8B5CF6;
-    qproperty-member5Color: #F59E0B;
-    qproperty-member6Color: #EC4899;
+    qproperty-barColor: @Accent;
+    qproperty-trackColor: @Track;
+    qproperty-textColor: @TextPrimary;
+    qproperty-mutedColor: @TextTertiary;
+    qproperty-member1Color: @Member1;
+    qproperty-member2Color: @Member2;
+    qproperty-member3Color: @Member3;
+    qproperty-member4Color: @Member4;
+    qproperty-member5Color: @Member5;
+    qproperty-member6Color: @Member6;
 }

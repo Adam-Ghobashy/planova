@@ -1,0 +1,105 @@
+/* Planova qss. Colours are token placeholders (at-sign plus Token name from ui/theme/Tokens.h); ThemeManager
+   replaces them with the light or dark value. No colour literal belongs in this folder.
+
+   Old light colour (hex without the hash sign) -> token. Values written "~" were merged into the nearest
+   existing token (largest channel difference 6 of 255, not visible); the prototype css gives the same intent.
+
+   Page and surfaces   FAF8F5 Background | F5F1E8 Sidebar | FFFFFF Surface (fills) or AccentText (text on Accent)
+                       or TextInverse (text on member colours) | F5F2EA SurfaceAlt | ECE7DC Track, or SurfaceHover on :hover
+                       EAE6DF SurfaceDialog | EFECE5 ~ SurfaceAlt
+   Text                1A1A1F TextPrimary | 18181B ~ TextPrimary | 52525B TextSecondary | 6B6B73 TextMuted | 71717A TextTertiary
+                       13380B PositiveText | 92400E WarningText (ReviewText on the review column chip) | 991B1B DangerText
+                       3F6212 DoneChipText | DC2626 DangerAction
+   Accent              5438DC Accent | F3F0FF AccentSoft | EAE5FF AccentSoftStrong | 4526CB AccentHover
+                       4A2FC9 and 4529C9 ~ AccentHover | 381BAF AccentPressed
+   Borders             E7E2D6 Border | E9E5DB, E3DFD4, E6E1D5 ~ Border | E0DBCF ControlBorder | EFEBE3 BorderSoft
+                       DDD8CC Divider | D9D4C8 ScrollHandle | CFCABD ScrollHandleStrong
+                       24,24,27 at 6 percent BorderSubtle | at 10 percent BorderDefault | at 18 percent BorderStrong
+                       24,24,27 alpha 13 ShadowSoft | alpha 15 BorderSubtle
+                       107,107,115 at 35 percent ScrollThumb | at 60 percent ScrollThumbHover
+   Status              D4F981 SuccessSoft | D4F880 ~ SuccessSoft | FEE2E2 DangerSoft | FEF3C7 ReviewSoft
+                       FDEFC7 ~ ReviewSoft | F7E3A1 ReviewBorder | EF4444 Member1 (DangerBorder on the remove button)
+                       10B981 Member3 (StatusConnected on the git dot)
+   Pins and stickies   E8F8F0 PinHandoff | FDF2F8 PinBlocker | FEFCE8 PinTesting | EFF6FF PinArchitecture
+                       86EFAC StickyGreenBorder | 14532D StickyGreenText | F9A8D4 StickyPinkBorder | 831843 StickyPinkText
+                       93C5FD StickyBlueBorder | 1E3A8A StickyBlueText | FDE047 StickyYellowBorder | 713F12 StickyYellowText
+   Members             EF4444 Member1 | 6366F1 Member2 | 10B981 Member3 | 8B5CF6 Member4 | F59E0B Member5 | EC4899 Member6
+
+   Contrast: tst_Contrast checks the text pairs of both themes at 4.5:1. No token value had to be changed. */
+
+QWidget {
+    background-color: @Background;
+    color: @TextPrimary;
+    font-family: "Segoe UI";
+}
+
+QPushButton {
+    background-color: @Accent;
+    color: @AccentText;
+    border-radius: 8px;
+    padding: 8px 16px;
+}
+
+/* ---------- sidebar (S1) ---------- */
+QWidget#Sidebar {
+    background-color: @Sidebar;
+    border-right: 1px solid @Border;
+}
+
+QWidget#Sidebar QPushButton#SidebarNavButton {
+    color: @TextPrimary;
+    background-color: @Sidebar;
+    border-right: 1px solid @Border;
+}
+
+QFrame#SidebarGitCard {
+    background-color: @Surface;
+    border: 1px solid @Border;
+    border-radius: 10px;
+}
+
+/* property "state" is "connected" or "disconnected" */
+QLabel#SidebarGitDot {
+    color: @TextMuted;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+}
+
+QLabel#SidebarGitDot[state="connected"] {
+    color: @StatusConnected;
+}
+
+QLabel#SidebarGitDot[state="disconnected"] {
+    color: @TextMuted;
+}
+
+QLabel#SidebarGitTitle {
+    color: @TextPrimary;
+    font-size: 12px;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+}
+
+QLabel#SidebarGitSubtitle {
+    color: @TextMuted;
+    font-size: 11px;
+    border: none;
+    background: transparent;
+}
+
+QPushButton#SidebarSyncButton {
+    background-color: @Background;
+    color: @Accent;
+    border: 1px solid @Border;
+    border-radius: 6px;
+    padding: 0px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+QPushButton#SidebarSyncButton:hover {
+    background-color: @AccentSoft;
+    border-color: @Accent;
+}

@@ -1,5 +1,7 @@
 #include <QApplication>
 #include <QFile>
+#include <QFrame>
+#include <QRegularExpression>
 #include <QtTest>
 
 #include "theme/ThemeManager.h"
@@ -44,7 +46,30 @@ private slots:
                  QString("a{c:#F5F2EA;b:#FFFFFF}"));
     }
     void unknownTokenUntouched() {
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression("NoSuchToken"));
         QCOMPARE(ThemeManager::resolveTokens("x:@NoSuchToken;", ThemeMode::Light), QString("x:@NoSuchToken;"));
+    }
+    void unknownTokenWarnsOncePerName() {
+        // Only one message is expected for two uses of the same name.
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression("NoSuchToken"));
+        const QString css = "x:@NoSuchToken; y:@NoSuchToken;";
+        QCOMPARE(ThemeManager::resolveTokens(css, ThemeMode::Light), css);
+    }
+    void translucentTokenIsAcceptedByQss() {
+        // Qt reads #AARRGGBB (alpha first) in a stylesheet, so no rgba() conversion is needed.
+        QCOMPARE(ThemeManager::resolveTokens("x:@Overlay;", ThemeMode::Light), QString("x:#B3000000;"));
+        QWidget window;
+        window.setObjectName("root");
+        window.setStyleSheet(ThemeManager::resolveTokens(
+            "QWidget#root{background-color:#FFFFFF;} QFrame#probe{background-color:@Overlay;}", ThemeMode::Light));
+        window.resize(10, 10);
+        auto* probe = new QFrame(&window);
+        probe->setObjectName("probe");
+        probe->setGeometry(0, 0, 10, 10);
+        window.show();
+        const QColor pixel = window.grab().toImage().pixelColor(5, 5);
+        // 70% black over the white window: neither black nor white.
+        QVERIFY2(pixel.red() > 20 && pixel.red() < 120, qPrintable(pixel.name()));
     }
     void toggleEmitsSignal() {
         QSignalSpy s(&ThemeManager::instance(), &ThemeManager::themeChanged);

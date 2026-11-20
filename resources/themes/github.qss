@@ -1,10 +1,10 @@
-/* GitHub Integration page (S2) - light theme.
+/* GitHub Integration page (S2).
    Generic rules (card, buttons, input, table, scroll area) are copies of the slicer ones,
    scoped under this page so the two pages do not depend on each other. */
 
 QWidget#GitHubIntegrationPage {
-    background-color: #FAF8F5;
-    color: #1A1A1F;
+    background-color: @Background;
+    color: @TextPrimary;
     font-family: "Segoe UI", sans-serif;
 }
 
@@ -18,8 +18,8 @@ QWidget#GitHubIntegrationPage QWidget#slicerScrollContent {
 }
 
 QWidget#GitHubIntegrationPage QFrame#card {
-    background-color: #FFFFFF;
-    border: 1px solid #E7E2D6;
+    background-color: @Surface;
+    border: 1px solid @Border;
     border-radius: 12px;
 }
 
@@ -28,19 +28,19 @@ QWidget#GitHubIntegrationPage QFrame#card QLabel {
 }
 
 QWidget#GitHubIntegrationPage QLabel#cardTitle {
-    color: #1A1A1F;
+    color: @TextPrimary;
     font-size: 14px;
     font-weight: 600;
 }
 
 QWidget#GitHubIntegrationPage QLabel#cardSubtitle {
-    color: #6B6B73;
+    color: @TextMuted;
     font-size: 12px;
 }
 
 QWidget#GitHubIntegrationPage QPushButton#primaryButton {
-    background-color: #5438DC;
-    color: #FFFFFF;
+    background-color: @Accent;
+    color: @AccentText;
     border: none;
     border-radius: 8px;
     padding: 8px 18px;
@@ -49,17 +49,17 @@ QWidget#GitHubIntegrationPage QPushButton#primaryButton {
 }
 
 QWidget#GitHubIntegrationPage QPushButton#primaryButton:hover {
-    background-color: #4526CB;
+    background-color: @AccentHover;
 }
 
 QWidget#GitHubIntegrationPage QPushButton#primaryButton:pressed {
-    background-color: #381BAF;
+    background-color: @AccentPressed;
 }
 
 QWidget#GitHubIntegrationPage QPushButton#secondaryButton {
-    background-color: #FFFFFF;
-    color: #1A1A1F;
-    border: 1px solid #E7E2D6;
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 1px solid @Border;
     border-radius: 8px;
     padding: 8px 16px;
     font-size: 13px;
@@ -67,16 +67,16 @@ QWidget#GitHubIntegrationPage QPushButton#secondaryButton {
 }
 
 QWidget#GitHubIntegrationPage QPushButton#secondaryButton:hover {
-    background-color: #F5F2EA;
+    background-color: @SurfaceAlt;
 }
 
 QWidget#GitHubIntegrationPage QPushButton#secondaryButton:pressed {
-    background-color: #ECE7DC;
+    background-color: @Track;
 }
 
 QWidget#GitHubIntegrationPage QLabel#statusLabel {
-    background-color: #D4F981;
-    color: #1A1A1F;
+    background-color: @SuccessSoft;
+    color: @TextPrimary;
     border-radius: 12px;
     padding: 5px 14px;
     font-size: 12px;
@@ -84,17 +84,17 @@ QWidget#GitHubIntegrationPage QLabel#statusLabel {
 }
 
 QWidget#GitHubIntegrationPage QLineEdit#lightInput {
-    background-color: #FAF8F5;
-    color: #1A1A1F;
-    border: 1px solid #E7E2D6;
+    background-color: @Background;
+    color: @TextPrimary;
+    border: 1px solid @Border;
     border-radius: 8px;
     padding: 7px 12px;
     font-size: 13px;
 }
 
 QWidget#GitHubIntegrationPage QLineEdit#lightInput:focus {
-    border: 1px solid #5438DC;
-    background-color: #FFFFFF;
+    border: 1px solid @Accent;
+    background-color: @Surface;
 }
 
 /* property "state" is "connected" or "disconnected" */
@@ -105,34 +105,34 @@ QWidget#GitHubIntegrationPage QFrame#card QLabel#connectionBadge {
 }
 
 QWidget#GitHubIntegrationPage QFrame#card QLabel#connectionBadge[state="connected"] {
-    background-color: #D4F981;
-    color: #1A1A1F;
+    background-color: @SuccessSoft;
+    color: @TextPrimary;
     font-weight: 700;
 }
 
 QWidget#GitHubIntegrationPage QFrame#card QLabel#connectionBadge[state="disconnected"] {
-    background-color: #F5F2EA;
-    color: #6B6B73;
-    border: 1px solid #E7E2D6;
+    background-color: @SurfaceAlt;
+    color: @TextMuted;
+    border: 1px solid @Border;
     font-weight: 600;
 }
 
 /* ---------- tables ---------- */
 QWidget#GitHubIntegrationPage QTableView#assignmentsTable {
-    background-color: #FFFFFF;
-    border: 1px solid #E7E2D6;
+    background-color: @Surface;
+    border: 1px solid @Border;
     border-radius: 12px;
-    gridline-color: #F5F2EA;
-    selection-background-color: #F3F0FF;
-    selection-color: #1A1A1F;
+    gridline-color: @SurfaceAlt;
+    selection-background-color: @AccentSoft;
+    selection-color: @TextPrimary;
     outline: none;
 }
 
 QWidget#GitHubIntegrationPage QHeaderView::section {
-    background-color: #FAF8F5;
-    color: #6B6B73;
+    background-color: @Background;
+    color: @TextMuted;
     border: none;
-    border-bottom: 1px solid #E7E2D6;
+    border-bottom: 1px solid @Border;
     padding: 10px 12px;
     font-size: 12px;
     font-weight: 600;
@@ -141,5 +141,5 @@ QWidget#GitHubIntegrationPage QHeaderView::section {
 
 QWidget#GitHubIntegrationPage QTableView::item {
     padding: 8px 12px;
-    border-bottom: 1px solid #F5F2EA;
+    border-bottom: 1px solid @SurfaceAlt;
 }

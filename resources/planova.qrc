@@ -1,13 +1,13 @@
 <RCC>
   <qresource prefix="/">
-    <file>themes/light/base.qss</file>
-    <file>themes/light/board.qss</file>
-    <file>themes/light/github.qss</file>
-    <file>themes/light/home.qss</file>
-    <file>themes/light/pins.qss</file>
-    <file>themes/light/slicer.qss</file>
-    <file>themes/light/team.qss</file>
-    <file>themes/light/tracking.qss</file>
+    <file>themes/base.qss</file>
+    <file>themes/board.qss</file>
+    <file>themes/github.qss</file>
+    <file>themes/home.qss</file>
+    <file>themes/pins.qss</file>
+    <file>themes/slicer.qss</file>
+    <file>themes/team.qss</file>
+    <file>themes/tracking.qss</file>
     <file>icons/chevron-updown.svg</file>
   </qresource>
 </RCC>

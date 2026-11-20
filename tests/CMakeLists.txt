@@ -44,6 +44,7 @@ planova_add_test(tst_PlanovaCoreSlicer)
 # --- end S4 ---
 # --- S1 ---
 planova_add_ui_test(tst_ThemeManager)
+planova_add_ui_test(tst_Contrast)
 # --- end S1 ---
 # --- S6 ---
 planova_add_test(tst_ProgressCalculator)

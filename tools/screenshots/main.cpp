@@ -55,6 +55,10 @@ int main(int argc, char* argv[])
     }
     QDir().mkpath(options.outDir);
 
+    // The first theme is applied before the window exists, so every widget is built under it.
+    const QStringList themes = options.theme == "both" ? QStringList{"light", "dark"} : QStringList{options.theme};
+    ThemeManager::instance().apply(themes.first() == "dark" ? ThemeMode::Dark : ThemeMode::Light);
+
     QTemporaryDir workspace;
     if (!workspace.isValid())
         return 1;
@@ -72,9 +76,7 @@ int main(int argc, char* argv[])
         return 1;
 
     // One entry per screenshot: (theme name, page index).
-    // TODO(Task 2): dark mode does not exist yet, so "dark" renders the light theme.
     QList<QPair<QString, int>> jobs;
-    const QStringList themes = options.theme == "both" ? QStringList{"light", "dark"} : QStringList{options.theme};
     for (const QString& theme : themes) {
         for (int page = 0; page < pages->count(); ++page) {
             if (options.page < 0 || options.page == page)
@@ -90,6 +92,9 @@ int main(int argc, char* argv[])
             return;
         }
         const auto job = jobs[index++];
+        const ThemeMode mode = job.first == "dark" ? ThemeMode::Dark : ThemeMode::Light;
+        if (ThemeManager::instance().mode() != mode)
+            ThemeManager::instance().apply(mode);
         pages->setCurrentIndex(job.second);
         QTimer::singleShot(250, [&, job]() {
             const QString path = QString("%1/page%2-%3.png").arg(options.outDir).arg(job.second).arg(job.first);

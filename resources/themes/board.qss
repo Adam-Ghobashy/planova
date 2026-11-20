@@ -1,0 +1,131 @@
+/* Phase Board (S3), matches Figma */
+
+/* ---------- header ---------- */
+QLabel#PageTitle      { font-size: 30px; font-weight: 800; color: @TextPrimary; background: transparent; }
+QLabel#ModelLabel     { font-size: 14px; color: @TextMuted; background: transparent; }
+QLabel#ModelValue     { font-size: 14px; font-weight: 700; color: @Accent; background: transparent; }
+QLabel#TaskCountLabel { font-size: 14px; color: @TextMuted; background: transparent; }
+
+QLineEdit#BoardSearch, QComboBox#BoardMemberFilter {
+    background: @Surface; border: 1px solid @Border; border-radius: 20px;
+    padding: 9px 18px; min-height: 22px; font-size: 15px; color: @TextPrimary;
+}
+QLineEdit#BoardSearch:focus, QComboBox#BoardMemberFilter:focus { border: 1px solid @Accent; }
+
+/* ---------- buttons ---------- */
+QPushButton#BoardPrimary {
+    background: @Accent; color: @AccentText; border: none; border-radius: 14px;
+    padding: 11px 22px; font-size: 15px; font-weight: 700;
+}
+QPushButton#BoardPrimary:hover { background: @AccentHover; }
+QPushButton#BoardSecondary {
+    background: @SurfaceAlt; color: @TextPrimary; border: 1px solid @ControlBorder; border-radius: 14px;
+    padding: 11px 22px; font-size: 15px; font-weight: 700;
+}
+QPushButton#BoardSecondary:hover { background: @SurfaceHover; }
+
+/* ---------- combo popup + arrow ---------- */
+QComboBox#BoardMemberFilter, QDialog#NewTaskDialog QComboBox { padding-right: 40px; }
+QComboBox#BoardMemberFilter::drop-down, QDialog#NewTaskDialog QComboBox::drop-down {
+    subcontrol-origin: padding; subcontrol-position: center right;
+    width: 36px; border: none; background: transparent;
+}
+QComboBox#BoardMemberFilter::down-arrow, QDialog#NewTaskDialog QComboBox::down-arrow {
+    image: url(:/icons/chevron-updown.svg); width: 16px; height: 16px;
+}
+QComboBox#BoardMemberFilter QAbstractItemView, QDialog#NewTaskDialog QComboBox QAbstractItemView {
+    background: @Surface; border: 1px solid @Border; border-radius: 12px; padding: 6px;
+    outline: 0; color: @TextPrimary; font-size: 15px;
+    selection-background-color: @AccentSoft; selection-color: @TextPrimary;
+}
+QComboBox#BoardMemberFilter QAbstractItemView::item, QDialog#NewTaskDialog QComboBox QAbstractItemView::item { min-height: 34px; padding: 2px 10px; border-radius: 8px; }
+
+/* ---------- columns ---------- */
+QScrollArea#BoardScroll { background: transparent; border: none; }
+QWidget#BoardColumnsHost { background: transparent; }
+QScrollArea#BoardScroll QScrollBar:horizontal { height: 8px; background: transparent; margin: 0 4px; }
+QScrollArea#BoardScroll QScrollBar::handle:horizontal { background: @ScrollHandle; border-radius: 4px; min-width: 30px; }
+QScrollArea#BoardScroll QScrollBar::add-line:horizontal,
+QScrollArea#BoardScroll QScrollBar::sub-line:horizontal { width: 0; }
+
+QFrame#TaskColumn { background: @Surface; border: 1px solid @Border; border-radius: 26px; }
+QLabel#ColumnTitle { font-size: 17px; font-weight: 700; color: @TextPrimary; background: transparent; }
+QLabel#ColumnCount {
+    background: @SurfaceAlt; color: @TextPrimary; border-radius: 10px; padding: 3px 12px;
+    font-size: 14px; font-weight: 700;
+}
+QLabel#ColumnCount[tone="progress"] { background: @AccentSoftStrong; color: @Accent; }
+QLabel#ColumnCount[tone="review"]   { background: @ReviewSoft; color: @ReviewText; }
+QLabel#ColumnCount[tone="done"]     { background: @SuccessSoft; color: @DoneChipText; }
+QFrame#ColumnDivider { background: @Border; border: none; }
+
+QScrollArea#ColumnScroll { background: transparent; border: none; }
+QWidget#ColumnViewport, QWidget#ColumnContainer { background: transparent; }
+QScrollArea#ColumnScroll QScrollBar:vertical { width: 8px; background: transparent; margin: 4px 0; }
+QScrollArea#ColumnScroll QScrollBar::handle:vertical { background: @ScrollHandle; border-radius: 4px; min-height: 30px; }
+QScrollArea#ColumnScroll QScrollBar::add-line:vertical,
+QScrollArea#ColumnScroll QScrollBar::sub-line:vertical { height: 0; }
+
+/* ---------- cards ---------- */
+QFrame#TaskCard { background: @SurfaceAlt; border: 1px solid @Border; border-radius: 20px; }
+QLabel#SkillChip {
+    background: @AccentSoft; color: @Accent; border: 1px solid @Accent; border-radius: 12px;
+    padding: 5px 14px; font-size: 13px; font-weight: 700;
+}
+QFrame#BlockedBadge { background: @Background; border: 1px solid @Border; border-radius: 12px; }
+QLabel#BlockedIcon  { font-size: 14px; background: transparent; }
+QLabel#BlockedText  { font-size: 12px; font-weight: 600; color: @TextPrimary; background: transparent; }
+QLabel#TaskTitle    { font-size: 17px; font-weight: 700; color: @TextPrimary; background: transparent; }
+QFrame#CardDivider  { background: @Border; border: none; }
+QLabel#CardAvatar {
+    background: @Surface; border: 1px solid @ControlBorder; border-radius: 17px;
+    font-size: 12px; font-weight: 700; color: @TextPrimary;
+}
+QLabel#CardMeta  { font-size: 14px; color: @TextMuted; background: transparent; }
+QLabel#DoneMark  { font-size: 20px; font-weight: 700; color: @TextPrimary; background: transparent; }
+QToolButton#AdvanceButton {
+    border: none; background: transparent; color: @TextPrimary; font-size: 20px;
+    padding: 0 6px; border-radius: 10px;
+}
+QToolButton#AdvanceButton:hover { background: @Border; }
+
+/* ---------- new task dialog ---------- */
+QDialog#NewTaskDialog { background: transparent; }
+QFrame#DialogCard   { background: @SurfaceDialog; border-radius: 30px; }
+QFrame#DialogHeader { background: transparent; border: none; border-bottom: 1px solid @Divider; }
+QLabel#DialogTitle  { font-size: 26px; font-weight: 800; color: @TextPrimary; background: transparent; }
+QToolButton#DialogClose {
+    border: none; background: transparent; color: @TextPrimary; font-size: 26px;
+    padding: 0 8px; border-radius: 12px;
+}
+QToolButton#DialogClose:hover { background: @Divider; }
+
+QScrollArea#DialogScroll { background: transparent; border: none; }
+QWidget#DialogViewport, QWidget#DialogBody { background: transparent; }
+QScrollArea#DialogScroll QScrollBar:vertical { width: 8px; background: transparent; margin: 4px 0; }
+QScrollArea#DialogScroll QScrollBar::handle:vertical { background: @ScrollHandleStrong; border-radius: 4px; min-height: 30px; }
+QScrollArea#DialogScroll QScrollBar::add-line:vertical,
+QScrollArea#DialogScroll QScrollBar::sub-line:vertical { height: 0; }
+
+QLabel#FieldLabel { font-size: 15px; font-weight: 600; color: @TextMuted; background: transparent; }
+QDialog#NewTaskDialog QLineEdit, QDialog#NewTaskDialog QComboBox,
+QDialog#NewTaskDialog QSpinBox, QDialog#NewTaskDialog QListWidget {
+    background: @Surface; border: 1px solid @BorderSoft; border-radius: 18px;
+    padding: 12px 18px; min-height: 26px; font-size: 16px; color: @TextPrimary;
+}
+QDialog#NewTaskDialog QLineEdit:focus, QDialog#NewTaskDialog QComboBox:focus,
+QDialog#NewTaskDialog QSpinBox:focus { border: 1px solid @Accent; }
+QDialog#NewTaskDialog QListWidget { padding: 8px; min-height: 0; }
+QComboBox#BoardMemberFilter, QDialog#NewTaskDialog QComboBox { padding-right: 40px; }
+
+QFrame#DialogFooter {
+    background: @SurfaceAlt; border: none;
+    border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;
+}
+QDialog#NewTaskDialog QPushButton#BoardPrimary   { padding: 14px 30px; border-radius: 20px; font-size: 17px; }
+QDialog#NewTaskDialog QPushButton#BoardSecondary { padding: 14px 30px; border-radius: 20px; font-size: 17px; }
+QLabel#FormError { background: @DangerSoft; color: @DangerText; border-radius: 10px; padding: 8px 12px; font-size: 14px; }
+/* pin badge on cards */
+QFrame#PinChip  { background: @ReviewSoft; border: 1px solid @ReviewBorder; border-radius: 10px; }
+QLabel#PinIcon  { font-size: 13px; background: transparent; }
+QLabel#PinCount { font-size: 13px; font-weight: 700; color: @WarningText; background: transparent; }

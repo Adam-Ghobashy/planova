@@ -21,7 +21,7 @@ public:
 
     QColor color(Token token) const;
 
-    // Replaces @TokenName with the token's hex value. Unknown names are left as they are.
+    // Replaces @TokenName with the token's hex value. Unknown names are left as they are and logged with qWarning.
     static QString resolveTokens(const QString& css, ThemeMode mode);
 
     // Saved choice ("ui/theme" in QSettings), otherwise the operating system colour scheme.

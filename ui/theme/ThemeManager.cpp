@@ -1,11 +1,13 @@
 #include "ThemeManager.h"
 
 #include <QApplication>
+#include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QGuiApplication>
 #include <QPalette>
 #include <QRegularExpression>
+#include <QSet>
 #include <QSettings>
 #include <QStyleHints>
 
@@ -61,7 +63,7 @@ void ThemeManager::apply(ThemeMode mode)
     applyPalette(mode);
 
     // base.qss first so page files can override it, then the rest by name.
-    const QString dir = ":/themes/light";
+    const QString dir = ":/themes";
     QString css = readStyleSheet(dir + "/base.qss");
     const QStringList files = QDir(dir).entryList({"*.qss"}, QDir::Files, QDir::Name);
     for (const QString& name : files) {
@@ -98,17 +100,25 @@ QString ThemeManager::resolveTokens(const QString& css, ThemeMode mode)
 
     QString result;
     qsizetype last = 0;
+    QSet<QString> warned;
     auto it = placeholder.globalMatch(css);
     while (it.hasNext()) {
         const QRegularExpressionMatch match = it.next();
         const QString name = match.captured(1);
+        bool known = false;
         for (int i = 0; i < kTokenCount; ++i) {
             if (name == QLatin1String(kTokenNames[i])) {
                 result += css.mid(last, match.capturedStart() - last);
                 result += QLatin1String(hexTable(mode)[i]);
                 last = match.capturedEnd();
+                known = true;
                 break;
             }
+        }
+        // An unknown name stays in the text; warn once per name so a typo is easy to spot.
+        if (!known && !warned.contains(name)) {
+            warned.insert(name);
+            qWarning().noquote() << "ThemeManager: unknown token @" + name;
         }
     }
     result += css.mid(last);

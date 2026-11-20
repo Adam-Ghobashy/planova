@@ -1,7 +1,7 @@
 
 QWidget#ChaosSlicerPage {
-    background-color: #FAF8F5;
-    color: #1A1A1F;
+    background-color: @Background;
+    color: @TextPrimary;
     font-family: "Segoe UI", sans-serif;
 }
 
@@ -15,8 +15,8 @@ QWidget#ChaosSlicerPage QWidget#slicerScrollContent {
 }
 
 QWidget#ChaosSlicerPage QFrame#card {
-    background-color: #FFFFFF;
-    border: 1px solid #E7E2D6;
+    background-color: @Surface;
+    border: 1px solid @Border;
     border-radius: 12px;
 }
 
@@ -25,19 +25,19 @@ QWidget#ChaosSlicerPage QFrame#card QLabel {
 }
 
 QWidget#ChaosSlicerPage QLabel#cardTitle {
-    color: #1A1A1F;
+    color: @TextPrimary;
     font-size: 14px;
     font-weight: 600;
 }
 
 QWidget#ChaosSlicerPage QLabel#cardSubtitle {
-    color: #6B6B73;
+    color: @TextMuted;
     font-size: 12px;
 }
 
 QWidget#ChaosSlicerPage QPushButton#primaryButton, QWidget#ChaosSlicerPage QPushButton#applyButton, QWidget#ChaosSlicerPage QPushButton#sliceButton {
-    background-color: #5438DC;
-    color: #FFFFFF;
+    background-color: @Accent;
+    color: @AccentText;
     border: none;
     border-radius: 8px;
     padding: 8px 18px;
@@ -46,17 +46,17 @@ QWidget#ChaosSlicerPage QPushButton#primaryButton, QWidget#ChaosSlicerPage QPush
 }
 
 QWidget#ChaosSlicerPage QPushButton#primaryButton:hover, QWidget#ChaosSlicerPage QPushButton#applyButton:hover, QWidget#ChaosSlicerPage QPushButton#sliceButton:hover {
-    background-color: #4526CB;
+    background-color: @AccentHover;
 }
 
 QWidget#ChaosSlicerPage QPushButton#primaryButton:pressed, QWidget#ChaosSlicerPage QPushButton#applyButton:pressed, QWidget#ChaosSlicerPage QPushButton#sliceButton:pressed {
-    background-color: #381BAF;
+    background-color: @AccentPressed;
 }
 
 QWidget#ChaosSlicerPage QPushButton#secondaryButton, QWidget#ChaosSlicerPage QPushButton#recalculateButton {
-    background-color: #FFFFFF;
-    color: #1A1A1F;
-    border: 1px solid #E7E2D6;
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 1px solid @Border;
     border-radius: 8px;
     padding: 8px 16px;
     font-size: 13px;
@@ -64,16 +64,16 @@ QWidget#ChaosSlicerPage QPushButton#secondaryButton, QWidget#ChaosSlicerPage QPu
 }
 
 QWidget#ChaosSlicerPage QPushButton#secondaryButton:hover, QWidget#ChaosSlicerPage QPushButton#recalculateButton:hover {
-    background-color: #F5F2EA;
+    background-color: @SurfaceAlt;
 }
 
 QWidget#ChaosSlicerPage QPushButton#secondaryButton:pressed, QWidget#ChaosSlicerPage QPushButton#recalculateButton:pressed {
-    background-color: #ECE7DC;
+    background-color: @Track;
 }
 
 QWidget#ChaosSlicerPage QLabel#statusLabel {
-    background-color: #D4F981;
-    color: #1A1A1F;
+    background-color: @SuccessSoft;
+    color: @TextPrimary;
     border-radius: 12px;
     padding: 5px 14px;
     font-size: 12px;
@@ -81,14 +81,14 @@ QWidget#ChaosSlicerPage QLabel#statusLabel {
 }
 
 QWidget#ChaosSlicerPage QLabel#emptyLabel {
-    color: #6B6B73;
+    color: @TextMuted;
     font-size: 13px;
     padding: 28px;
 }
 
 QWidget#ChaosSlicerPage QWidget#WeightSlidersPanel {
-    background-color: #FFFFFF;
-    border: 1px solid #E7E2D6;
+    background-color: @Surface;
+    border: 1px solid @Border;
     border-radius: 12px;
 }
 
@@ -98,18 +98,18 @@ QWidget#ChaosSlicerPage QWidget#WeightSlidersPanel QLabel, QWidget#ChaosSlicerPa
 
 QWidget#ChaosSlicerPage QSlider::groove:horizontal {
     height: 6px;
-    background: #ECE7DC;
+    background: @Track;
     border-radius: 3px;
 }
 
 QWidget#ChaosSlicerPage QSlider::sub-page:horizontal {
-    background: #5438DC;
+    background: @Accent;
     border-radius: 3px;
 }
 
 QWidget#ChaosSlicerPage QSlider::handle:horizontal {
-    background: #5438DC;
-    border: 2px solid #FFFFFF;
+    background: @Accent;
+    border: 2px solid @Surface;
     width: 16px;
     height: 16px;
     margin: -5px 0;
@@ -117,25 +117,25 @@ QWidget#ChaosSlicerPage QSlider::handle:horizontal {
 }
 
 QWidget#ChaosSlicerPage QSlider::handle:horizontal:hover {
-    background: #4526CB;
+    background: @AccentHover;
 }
 
 QWidget#ChaosSlicerPage QLabel#sliderNameLabel {
-    color: #1A1A1F;
+    color: @TextPrimary;
     font-size: 13px;
     font-weight: 500;
 }
 
 QWidget#ChaosSlicerPage QLabel#sliderValueLabel {
-    color: #1A1A1F;
+    color: @TextPrimary;
     font-size: 13px;
     font-weight: 600;
     min-width: 36px;
 }
 
 QWidget#ChaosSlicerPage QWidget#WeightSlidersPanel QLabel#sumLabel {
-    background-color: #F3F0FF;
-    color: #5438DC;
+    background-color: @AccentSoft;
+    color: @Accent;
     border-radius: 10px;
     padding: 3px 10px;
     font-size: 12px;
@@ -143,20 +143,20 @@ QWidget#ChaosSlicerPage QWidget#WeightSlidersPanel QLabel#sumLabel {
 }
 
 QWidget#ChaosSlicerPage QTableView#assignmentsTable {
-    background-color: #FFFFFF;
-    border: 1px solid #E7E2D6;
+    background-color: @Surface;
+    border: 1px solid @Border;
     border-radius: 12px;
-    gridline-color: #F5F2EA;
-    selection-background-color: #F3F0FF;
-    selection-color: #1A1A1F;
+    gridline-color: @SurfaceAlt;
+    selection-background-color: @AccentSoft;
+    selection-color: @TextPrimary;
     outline: none;
 }
 
 QWidget#ChaosSlicerPage QHeaderView::section {
-    background-color: #FAF8F5;
-    color: #6B6B73;
+    background-color: @Background;
+    color: @TextMuted;
     border: none;
-    border-bottom: 1px solid #E7E2D6;
+    border-bottom: 1px solid @Border;
     padding: 10px 12px;
     font-size: 12px;
     font-weight: 600;
@@ -165,20 +165,20 @@ QWidget#ChaosSlicerPage QHeaderView::section {
 
 QWidget#ChaosSlicerPage QTableView::item {
     padding: 8px 12px;
-    border-bottom: 1px solid #F5F2EA;
+    border-bottom: 1px solid @SurfaceAlt;
 }
 
 QWidget#ChaosSlicerPage QComboBox#overrideCombo {
-    background-color: #FFFFFF;
-    color: #1A1A1F;
-    border: 1px solid #E7E2D6;
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 1px solid @Border;
     border-radius: 6px;
     padding: 4px 10px;
     font-size: 12px;
 }
 
 QWidget#ChaosSlicerPage QComboBox#overrideCombo:hover {
-    border-color: #5438DC;
+    border-color: @Accent;
 }
 
 QWidget#ChaosSlicerPage QComboBox#overrideCombo::drop-down {
@@ -187,9 +187,9 @@ QWidget#ChaosSlicerPage QComboBox#overrideCombo::drop-down {
 }
 
 QWidget#ChaosSlicerPage QComboBox#overrideCombo QAbstractItemView {
-    background-color: #FFFFFF;
-    color: #1A1A1F;
-    border: 1px solid #E7E2D6;
-    selection-background-color: #F3F0FF;
-    selection-color: #1A1A1F;
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 1px solid @Border;
+    selection-background-color: @AccentSoft;
+    selection-color: @TextPrimary;
 }
