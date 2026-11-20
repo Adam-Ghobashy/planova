@@ -19,7 +19,7 @@ class GitHubIntegrationPage : public QWidget {
     Q_OBJECT
 public:
     GitHubIntegrationPage(GitService& gitService,
-                          GitProjection& gitProjection,
+                          const GitProjection& gitProjection,
                           IMemberQuery& members,
                           CoreBridge& bridge,
                           QWidget* parent = nullptr);
@@ -35,7 +35,7 @@ private:
     void showStatus(const QString& text);
 
     GitService& gitService_;
-    GitProjection& gitProjection_;
+    const GitProjection& gitProjection_;
     IMemberQuery& members_;
     CoreBridge& bridge_;
 

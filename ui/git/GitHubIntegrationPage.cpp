@@ -2,18 +2,18 @@
 #include "theme/ThemeManager.h"
 #include "theme/Tokens.h"
 #include <QDateTime>
-#include <QFile>
 #include <QFont>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QPalette>
 #include <QScrollArea>
+#include <QStyle>
 #include <exception>
 
 namespace planova::git {
 
 GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
-                                             GitProjection& gitProjection,
+                                             const GitProjection& gitProjection,
                                              IMemberQuery& members,
                                              CoreBridge& bridge,
                                              QWidget* parent)
@@ -22,7 +22,7 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     gitProjection_(gitProjection),
     members_(members),
     bridge_(bridge) {
-    setObjectName("ChaosSlicerPage");
+    setObjectName("GitHubIntegrationPage");
 
     auto& tm = ThemeManager::instance();
     QPalette pal = palette();
@@ -34,25 +34,7 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     setPalette(pal);
     setAutoFillBackground(true);
 
-    QFile qss(":/themes/light/slicer.qss");
-    if (qss.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QString style = QString::fromUtf8(qss.readAll());
-        style += R"(
-            QLineEdit#lightInput {
-                background-color: #FAF8F5;
-                color: #1A1A1F;
-                border: 1px solid #E7E2D6;
-                border-radius: 8px;
-                padding: 7px 12px;
-                font-size: 13px;
-            }
-            QLineEdit#lightInput:focus {
-                border: 1px solid #5438DC;
-                background-color: #FFFFFF;
-            }
-        )";
-        setStyleSheet(style);
-    }
+    // Styles come from github.qss, loaded once by ThemeManager.
 
     auto* rootLayout = new QVBoxLayout(this);
     rootLayout->setContentsMargins(0, 0, 0, 0);
@@ -128,6 +110,7 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     connHeader->addStretch();
 
     connectionBadge_ = new QLabel("Disconnected", connCard);
+    connectionBadge_->setObjectName("connectionBadge");
     connHeader->addWidget(connectionBadge_);
     connLayout->addLayout(connHeader);
 
@@ -327,19 +310,18 @@ void GitHubIntegrationPage::refresh() {
 
     if (connected) {
         connectionBadge_->setText("● Connected");
-        connectionBadge_->setStyleSheet(
-            "background-color: #D4F981; color: #1A1A1F; border-radius: 10px; "
-            "padding: 4px 12px; font-size: 12px; font-weight: 700;");
+        connectionBadge_->setProperty("state", "connected");
         repoInput_->setText(QString::fromStdString(gitProjection_.repoUrl()));
         branchInput_->setText(QString::fromStdString(gitProjection_.branch()));
         branchValue_->setText(QString::fromStdString(gitProjection_.branch()));
     } else {
         connectionBadge_->setText("○ Disconnected");
-        connectionBadge_->setStyleSheet(
-            "background-color: #F5F2EA; color: #6B6B73; border: 1px solid #E7E2D6; "
-            "border-radius: 10px; padding: 4px 12px; font-size: 12px; font-weight: 600;");
+        connectionBadge_->setProperty("state", "disconnected");
         branchValue_->setText("—");
     }
+    // The colours come from github.qss; re-polish so the new "state" value takes effect.
+    connectionBadge_->style()->unpolish(connectionBadge_);
+    connectionBadge_->style()->polish(connectionBadge_);
 
     const auto commits = gitProjection_.commits();
     const auto issues = gitProjection_.issues();
@@ -378,7 +360,7 @@ void GitHubIntegrationPage::refresh() {
         issuesTable_->setItem(i, 0, new QTableWidgetItem(QString("#%1").arg(iss.number)));
         issuesTable_->setItem(i, 1, new QTableWidgetItem(QString::fromStdString(iss.title)));
         auto* stateItem = new QTableWidgetItem(iss.open ? "OPEN" : "CLOSED");
-        stateItem->setForeground(QColor(iss.open ? "#5438DC" : "#6B6B73"));
+        stateItem->setForeground(ThemeManager::instance().color(iss.open ? Token::Accent : Token::TextMuted));
         issuesTable_->setItem(i, 2, stateItem);
     }
 }

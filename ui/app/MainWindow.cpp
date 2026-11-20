@@ -9,6 +9,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QStatusBar>
+#include <QStyle>
 #include <QStringList>
 #include <QVBoxLayout>
 
@@ -91,13 +92,14 @@ QWidget* MainWindow::buildSidebar()
 {
     auto* sidebar = new QWidget(this);
     sidebar->setFixedWidth(230);
-    sidebar->setStyleSheet("background-color: #F5F1E8; border-right: 1px solid #E7E2D6;");
+    sidebar->setObjectName("Sidebar");
     auto* layout = new QVBoxLayout(sidebar);
     layout->setContentsMargins(12, 16, 12, 16);
     layout->setSpacing(6);
 
     for (int i = 0; i < kScreens.size(); ++i) {
         auto* button = new QPushButton(kScreens[i], sidebar);
+        button->setObjectName("SidebarNavButton");
         button->setCursor(Qt::PointingHandCursor);
         connect(button, &QPushButton::clicked, this, [this, i] {
             pages_->setCurrentIndex(i);
@@ -108,22 +110,21 @@ QWidget* MainWindow::buildSidebar()
 
     // --- S2 Sidebar Git Sync Status Card ---
     auto* gitCard = new QFrame(sidebar);
-    gitCard->setStyleSheet(
-        "QFrame { background-color: #FFFFFF; border: 1px solid #E7E2D6; border-radius: 10px; }");
+    gitCard->setObjectName("SidebarGitCard");
     auto* gitLayout = new QHBoxLayout(gitCard);
     gitLayout->setContentsMargins(12, 10, 12, 10);
     gitLayout->setSpacing(8);
 
     auto* dotLbl = new QLabel("●", gitCard);
-    dotLbl->setStyleSheet("color: #10B981; font-size: 14px; border: none; background: transparent;");
+    dotLbl->setObjectName("SidebarGitDot");
     gitLayout->addWidget(dotLbl);
 
     auto* textCol = new QVBoxLayout();
     textCol->setSpacing(1);
     auto* syncTitle = new QLabel("Synced with Git", gitCard);
-    syncTitle->setStyleSheet("color: #1A1A1F; font-size: 12px; font-weight: 700; border: none; background: transparent;");
+    syncTitle->setObjectName("SidebarGitTitle");
     auto* syncSub = new QLabel("Peer Event Store", gitCard);
-    syncSub->setStyleSheet("color: #6B6B73; font-size: 11px; border: none; background: transparent;");
+    syncSub->setObjectName("SidebarGitSubtitle");
     textCol->addWidget(syncTitle);
     textCol->addWidget(syncSub);
     gitLayout->addLayout(textCol, 1);
@@ -132,10 +133,7 @@ QWidget* MainWindow::buildSidebar()
     syncBtn->setFixedSize(28, 28);
     syncBtn->setCursor(Qt::PointingHandCursor);
     syncBtn->setToolTip("Simulate Git Sync");
-    syncBtn->setStyleSheet(
-        "QPushButton { background-color: #FAF8F5; color: #5438DC; border: 1px solid #E7E2D6; "
-        "border-radius: 6px; padding: 0px; font-size: 14px; font-weight: 700; }"
-        "QPushButton:hover { background-color: #F3F0FF; border-color: #5438DC; }");
+    syncBtn->setObjectName("SidebarSyncButton");
     connect(syncBtn, &QPushButton::clicked, this, [this] {
         if (!core_.gitProjection().isConnected()) {
             core_.git().connect("https://github.com/Zeyad-101/planova.git", "main");
@@ -146,14 +144,17 @@ QWidget* MainWindow::buildSidebar()
     gitLayout->addWidget(syncBtn);
 
     auto updateGitCard = [this, dotLbl, syncTitle, syncSub]() {
-        if (core_.gitProjection().isConnected()) {
-            dotLbl->setStyleSheet("color: #10B981; font-size: 14px; border: none; background: transparent;");
+        const bool connected = core_.gitProjection().isConnected();
+        // The colour comes from the qss; the property selects it. Re-polish so it takes effect.
+        dotLbl->setProperty("state", connected ? "connected" : "disconnected");
+        dotLbl->style()->unpolish(dotLbl);
+        dotLbl->style()->polish(dotLbl);
+        if (connected) {
             syncTitle->setText("Synced with Git");
             syncSub->setText(QString::fromStdString(
                 "Branch: " + core_.gitProjection().branch() + " (" +
                 std::to_string(core_.gitProjection().commits().size()) + " commits)"));
         } else {
-            dotLbl->setStyleSheet("color: #6B6B73; font-size: 14px; border: none; background: transparent;");
             syncTitle->setText("Git Disconnected");
             syncSub->setText("Click ⟳ to sync");
         }

@@ -1,0 +1,313 @@
+/* Team & Skills page (S2) - light theme.
+   Generic rules (card, buttons, inputs, slider, scroll area) are copies of the slicer ones,
+   scoped under this page so the two pages do not depend on each other. */
+
+QWidget#TeamSkillsPage {
+    background-color: #FAF8F5;
+    color: #1A1A1F;
+    font-family: "Segoe UI", sans-serif;
+}
+
+QWidget#TeamSkillsPage QScrollArea#slicerScrollArea {
+    background: transparent;
+    border: none;
+}
+
+QWidget#TeamSkillsPage QWidget#slicerScrollContent {
+    background: transparent;
+}
+
+QWidget#TeamSkillsPage QFrame#card {
+    background-color: #FFFFFF;
+    border: 1px solid #E7E2D6;
+    border-radius: 12px;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel {
+    background: transparent;
+}
+
+QWidget#TeamSkillsPage QLabel#cardTitle {
+    color: #1A1A1F;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QLabel#cardSubtitle {
+    color: #6B6B73;
+    font-size: 12px;
+}
+
+QWidget#TeamSkillsPage QPushButton#primaryButton {
+    background-color: #5438DC;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#primaryButton:hover {
+    background-color: #4526CB;
+}
+
+QWidget#TeamSkillsPage QPushButton#primaryButton:pressed {
+    background-color: #381BAF;
+}
+
+QWidget#TeamSkillsPage QPushButton#secondaryButton {
+    background-color: #FFFFFF;
+    color: #1A1A1F;
+    border: 1px solid #E7E2D6;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+QWidget#TeamSkillsPage QPushButton#secondaryButton:hover {
+    background-color: #F5F2EA;
+}
+
+QWidget#TeamSkillsPage QPushButton#secondaryButton:pressed {
+    background-color: #ECE7DC;
+}
+
+QWidget#TeamSkillsPage QLabel#statusLabel {
+    background-color: #D4F981;
+    color: #1A1A1F;
+    border-radius: 12px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QLabel#emptyLabel {
+    color: #6B6B73;
+    font-size: 13px;
+    padding: 28px;
+}
+
+QWidget#TeamSkillsPage QLabel#sliderValueLabel {
+    color: #1A1A1F;
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 36px;
+}
+
+QWidget#TeamSkillsPage QSlider::groove:horizontal {
+    height: 6px;
+    background: #ECE7DC;
+    border-radius: 3px;
+}
+
+QWidget#TeamSkillsPage QSlider::sub-page:horizontal {
+    background: #5438DC;
+    border-radius: 3px;
+}
+
+QWidget#TeamSkillsPage QSlider::handle:horizontal {
+    background: #5438DC;
+    border: 2px solid #FFFFFF;
+    width: 16px;
+    height: 16px;
+    margin: -5px 0;
+    border-radius: 8px;
+}
+
+QWidget#TeamSkillsPage QSlider::handle:horizontal:hover {
+    background: #4526CB;
+}
+
+/* ---------- inputs ---------- */
+QWidget#TeamSkillsPage QLineEdit#lightInput {
+    background-color: #FAF8F5;
+    color: #1A1A1F;
+    border: 1px solid #E7E2D6;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13px;
+}
+
+QWidget#TeamSkillsPage QLineEdit#lightInput:focus {
+    border: 1px solid #5438DC;
+    background-color: #FFFFFF;
+}
+
+QWidget#TeamSkillsPage QCheckBox#leadCheck {
+    color: #1A1A1F;
+    font-size: 13px;
+    font-weight: 500;
+    spacing: 6px;
+    background: transparent;
+}
+
+QWidget#TeamSkillsPage QComboBox#roleCombo {
+    background-color: #FAF8F5;
+    color: #1A1A1F;
+    border: 1px solid #E7E2D6;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    min-width: 160px;
+}
+
+QWidget#TeamSkillsPage QComboBox#roleCombo:hover, QWidget#TeamSkillsPage QComboBox#roleCombo:focus {
+    border: 1px solid #5438DC;
+    background-color: #FFFFFF;
+}
+
+QWidget#TeamSkillsPage QComboBox#roleCombo::drop-down {
+    border: none;
+    width: 24px;
+}
+
+QWidget#TeamSkillsPage QComboBox#roleCombo QAbstractItemView {
+    background-color: #FFFFFF;
+    color: #1A1A1F;
+    border: 1px solid #E7E2D6;
+    selection-background-color: #F3F0FF;
+    selection-color: #5438DC;
+    padding: 4px;
+}
+
+/* ---------- member card ---------- */
+/* Avatar fills: property memberColor 1..6 = the Member1..Member6 colours of Tokens.h. */
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar {
+    color: #FFFFFF;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar[memberColor="1"] { background-color: #EF4444; }
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar[memberColor="2"] { background-color: #6366F1; }
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar[memberColor="3"] { background-color: #10B981; }
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar[memberColor="4"] { background-color: #8B5CF6; }
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar[memberColor="5"] { background-color: #F59E0B; }
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar[memberColor="6"] { background-color: #EC4899; }
+
+QWidget#TeamSkillsPage QFrame#card QLabel#leadBadge {
+    background-color: #F3F0FF;
+    color: #5438DC;
+    border-radius: 8px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel#velocityBadge {
+    background-color: #FAF8F5;
+    color: #1A1A1F;
+    border: 1px solid #E7E2D6;
+    border-radius: 8px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#editRoleButton {
+    background-color: #FAF8F5;
+    color: #5438DC;
+    border: 1px solid #E7E2D6;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#editRoleButton:hover {
+    background-color: #F3F0FF;
+    border-color: #5438DC;
+}
+
+QWidget#TeamSkillsPage QPushButton#removeMemberButton {
+    background-color: #FAF8F5;
+    color: #DC2626;
+    border: 1px solid #FEE2E2;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#removeMemberButton:hover {
+    background-color: #FEE2E2;
+    color: #991B1B;
+    border-color: #EF4444;
+}
+
+QWidget#TeamSkillsPage QPushButton#saveRoleButton {
+    background-color: #5438DC;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#saveRoleButton:hover {
+    background-color: #4526CB;
+}
+
+QWidget#TeamSkillsPage QPushButton#cancelRoleButton {
+    background-color: #FAF8F5;
+    color: #6B6B73;
+    border: 1px solid #E7E2D6;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#cancelRoleButton:hover {
+    background-color: #F5F2EA;
+}
+
+QWidget#TeamSkillsPage QFrame#card QFrame#cardDivider {
+    background-color: #F5F2EA;
+    border: none;
+    max-height: 1px;
+}
+
+/* ---------- skill rating matrix ---------- */
+QWidget#TeamSkillsPage QWidget#skillCell {
+    background: transparent;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel#skillLabel {
+    color: #6B6B73;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* property "active" is "true" for the rating steps up to the member's rating */
+QWidget#TeamSkillsPage QPushButton#ratingButton {
+    background-color: #FAF8F5;
+    color: #6B6B73;
+    border: 1px solid #E7E2D6;
+    border-radius: 6px;
+    padding: 0px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#ratingButton:hover {
+    background-color: #F3F0FF;
+    color: #5438DC;
+    border-color: #5438DC;
+}
+
+QWidget#TeamSkillsPage QPushButton#ratingButton[active="true"] {
+    background-color: #5438DC;
+    color: #FFFFFF;
+    border: none;
+    font-weight: 700;
+}
+
+QWidget#TeamSkillsPage QPushButton#ratingButton[active="true"]:hover {
+    background-color: #4526CB;
+    color: #FFFFFF;
+}

@@ -13,7 +13,8 @@ private slots:
         ThemeManager::instance().apply(ThemeMode::Light);
         const QString css = qApp->styleSheet();
         for (const char* sel : {"QWidget#ChaosSlicerPage", "QWidget#homePage", "QWidget#PinsPage",
-                                "#TrackingPage", "QLabel#PageTitle"})
+                                "#TrackingPage", "QLabel#PageTitle", "QWidget#TeamSkillsPage",
+                                "QWidget#GitHubIntegrationPage"})
             QVERIFY2(css.contains(sel), sel);
     }
 

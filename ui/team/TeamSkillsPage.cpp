@@ -1,7 +1,6 @@
 #include "team/TeamSkillsPage.h"
 #include "theme/ThemeManager.h"
 #include "theme/Tokens.h"
-#include <QFile>
 #include <QFont>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -9,6 +8,7 @@
 #include <QPalette>
 #include <QScrollArea>
 #include <QSlider>
+#include <QStyle>
 #include <exception>
 #include <numeric>
 
@@ -31,11 +31,6 @@ constexpr SkillMeta kAllSkills[] = {
     {SkillCategory::Integration, "Integration"},
     {SkillCategory::Testing, "Testing"},
     {SkillCategory::Documentation, "Documentation"}
-};
-
-constexpr Token kMemberTokens[] = {
-    Token::Member1, Token::Member2, Token::Member3,
-    Token::Member4, Token::Member5, Token::Member6
 };
 
 const QStringList kKnownRoles = {
@@ -68,7 +63,7 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
                                CoreBridge& bridge,
                                QWidget* parent)
     : QWidget(parent), service_(service), members_(members), bridge_(bridge) {
-    setObjectName("ChaosSlicerPage");
+    setObjectName("TeamSkillsPage");
 
     auto& tm = ThemeManager::instance();
     QPalette pal = palette();
@@ -80,57 +75,7 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     setPalette(pal);
     setAutoFillBackground(true);
 
-    QFile qss(":/themes/light/slicer.qss");
-    if (qss.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QString style = QString::fromUtf8(qss.readAll());
-        style += R"(
-            QLineEdit#lightInput {
-                background-color: #FAF8F5;
-                color: #1A1A1F;
-                border: 1px solid #E7E2D6;
-                border-radius: 8px;
-                padding: 7px 12px;
-                font-size: 13px;
-            }
-            QLineEdit#lightInput:focus {
-                border: 1px solid #5438DC;
-                background-color: #FFFFFF;
-            }
-            QCheckBox#leadCheck {
-                color: #1A1A1F;
-                font-size: 13px;
-                font-weight: 500;
-                spacing: 6px;
-                background: transparent;
-            }
-            QComboBox#roleCombo {
-                background-color: #FAF8F5;
-                color: #1A1A1F;
-                border: 1px solid #E7E2D6;
-                border-radius: 8px;
-                padding: 6px 12px;
-                font-size: 13px;
-                min-width: 160px;
-            }
-            QComboBox#roleCombo:hover, QComboBox#roleCombo:focus {
-                border: 1px solid #5438DC;
-                background-color: #FFFFFF;
-            }
-            QComboBox#roleCombo::drop-down {
-                border: none;
-                width: 24px;
-            }
-            QComboBox#roleCombo QAbstractItemView {
-                background-color: #FFFFFF;
-                color: #1A1A1F;
-                border: 1px solid #E7E2D6;
-                selection-background-color: #F3F0FF;
-                selection-color: #5438DC;
-                padding: 4px;
-            }
-        )";
-        setStyleSheet(style);
-    }
+    // Styles come from team.qss, loaded once by ThemeManager.
 
     auto* rootLayout = new QVBoxLayout(this);
     rootLayout->setContentsMargins(0, 0, 0, 0);
@@ -392,15 +337,12 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
     auto* topRow = new QHBoxLayout();
     topRow->setSpacing(12);
 
-    auto& tm = ThemeManager::instance();
-    const QColor avatarColor = tm.color(kMemberTokens[colorIndex % 6]);
-
     auto* avatar = new QLabel(initialsFor(member.name), card);
     avatar->setFixedSize(40, 40);
     avatar->setAlignment(Qt::AlignCenter);
-    avatar->setStyleSheet(QString(
-                              "background-color: %1; color: #FFFFFF; border-radius: 20px; font-size: 14px; font-weight: 700;"
-                              ).arg(avatarColor.name()));
+    avatar->setObjectName("memberAvatar");
+    // team.qss maps memberColor 1..6 to the Member1..Member6 colours.
+    avatar->setProperty("memberColor", colorIndex % 6 + 1);
     topRow->addWidget(avatar);
 
     auto* infoCol = new QVBoxLayout();
@@ -414,17 +356,13 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
 
     if (member.isLead) {
         auto* leadBadge = new QLabel("TEAM LEAD", card);
-        leadBadge->setStyleSheet(
-            "background-color: #F3F0FF; color: #5438DC; border-radius: 8px; "
-            "padding: 2px 8px; font-size: 11px; font-weight: 700;");
+        leadBadge->setObjectName("leadBadge");
         nameRow->addWidget(leadBadge);
     }
 
     auto* velBadge = new QLabel(
         QString("Velocity: %1").arg(member.velocity, 0, 'f', 2), card);
-    velBadge->setStyleSheet(
-        "background-color: #FAF8F5; color: #1A1A1F; border: 1px solid #E7E2D6; "
-        "border-radius: 8px; padding: 2px 8px; font-size: 11px; font-weight: 600;");
+    velBadge->setObjectName("velocityBadge");
     nameRow->addWidget(velBadge);
     nameRow->addStretch();
 
@@ -439,19 +377,13 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
     auto* editRoleBtn = new QPushButton("✎ Edit Role", card);
     editRoleBtn->setCursor(Qt::PointingHandCursor);
     editRoleBtn->setToolTip("Change this member's role");
-    editRoleBtn->setStyleSheet(
-        "QPushButton { background-color: #FAF8F5; color: #5438DC; border: 1px solid #E7E2D6; "
-        "border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }"
-        "QPushButton:hover { background-color: #F3F0FF; border-color: #5438DC; }");
+    editRoleBtn->setObjectName("editRoleButton");
     roleRow->addWidget(editRoleBtn);
 
     auto* removeBtn = new QPushButton("✕ Remove", card);
     removeBtn->setCursor(Qt::PointingHandCursor);
     removeBtn->setToolTip("Remove member from the team");
-    removeBtn->setStyleSheet(
-        "QPushButton { background-color: #FAF8F5; color: #DC2626; border: 1px solid #FEE2E2; "
-        "border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }"
-        "QPushButton:hover { background-color: #FEE2E2; color: #991B1B; border-color: #EF4444; }");
+    removeBtn->setObjectName("removeMemberButton");
     roleRow->addWidget(removeBtn);
 
     // Inline edit widgets: Dropdown of known roles + custom text input
@@ -480,19 +412,13 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
 
     auto* saveRoleBtn = new QPushButton("Save", card);
     saveRoleBtn->setCursor(Qt::PointingHandCursor);
-    saveRoleBtn->setStyleSheet(
-        "QPushButton { background-color: #5438DC; color: #FFFFFF; border: none; "
-        "border-radius: 6px; padding: 2px 10px; font-size: 11px; font-weight: 600; }"
-        "QPushButton:hover { background-color: #4526CB; }");
+    saveRoleBtn->setObjectName("saveRoleButton");
     saveRoleBtn->hide();
     roleRow->addWidget(saveRoleBtn);
 
     auto* cancelRoleBtn = new QPushButton("Cancel", card);
     cancelRoleBtn->setCursor(Qt::PointingHandCursor);
-    cancelRoleBtn->setStyleSheet(
-        "QPushButton { background-color: #FAF8F5; color: #6B6B73; border: 1px solid #E7E2D6; "
-        "border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }"
-        "QPushButton:hover { background-color: #F5F2EA; }");
+    cancelRoleBtn->setObjectName("cancelRoleButton");
     cancelRoleBtn->hide();
     roleRow->addWidget(cancelRoleBtn);
 
@@ -636,7 +562,7 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
     // --- Divider ---
     auto* divider = new QFrame(card);
     divider->setFrameShape(QFrame::HLine);
-    divider->setStyleSheet("background-color: #F5F2EA; border: none; max-height: 1px;");
+    divider->setObjectName("cardDivider");
     cardLayout->addWidget(divider);
 
     // --- 7-Domain Skill Rating Matrix ---
@@ -656,14 +582,14 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
         const int col = i % 4;
 
         auto* cellWidget = new QWidget(card);
-        cellWidget->setStyleSheet("background: transparent;");
+        cellWidget->setObjectName("skillCell");
         auto* cellLayout = new QHBoxLayout(cellWidget);
         cellLayout->setContentsMargins(0, 0, 0, 0);
         cellLayout->setSpacing(4);
 
         auto* skillLbl = new QLabel(meta.label, cellWidget);
         skillLbl->setFixedWidth(92);
-        skillLbl->setStyleSheet("color: #6B6B73; font-size: 12px; font-weight: 500;");
+        skillLbl->setObjectName("skillLabel");
         cellLayout->addWidget(skillLbl);
 
         for (int r = 1; r <= 5; ++r) {
@@ -671,13 +597,11 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
             rateBtn->setFixedSize(24, 24);
             rateBtn->setCursor(Qt::PointingHandCursor);
             const bool active = (r <= currentRating);
-            rateBtn->setStyleSheet(active
-                                       ? "QPushButton { background-color: #5438DC; color: #FFFFFF; border: none; "
-                                         "border-radius: 6px; padding: 0px; font-size: 11px; font-weight: 700; }"
-                                         "QPushButton:hover { background-color: #4526CB; }"
-                                       : "QPushButton { background-color: #FAF8F5; color: #6B6B73; border: 1px solid #E7E2D6; "
-                                         "border-radius: 6px; padding: 0px; font-size: 11px; font-weight: 600; }"
-                                         "QPushButton:hover { background-color: #F3F0FF; color: #5438DC; border-color: #5438DC; }");
+            rateBtn->setObjectName("ratingButton");
+            rateBtn->setProperty("active", active);
+            // Re-polish so the qss [active] selector is applied.
+            rateBtn->style()->unpolish(rateBtn);
+            rateBtn->style()->polish(rateBtn);
 
             connect(rateBtn, &QPushButton::clicked, this,
                     [this, id = member.id, cat = meta.category, r, label = QString(meta.label)]() {
