@@ -8,20 +8,20 @@
 
 namespace planova {
 
-// The Phase 0 common headers currently declare everything in planova::s6.
+// The Phase 0 common headers declare these names in the global namespace.
 // Re-export the names S5 uses so planova:: and planova::s5:: code can use them unqualified.
-using s6::Id;
-using s6::Priority;
-using s6::SkillCategory;
-using s6::TaskStatus;
-using s6::PinCategory;
-using s6::TaskDto;
-using s6::MemberDto;
-using s6::PinDto;
-using s6::ITaskQuery;
-using s6::IMemberQuery;
-using s6::IPinQuery;
-using s6::IConflictQuery;
+using ::Id;
+using ::Priority;
+using ::SkillCategory;
+using ::TaskStatus;
+using ::PinCategory;
+using ::TaskDto;
+using ::MemberDto;
+using ::PinDto;
+using ::ITaskQuery;
+using ::IMemberQuery;
+using ::IPinQuery;
+using ::IConflictQuery;
 
 struct PinComment {
     Id id;

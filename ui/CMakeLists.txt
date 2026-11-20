@@ -11,12 +11,28 @@ add_library(planova_ui STATIC
 target_include_directories(planova_ui PUBLIC .)
 target_link_libraries(planova_ui PUBLIC Qt6::Widgets planova_core)
 
+# --- S1 ---
+target_sources(planova_ui PRIVATE
+    app/DemoData.cpp
+)
+# --- end S1 ---
+
 # --- S2 ---
 target_sources(planova_ui PRIVATE
     team/TeamSkillsPage.cpp
     git/GitHubIntegrationPage.cpp
 )
 # --- end S2 ---
+
+# --- S3 ---
+target_sources(planova_ui PRIVATE
+    board/ComplexityDotsWidget.cpp
+    board/NewTaskDialog.cpp
+    board/PhaseBoardPage.cpp
+    board/TaskCardWidget.cpp
+    board/TaskColumnWidget.cpp
+)
+# --- end S3 ---
 
 # --- S4 ---
 target_sources(planova_ui PRIVATE
@@ -30,6 +46,28 @@ target_sources(planova_ui PRIVATE
     slicer/SlicerTableDelegate.cpp
 )
 # --- end S4 ---
+
+# --- S5 ---
+target_sources(planova_ui PRIVATE
+    pins/DeclineDialog.cpp
+    pins/LeavePinDialog.cpp
+    pins/PinCardWidget.cpp
+    pins/PinColumnWidget.cpp
+    pins/PinsPage.cpp
+    pins/StyledComboBox.cpp
+)
+# --- end S5 ---
+
+# --- S6 ---
+target_sources(planova_ui PRIVATE
+    home/HomePage.cpp
+    tracking/LeaderboardModel.cpp
+    tracking/TrackingPage.cpp
+    widgets/BarChartWidget.cpp
+    widgets/DonutWidget.cpp
+    widgets/StatCardWidget.cpp
+)
+# --- end S6 ---
 
 add_executable(planova app/main.cpp)
 target_link_libraries(planova PRIVATE planova_ui)

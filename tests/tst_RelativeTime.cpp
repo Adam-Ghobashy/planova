@@ -1,6 +1,6 @@
 #include <QtTest>
 
-#include "RelativeTime.h"
+#include "pins/RelativeTime.h"
 
 using planova::s5::formatRelative;
 

@@ -47,4 +47,9 @@ planova_add_test(tst_PlanovaCoreSlicer)
 planova_add_test(tst_ProgressCalculator)
 planova_add_test(tst_Leaderboard)
 planova_add_test(tst_HomeService)
+planova_add_ui_test(tst_LeaderboardModel)
 # --- end S6 ---
+# --- S5 ---
+planova_add_ui_test(tst_LeavePinDialog)
+planova_add_ui_test(tst_RelativeTime)
+# --- end S5 ---

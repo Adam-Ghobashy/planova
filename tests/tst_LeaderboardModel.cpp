@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "ui/tracking/LeaderboardModel.h"
+#include "tracking/LeaderboardModel.h"
 
 using namespace planova::s6;
 
