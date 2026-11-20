@@ -69,5 +69,11 @@ target_sources(planova_ui PRIVATE
 )
 # --- end S6 ---
 
-add_executable(planova app/main.cpp)
+add_executable(planova WIN32 app/main.cpp)
 target_link_libraries(planova PRIVATE planova_ui)
+
+# Copy the Qt DLLs next to planova.exe so it opens with a double-click, outside Qt Creator.
+if(WIN32)
+    add_custom_command(TARGET planova POST_BUILD
+        COMMAND Qt6::windeployqt --no-translations $<TARGET_FILE:planova>)
+endif()
