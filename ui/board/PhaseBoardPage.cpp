@@ -124,9 +124,15 @@ void PhaseBoardPage::refresh() {
     const std::vector<MemberDto> members = core_.memberProjection().all();
     rebuildMemberFilter(members);
 
-    const auto projects = core_.projects().list();
-    if (!projects.empty() && !projects.front().seModel.empty())
-        modelValue_->setText(QString::fromStdString(projects.front().seModel));
+    QString seModel;
+    const auto current = core_.currentProject();
+    if (current) {
+        for (const auto& project : core_.projects().list()) {
+            if (project.id == *current)
+                seModel = QString::fromStdString(project.seModel);
+        }
+    }
+    modelValue_->setText(seModel);
 
     std::map<Id, std::size_t> memberIndex;
     for (std::size_t i = 0; i < members.size(); ++i) memberIndex[members[i].id] = i;
