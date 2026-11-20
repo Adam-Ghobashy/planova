@@ -33,12 +33,12 @@ QComboBox#BoardMemberFilter::drop-down, QDialog#NewTaskDialog QComboBox::drop-do
 QComboBox#BoardMemberFilter::down-arrow, QDialog#NewTaskDialog QComboBox::down-arrow {
     image: url(:/icons/chevron-updown.svg); width: 16px; height: 16px;
 }
-QComboBox QAbstractItemView {
+QComboBox#BoardMemberFilter QAbstractItemView, QDialog#NewTaskDialog QComboBox QAbstractItemView {
     background: #FFFFFF; border: 1px solid #E7E2D6; border-radius: 12px; padding: 6px;
     outline: 0; color: #1A1A1F; font-size: 15px;
     selection-background-color: #F3F0FF; selection-color: #1A1A1F;
 }
-QComboBox QAbstractItemView::item { min-height: 34px; padding: 2px 10px; border-radius: 8px; }
+QComboBox#BoardMemberFilter QAbstractItemView::item, QDialog#NewTaskDialog QComboBox QAbstractItemView::item { min-height: 34px; padding: 2px 10px; border-radius: 8px; }
 
 /* ---------- columns ---------- */
 QScrollArea#BoardScroll { background: transparent; border: none; }

@@ -17,6 +17,12 @@ private slots:
             QVERIFY2(css.contains(sel), sel);
     }
 
+    void comboPopupRulesAreScoped() {
+        ThemeManager::instance().apply(ThemeMode::Light);
+        // A bare rule would restyle every combo popup in the app.
+        QVERIFY(!qApp->styleSheet().contains("\nQComboBox QAbstractItemView"));
+    }
+
     void chevronIconIsBundled() { QVERIFY(QFile::exists(":/icons/chevron-updown.svg")); }
 };
 
