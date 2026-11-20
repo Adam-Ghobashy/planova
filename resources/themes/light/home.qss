@@ -1,0 +1,318 @@
+/* Home Page, light theme. Values follow the GUI reference light theme
+   (css/theme.css [data-theme="light"], css/home.css, css/components.css). */
+
+QWidget#homePage {
+    background-color: #FAF8F5;              /* Background */
+}
+
+/* Header / branding */
+
+QLabel#homeEyebrow {
+    color: #5438DC;                         /* Accent */
+    font-size: 12px;
+    font-weight: 700;
+    background: transparent;
+    border: none;
+}
+
+QLabel#homeTitle {
+    color: #18181B;                         /* text-1 */
+    font-size: 24px;
+    font-weight: 800;
+    background: transparent;
+    border: none;
+}
+
+/* .btn.btn-secondary.btn-sm */
+
+QPushButton#homeHubButton {
+    background-color: #F5F2EA;              /* surface-raised */
+    color: #18181B;
+    border: 1px solid rgba(24, 24, 27, 10%);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QPushButton#homeHubButton:hover {
+    background-color: #ECE7DC;              /* surface-hover */
+    border-color: rgba(24, 24, 27, 18%);
+}
+
+/* .btn.btn-primary.btn-sm */
+
+QPushButton#homeSlicerButton {
+    background-color: #5438DC;
+    color: #FFFFFF;
+    border: 1px solid #5438DC;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QPushButton#homeSlicerButton:hover {
+    background-color: #4526CB;
+    border-color: #4526CB;
+}
+
+QPushButton#homeSlicerButton:pressed {
+    background-color: #381BAF;
+    border-color: #381BAF;
+}
+
+/* Cards (.card) */
+
+QFrame#homePanel {
+    background-color: #FFFFFF;
+    border: 1px solid rgba(24, 24, 27, 10%);
+    border-radius: 14px;
+}
+
+QFrame#homePanel:hover {
+    border-color: rgba(24, 24, 27, 18%);
+}
+
+QLabel#homePanelTitle {
+    color: #18181B;
+    font-size: 15px;
+    font-weight: 700;
+    background: transparent;
+    border: none;
+}
+
+/* .badge.badge-primary */
+
+QLabel#homeBadge {
+    background-color: #F3F0FF;
+    color: #5438DC;
+    border: 1px solid #5438DC;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QLabel#homeSectionTitle {
+    color: #52525B;                         /* text-2 */
+    font-size: 12px;
+    font-weight: 700;
+    background: transparent;
+    border: none;
+}
+
+QLabel#homeEmptyLabel {
+    color: #71717A;
+    background: transparent;
+    border: none;
+}
+
+QFrame#homeDivider {
+    background-color: rgba(24, 24, 27, 6%); /* border-subtle */
+    border: none;
+}
+
+/* Sticky-notes panel */
+
+QFrame#homePinsPanel {
+    background-color: #FFFFFF;
+    border: 1px solid rgba(24, 24, 27, 10%);
+    border-radius: 14px;
+}
+
+QFrame#homePinsPanel:hover {
+    border-color: #5438DC;                  /* brand-primary */
+}
+
+QLabel#homeStickyTitle {
+    color: #18181B;
+    font-size: 14px;
+    font-weight: 700;
+    background: transparent;
+    border: none;
+}
+
+/* .btn-ghost.btn-sm */
+
+QPushButton#homePinsMore {
+    color: #52525B;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 12px;
+}
+
+QPushButton#homePinsMore:hover {
+    background-color: #ECE7DC;
+    color: #18181B;
+}
+
+QLabel#homePinsCount {
+    color: #71717A;                         /* text-tertiary */
+    font-size: 11px;
+    background: transparent;
+    border: none;
+}
+
+QPushButton#homePinsLink {
+    color: #5438DC;
+    font-size: 12px;
+    font-weight: 700;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+/* Sticky notes - integrated inside HomePage.cpp
+   Colors are applied through Q_PROPERTY. */
+
+QWidget#stickyNoteWidget {
+    qproperty-noteColor: #E8F8F0;
+    qproperty-borderColor: #86EFAC;
+    qproperty-textColor: #14532D;
+    qproperty-shadowColor: rgba(24, 24, 27, 13);
+}
+
+QWidget#stickyNoteWidget[category="handoff"] {
+    qproperty-noteColor: #E8F8F0;
+    qproperty-borderColor: #86EFAC;
+    qproperty-textColor: #14532D;
+}
+
+QWidget#stickyNoteWidget[category="blocker"] {
+    qproperty-noteColor: #FDF2F8;
+    qproperty-borderColor: #F9A8D4;
+    qproperty-textColor: #831843;
+}
+
+QWidget#stickyNoteWidget[category="architecture"] {
+    qproperty-noteColor: #EFF6FF;
+    qproperty-borderColor: #93C5FD;
+    qproperty-textColor: #1E3A8A;
+}
+
+QWidget#stickyNoteWidget[category="testing"] {
+    qproperty-noteColor: #FEFCE8;
+    qproperty-borderColor: #FDE047;
+    qproperty-textColor: #713F12;
+}
+
+/* Quick links (.home-bottom-card) */
+
+QPushButton#quickLinkCard {
+    background-color: #FFFFFF;
+    border: 1px solid rgba(24, 24, 27, 10%);
+    border-radius: 14px;
+    text-align: left;
+}
+
+QPushButton#quickLinkCard:hover {
+    border-color: #5438DC;
+}
+
+QPushButton#quickLinkCard:pressed {
+    background-color: #F5F2EA;
+}
+
+/* .home-bottom-icon */
+
+QLabel#quickLinkIcon {
+    background-color: #F5F2EA;              /* surface-raised */
+    border: 1px solid rgba(24, 24, 27, 6%);
+    border-radius: 10px;
+    font-size: 20px;
+}
+
+QLabel#quickLinkTitle {
+    color: #18181B;
+    font-size: 13px;
+    font-weight: 700;
+    background: transparent;
+    border: none;
+}
+
+QLabel#quickLinkSubtitle {
+    color: #71717A;
+    font-size: 11px;
+    background: transparent;
+    border: none;
+}
+
+/* Stat cards (.oliver-stat-card) */
+
+QFrame#statCardWidget {
+    background-color: #FFFFFF;
+    border: 1px solid rgba(24, 24, 27, 10%);
+    border-radius: 14px;
+}
+
+QFrame#statCardWidget:hover {
+    border-color: rgba(24, 24, 27, 18%);    /* border-strong */
+}
+
+QLabel#statCardTitle {
+    color: #71717A;
+    font-size: 11px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+}
+
+QLabel#statCardValue {
+    color: #18181B;
+    font-size: 26px;
+    font-weight: 800;
+    background: transparent;
+    border: none;
+}
+
+QLabel#statCardValue[valueRole="default"] {
+    color: #18181B;
+}
+
+QLabel#statCardValue[valueRole="success"] {
+    color: #13380B;
+}
+
+QLabel#statCardValue[valueRole="accent"] {
+    color: #5438DC;
+}
+
+QLabel#statCardValue[valueRole="warning"] {
+    color: #92400E;
+}
+
+/* Donut chart: colours reach DonutWidget through qproperty-* */
+
+QWidget#donutWidget {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    qproperty-doneColor: #D4F880;
+    qproperty-activeColor: #5438DC;
+    qproperty-trackColor: #ECE7DC;
+    qproperty-textColor: #18181B;
+    qproperty-secondaryColor: #52525B;
+    qproperty-mutedColor: #71717A;
+    qproperty-outlineColor: rgba(24, 24, 27, 15);
+}
+
+/* Bar chart (contribution bars, one colour per member) */
+
+QWidget#barChartWidget {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    qproperty-barColor: #5438DC;
+    qproperty-trackColor: #ECE7DC;
+    qproperty-textColor: #18181B;
+    qproperty-mutedColor: #71717A;
+    qproperty-member1Color: #EF4444;
+    qproperty-member2Color: #6366F1;
+    qproperty-member3Color: #10B981;
+    qproperty-member4Color: #8B5CF6;
+    qproperty-member5Color: #F59E0B;
+    qproperty-member6Color: #EC4899;
+}
