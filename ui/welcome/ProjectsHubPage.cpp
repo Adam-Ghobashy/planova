@@ -2,6 +2,7 @@
 
 #include <QLabel>
 #include <QListWidget>
+#include <QTimer>
 #include <QVBoxLayout>
 
 ProjectsHubPage::ProjectsHubPage(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
@@ -14,8 +15,13 @@ ProjectsHubPage::ProjectsHubPage(PlanovaCore& core, CoreBridge& bridge, QWidget*
     connect(&bridge, &CoreBridge::changed, this, &ProjectsHubPage::refresh);
     connect(list_, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem* item) {
         const QString id = item->data(Qt::UserRole).toString();
-        core_.openProject(id.toStdString());
-        emit projectOpened();
+        // Opening publishes ProjectOpened, which refreshes (and clears) this list.
+        // Defer it so the clicked item is not deleted inside its own signal.
+        const std::string projectId = id.toStdString();
+        QTimer::singleShot(0, this, [this, projectId] {
+            core_.openProject(projectId);
+            emit projectOpened();
+        });
     });
     refresh();
 }

@@ -1,9 +1,14 @@
 #include "MainWindow.h"
+#include "board/PhaseBoardPage.h"
 #include "git/GitHubIntegrationPage.h"
+#include "home/HomePage.h"
+#include "slicer/ChaosSlicerPage.h"
 #include "team/TeamSkillsPage.h"
+#include "tracking/TrackingPage.h"
 #include "welcome/ProjectsHubPage.h"
 #include "welcome/SetupWizard.h"
 #include "welcome/WelcomePage.h"
+#include <QDialog>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -58,35 +63,74 @@ void MainWindow::buildPages()
 {
     auto* welcome = new WelcomePage(pages_);
     auto* hub = new ProjectsHubPage(core_, bridge_, pages_);
+    auto* slicerPage = new planova::slicer::ChaosSlicerPage(
+        core_.slicer(), core_.taskQuery(), core_.memberQuery(), pages_);
+    // Pins stays a placeholder until the S5 backend exists.
+    auto* pinsPage = new QLabel("Pins & Collab - Coming soon", pages_);
+    pinsPage->setAlignment(Qt::AlignCenter);
+    auto* teamPage = new planova::team::TeamSkillsPage(
+        core_.members(), core_.memberQuery(), bridge_, pages_);
+    auto* boardPage = new PhaseBoardPage(core_, bridge_, pages_);
+    auto* trackingPage = new planova::s6::TrackingPage(core_.stats(), core_.memberQuery(), pages_);
+    auto* gitPage = new planova::git::GitHubIntegrationPage(
+        core_.git(), core_.gitProjection(), core_.memberQuery(), bridge_, pages_);
+    homePage_ = new planova::s6::HomePage(core_.home(), core_.memberQuery(), pages_);
+
+    // One line per page, in Page enum order.
     pages_->addWidget(welcome);
     pages_->addWidget(hub);
+    pages_->addWidget(slicerPage);
+    pages_->addWidget(pinsPage);
+    pages_->addWidget(teamPage);
+    pages_->addWidget(boardPage);
+    pages_->addWidget(trackingPage);
+    pages_->addWidget(gitPage);
+    pages_->addWidget(homePage_);
 
-    connect(welcome, &WelcomePage::continueProjects, this, [this] {
-        pages_->setCurrentIndex(1);
-    });
+    // Board, Team and GitHub pages connect to the bridge themselves.
+    connect(&bridge_, &CoreBridge::changed, slicerPage, &planova::slicer::ChaosSlicerPage::refreshFromBoard);
+    connect(&bridge_, &CoreBridge::changed, trackingPage, &planova::s6::TrackingPage::refresh);
+    connect(&bridge_, &CoreBridge::changed, homePage_, &planova::s6::HomePage::refresh);
+
+    connect(slicerPage, &planova::slicer::ChaosSlicerPage::assignmentsApplied, this,
+            [this](int) { showPage(Page::Board); });
+
+    connect(homePage_, &planova::s6::HomePage::projectsHubRequested, this, [this] { showPage(Page::Hub); });
+    connect(homePage_, &planova::s6::HomePage::slicerRequested, this, [this] { showPage(Page::Slicer); });
+    connect(homePage_, &planova::s6::HomePage::teamSkillsRequested, this, [this] { showPage(Page::Team); });
+    connect(homePage_, &planova::s6::HomePage::githubRequested, this, [this] { showPage(Page::GitHub); });
+    connect(homePage_, &planova::s6::HomePage::pinsRequested, this, [this] { showPage(Page::Pins); });
+
+    connect(welcome, &WelcomePage::continueProjects, this, [this] { showPage(Page::Hub); });
 
     connect(welcome, &WelcomePage::startNewProject, this, [this] {
         SetupWizard wizard(core_, this);
-        wizard.exec();
+        if (wizard.exec() == QDialog::Accepted) {
+            showHomeForCurrentProject();
+        }
     });
 
-    for (int i = 2; i < kScreens.size(); ++i) {
-        if (i == 4) {
-            auto* teamPage = new planova::team::TeamSkillsPage(
-                core_.members(), const_cast<MemberProjection&>(core_.memberProjection()), bridge_, pages_);
-            pages_->addWidget(teamPage);
-        } else if (i == 7) {
-            auto* gitPage = new planova::git::GitHubIntegrationPage(
-                core_.git(), const_cast<GitProjection&>(core_.gitProjection()), const_cast<MemberProjection&>(core_.memberProjection()), bridge_, pages_);
-            pages_->addWidget(gitPage);
-        } else {
-            auto* page = new QLabel(kScreens[i] + " - Coming soon", pages_);
-            page->setAlignment(Qt::AlignCenter);
-            pages_->addWidget(page);
+    connect(hub, &ProjectsHubPage::projectOpened, this, [this] { showHomeForCurrentProject(); });
+}
+
+void MainWindow::showPage(Page page)
+{
+    pages_->setCurrentIndex(static_cast<int>(page));
+}
+
+void MainWindow::showHomeForCurrentProject()
+{
+    const auto current = core_.currentProject();
+    if (current) {
+        for (const auto& project : core_.projects().list()) {
+            if (project.id == *current) {
+                homePage_->setProjectName(QString::fromStdString(project.name));
+                break;
+            }
         }
     }
-    }
-
+    showPage(Page::Home);
+}
 
 QWidget* MainWindow::buildSidebar()
 {
@@ -102,7 +146,8 @@ QWidget* MainWindow::buildSidebar()
         button->setObjectName("SidebarNavButton");
         button->setCursor(Qt::PointingHandCursor);
         connect(button, &QPushButton::clicked, this, [this, i] {
-            pages_->setCurrentIndex(i);
+            // kScreens is in Page enum order, so the button index is the page index.
+            showPage(static_cast<Page>(i));
         });
         layout->addWidget(button);
     }
@@ -135,11 +180,13 @@ QWidget* MainWindow::buildSidebar()
     syncBtn->setToolTip("Simulate Git Sync");
     syncBtn->setObjectName("SidebarSyncButton");
     connect(syncBtn, &QPushButton::clicked, this, [this] {
+        // Not connected yet: the GitHub page is where the user enters the repository.
         if (!core_.gitProjection().isConnected()) {
-            core_.git().connect("https://github.com/Zeyad-101/planova.git", "main");
+            showPage(Page::GitHub);
+            return;
         }
         core_.git().simulateSync(core_.memberProjection().all());
-        pages_->setCurrentIndex(7);
+        showPage(Page::GitHub);
     });
     gitLayout->addWidget(syncBtn);
 

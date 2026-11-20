@@ -18,6 +18,7 @@ QWidget#Sidebar {
 }
 
 QWidget#Sidebar QPushButton#SidebarNavButton {
+    color: #1A1A1F;
     background-color: #F5F1E8;
     border-right: 1px solid #E7E2D6;
 }
