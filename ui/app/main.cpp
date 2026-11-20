@@ -9,8 +9,11 @@
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
+    // QSettings needs these to find the saved theme choice.
+    QCoreApplication::setOrganizationName("Planova");
+    QCoreApplication::setApplicationName("Planova");
     Q_INIT_RESOURCE(planova);
-    ThemeManager::instance().apply(ThemeMode::Light);
+    ThemeManager::instance().apply(ThemeManager::savedOrSystemMode());
 
     const QString documents = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     const std::filesystem::path workspace = std::filesystem::path(documents.toStdString()) / "Planova";
