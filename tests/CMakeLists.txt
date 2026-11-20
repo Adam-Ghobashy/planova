@@ -12,7 +12,6 @@ function(planova_add_ui_test name)
     add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
-planova_add_test(tst_Skeleton)
 planova_add_test(tst_FileEventStore)
 planova_add_test(tst_EventLog)
 planova_add_test(tst_ProjectService)
