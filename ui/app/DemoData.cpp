@@ -53,7 +53,7 @@ void seedIfEmpty(PlanovaCore& core) {
     if (!core.taskQuery().all().empty()) return;      // never touch a real project
 
     try {
-        // ---- members (reuse existing ones with the same name)
+        // Members (reuse existing ones with the same name)
         std::map<std::string, Id> memberId;           // first name -> id
         const auto existing = core.memberProjection().all();
         for (const char* full : kMembers) {
@@ -64,7 +64,7 @@ void seedIfEmpty(PlanovaCore& core) {
             memberId[firstName(full)] = id;
         }
 
-        // ---- tasks: create, assign, move to their column
+        // Tasks: create, assign, move to their column
         std::vector<Id> ids;
         for (const SeedTask& s : kTasks) {
             NewTask n{};
@@ -88,7 +88,7 @@ void seedIfEmpty(PlanovaCore& core) {
             }
         }
 
-        // ---- dependencies (added last so the cards can already sit in their columns)
+        // Dependencies are added last so the cards can already sit in their columns
         // "Integrate Critical Path..." and "Construct GoogleTest..." wait on "Develop Weighted Scoring..."
         core.tasks().addDependency(ids[1], ids[2]); tick();
         core.tasks().addDependency(ids[5], ids[2]); tick();

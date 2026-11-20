@@ -31,7 +31,7 @@ public slots:
     void refresh();
 
 signals:
-    // Emitted after every pin command (stand-in for CoreBridge::changed until S1 merges).
+    // Emitted after every pin command.
     void pinsChanged();
 
 private:

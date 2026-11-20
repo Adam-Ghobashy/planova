@@ -22,7 +22,7 @@ public:
         : id(memberId), name(memberName), role(memberRole), isLead(lead) {}
 
     void setUnderstanding(int value) {
-        understanding = std::clamp(value, 0, 100); // Clamps 0..100 automatically!
+        understanding = std::clamp(value, 0, 100);
     }
 
     void setRating(SkillCategory category, int rating) {

@@ -46,17 +46,14 @@ private slots:
 
         GitService svc(log, clock);
 
-        // Initially disconnected
         QCOMPARE(proj.isConnected(), false);
         QCOMPARE(proj.repoUrl(), string(""));
 
-        // Connect repo
         svc.connect("https://github.com/Zeyad-101/planova.git", "feature/s2-team-git");
         QCOMPARE(proj.isConnected(), true);
         QCOMPARE(proj.repoUrl(), string("https://github.com/Zeyad-101/planova.git"));
         QCOMPARE(proj.branch(), string("feature/s2-team-git"));
 
-        // Disconnect repo
         clock.advance(10);
         svc.disconnect();
         QCOMPARE(proj.isConnected(), false);

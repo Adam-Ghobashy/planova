@@ -75,21 +75,18 @@ private slots:
         MemberService svc(log, clock);
         Id memberId = svc.add("Adam", "Backend Lead", true);
 
-        // Initial velocity starts at 1.0
         QCOMPARE(proj.byId(memberId)->velocity, 1.0);
 
-        // 1. The task is assigned to Adam (contract: taskId, memberId, by)
         appendEvent(log, "evt-assign", clock.nowMs(), TaskAssigned,
                     {{"taskId", "task_1"},
                      {"memberId", QString::fromStdString(memberId)},
                      {"by", "board"}});
 
-        // 2. Move to InProgress at t = 1000 ms
         appendEvent(log, "evt-start", clock.nowMs(), TaskMoved,
                     {{"taskId", "task_1"}, {"from", "ToDo"},
                      {"to", "InProgress"}, {"estHours", 4}});
 
-        // 3. Two hours later the task is Done (estimated 4h, took 2h)
+        // Two hours later the task is Done (estimated 4h, took 2h)
         clock.advance(2 * 3600000LL);
         appendEvent(log, "evt-done", clock.nowMs(), TaskMoved,
                     {{"taskId", "task_1"}, {"from", "Review"},

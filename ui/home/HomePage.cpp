@@ -35,10 +35,7 @@
 #include <string>
 #include <vector>
 
-// ============================================================
-// PIN NOTE WIDGET
 // Private sticky note painted on the Home pins card (home.qss colours via qproperty-*)
-// ============================================================
 
 namespace planova::s6::detail {
 
@@ -91,7 +88,6 @@ private:
     QColor m_shadowColor;
 };
 
-// ---------------- Constants ----------------
 
 namespace {
 
@@ -105,7 +101,6 @@ constexpr int kMaxBodyLines = 3;
 
 constexpr qreal kBodyLineHeight = 1.35;
 
-// ---------------- Text Wrapping ----------------
 
 QStringList wrapLines(const QString& text, const QFont& font, qreal width, int maxLines)
 {
@@ -140,7 +135,6 @@ QStringList wrapLines(const QString& text, const QFont& font, qreal width, int m
 }
 } // anonymous namespace
 
-// ---------------- Constructor ----------------
 
 PinNote::PinNote(QWidget* parent)
     : QWidget(parent),
@@ -168,7 +162,6 @@ PinNote::PinNote(QWidget* parent)
     });
 }
 
-// ---------------- Content ----------------
 
 void PinNote::setContent(const QString& tag, const QString& body, const QString& author,
     const QString& status, bool emphasiseStatus)
@@ -187,7 +180,6 @@ void PinNote::setTiltDegrees(double degrees)
     update();
 }
 
-// ---------------- Colors ----------------
 
 void PinNote::setNoteColor(const QColor& color)
 {
@@ -213,7 +205,6 @@ void PinNote::setShadowColor(const QColor& color)
     update();
 }
 
-// ---------------- Size ----------------
 
 QSize PinNote::sizeHint() const
 {
@@ -225,7 +216,6 @@ QSize PinNote::minimumSizeHint() const
     return QSize(110, kNoteHeight + 2 * kInset);
 }
 
-// ---------------- Hover Events ----------------
 
 void PinNote::enterEvent(QEnterEvent* event)
 {
@@ -247,7 +237,6 @@ void PinNote::animateHover(bool hovered)
     m_animation->start();
 }
 
-// ---------------- Painting ----------------
 
 void PinNote::paintEvent(QPaintEvent* event)
 {
@@ -322,9 +311,6 @@ void PinNote::paintEvent(QPaintEvent* event)
 }
 } // namespace planova::s6::detail
 
-// ============================================================
-// HOME PAGE
-// ============================================================
 
 namespace planova::s6 {
 
@@ -435,7 +421,6 @@ void clearLayout(QLayout* layout)
 }
 } // anonymous namespace
 
-// ---------------- Constructor ----------------
 
 HomePage::HomePage(HomeService& homeService, IMemberQuery& memberQuery, QWidget* parent)
     : QWidget(parent),
@@ -448,9 +433,6 @@ HomePage::HomePage(HomeService& homeService, IMemberQuery& memberQuery, QWidget*
     refresh();
 }
 
-// ============================================================
-// BUILD UI
-// ============================================================
 
 void HomePage::buildUi()
 {
@@ -458,9 +440,6 @@ void HomePage::buildUi()
     pageLayout->setContentsMargins(32, 24, 32, 24);
     pageLayout->setSpacing(20);
 
-    // --------------------------------------------------------
-    // Header
-    // --------------------------------------------------------
     auto* headerLayout = new QHBoxLayout;
     headerLayout->setContentsMargins(0, 0, 0, 0);
     headerLayout->setSpacing(10);
@@ -494,9 +473,6 @@ void HomePage::buildUi()
     headerLayout->addWidget(slicerButton, 0, Qt::AlignBottom);
     pageLayout->addLayout(headerLayout);
 
-    // --------------------------------------------------------
-    // Statistics
-    // --------------------------------------------------------
     auto* statsLayout = new QGridLayout;
     statsLayout->setContentsMargins(0, 0, 0, 0);
     statsLayout->setHorizontalSpacing(14);
@@ -517,9 +493,6 @@ void HomePage::buildUi()
         statsLayout->setColumnStretch(column, 1);
     pageLayout->addLayout(statsLayout);
 
-    // --------------------------------------------------------
-    // Middle Row: Charts + Pins
-    // --------------------------------------------------------
     auto* middleLayout = new QHBoxLayout;
     middleLayout->setContentsMargins(0, 0, 0, 0);
     middleLayout->setSpacing(18);
@@ -552,9 +525,6 @@ void HomePage::buildUi()
     middleLayout->addWidget(m_pinsPanel, 17);
     pageLayout->addLayout(middleLayout, 1);
 
-    // --------------------------------------------------------
-    // Quick Links
-    // --------------------------------------------------------
     auto* quickLinksLayout = new QGridLayout;
     quickLinksLayout->setContentsMargins(0, 0, 0, 0);
     quickLinksLayout->setHorizontalSpacing(14);
@@ -582,9 +552,6 @@ void HomePage::buildUi()
     pageLayout->addLayout(quickLinksLayout);
 }
 
-// ============================================================
-// PANEL
-// ============================================================
 
 QFrame* HomePage::createPanel(const QString& title, QWidget* content, QWidget* headerExtra)
 {
@@ -609,9 +576,6 @@ QFrame* HomePage::createPanel(const QString& title, QWidget* content, QWidget* h
     return panel;
 }
 
-// ============================================================
-// PINS PANEL
-// ============================================================
 
 QFrame* HomePage::createPinsPanel()
 {
@@ -672,9 +636,6 @@ QFrame* HomePage::createPinsPanel()
     return panel;
 }
 
-// ============================================================
-// EVENT FILTER
-// ============================================================
 
 bool HomePage::eventFilter(QObject* watched, QEvent* event)
 {
@@ -690,9 +651,6 @@ bool HomePage::eventFilter(QObject* watched, QEvent* event)
     return QWidget::eventFilter(watched, event);
 }
 
-// ============================================================
-// QUICK LINK
-// ============================================================
 
 QPushButton* HomePage::createQuickLink(const QString& icon, const QString& title,
     const QString& subtitle, const QString& linkType)
@@ -730,9 +688,6 @@ QPushButton* HomePage::createQuickLink(const QString& icon, const QString& title
     return button;
 }
 
-// ============================================================
-// PROJECT NAME
-// ============================================================
 
 void HomePage::setProjectName(const QString& name)
 {
@@ -740,9 +695,6 @@ void HomePage::setProjectName(const QString& name)
     m_projectTitle->setText(trimmed.isEmpty() ? placeholderProjectName() : trimmed);
 }
 
-// ============================================================
-// REFRESH
-// ============================================================
 
 void HomePage::refresh()
 {
@@ -756,9 +708,6 @@ void HomePage::refresh()
     updatePins(data.pins);
 }
 
-// ============================================================
-// CONTRIBUTION CHART
-// ============================================================
 
 void HomePage::updateContributionChart(const DashboardData& data)
 {
@@ -778,9 +727,6 @@ void HomePage::updateContributionChart(const DashboardData& data)
     m_contributionChart->setBars(bars, QStringLiteral("h"));
 }
 
-// ============================================================
-// CREATE PIN NOTE
-// ============================================================
 
 QWidget* HomePage::createPinNote(const PinDto& pin, const QString& authorName, int index)
 {
@@ -797,9 +743,6 @@ QWidget* HomePage::createPinNote(const PinDto& pin, const QString& authorName, i
     return note;
 }
 
-// ============================================================
-// UPDATE PINS
-// ============================================================
 
 void HomePage::updatePins(const std::vector<PinDto>& pins)
 {
@@ -854,9 +797,6 @@ void HomePage::updatePins(const std::vector<PinDto>& pins)
     updatePinsCount();
 }
 
-// ============================================================
-// OPEN PIN COUNT
-// ============================================================
 
 void HomePage::setOpenPinCount(int count)
 {

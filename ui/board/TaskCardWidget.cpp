@@ -16,7 +16,7 @@ TaskCardWidget::TaskCardWidget(const TaskDto& task, const QString& assigneeName,
     root->setContentsMargins(20, 20, 20, 16);
     root->setSpacing(14);
 
-    // --- top row: skill chip, blocked badge, complexity dots
+    // Top row: skill chip, blocked badge, complexity dots
     auto* top = new QHBoxLayout;
     top->setSpacing(8);
 
@@ -48,20 +48,18 @@ TaskCardWidget::TaskCardWidget(const TaskDto& task, const QString& assigneeName,
     top->addWidget(new ComplexityDotsWidget(task.complexity), 0, Qt::AlignTop);
     root->addLayout(top);
 
-    // --- title
     auto* title = new QLabel(QString::fromStdString(task.title));
     title->setObjectName("TaskTitle");
     title->setWordWrap(true);
     root->addWidget(title);
 
-    // --- divider
     auto* line = new QFrame;
     line->setObjectName("CardDivider");
     line->setFrameShape(QFrame::HLine);
     line->setFixedHeight(1);
     root->addWidget(line);
 
-    // --- bottom row: avatar, name, pins, hours, advance / done
+    // Bottom row: avatar, name, pins, hours, advance / done
     auto* bottom = new QHBoxLayout;
     bottom->setSpacing(10);
 

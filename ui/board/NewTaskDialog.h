@@ -20,7 +20,7 @@ public:
 
     NewTask taskData() const;
     std::optional<Id> assignee() const;      // empty = unassigned
-    QString component() const;               // UI only for now (not stored in events)
+    QString component() const;
 
 private:
     void validateAndAccept();

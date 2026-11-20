@@ -92,7 +92,6 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     mainLayout->setContentsMargins(24, 20, 24, 24);
     mainLayout->setSpacing(16);
 
-    // --- Header Row ---
     auto* headerLayout = new QHBoxLayout();
     headerLayout->setContentsMargins(0, 0, 0, 4);
 
@@ -131,7 +130,6 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
 
     mainLayout->addLayout(headerLayout);
 
-    // --- Summary Telemetry Row ---
     auto* summaryCard = new QFrame(contentWidget);
     summaryCard->setObjectName("card");
     auto* summaryLayout = new QHBoxLayout(summaryCard);
@@ -161,7 +159,6 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
 
     mainLayout->addWidget(summaryCard);
 
-    // --- Add Member Card ---
     auto* addCard = new QFrame(contentWidget);
     addCard->setObjectName("card");
     auto* addCardLayout = new QVBoxLayout(addCard);
@@ -220,7 +217,6 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
 
     mainLayout->addWidget(addCard);
 
-    // --- Member Profile Cards List ---
     cardsLayout_ = new QVBoxLayout();
     cardsLayout_->setSpacing(14);
     mainLayout->addLayout(cardsLayout_);
@@ -333,7 +329,6 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
     cardLayout->setContentsMargins(20, 16, 20, 16);
     cardLayout->setSpacing(14);
 
-    // --- Top Row: Avatar + Name/Role + Badges + Understanding Slider ---
     auto* topRow = new QHBoxLayout();
     topRow->setSpacing(12);
 
@@ -559,13 +554,11 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
 
     cardLayout->addLayout(topRow);
 
-    // --- Divider ---
     auto* divider = new QFrame(card);
     divider->setFrameShape(QFrame::HLine);
     divider->setObjectName("cardDivider");
     cardLayout->addWidget(divider);
 
-    // --- 7-Domain Skill Rating Matrix ---
     auto* skillsGrid = new QGridLayout();
     skillsGrid->setHorizontalSpacing(18);
     skillsGrid->setVerticalSpacing(8);

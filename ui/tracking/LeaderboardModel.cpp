@@ -65,14 +65,12 @@ QFont chipFontFor(const QFont& base, bool high)
 
 } // namespace
 
-// ---------------------------------------------------------------- table
 
 LeaderboardTable::LeaderboardTable(QWidget* parent)
     : QTableView(parent)
 {
 }
 
-// ---------------------------------------------------------------- model
 
 LeaderboardModel::LeaderboardModel(QObject* parent)
     : QAbstractTableModel(parent)
@@ -235,7 +233,6 @@ Qt::ItemFlags LeaderboardModel::flags(const QModelIndex& index) const
     return index.isValid() ? Qt::ItemIsEnabled : Qt::NoItemFlags;
 }
 
-// ------------------------------------------------------------ delegates
 
 const LeaderboardTable* LeaderboardCellDelegate::tableOf(const QStyleOptionViewItem& option)
 {

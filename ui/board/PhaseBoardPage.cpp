@@ -26,7 +26,6 @@ PhaseBoardPage::PhaseBoardPage(PlanovaCore& core, CoreBridge& bridge, QWidget* p
     root->setContentsMargins(36, 32, 36, 28);
     root->setSpacing(28);
 
-    // ---- header
     auto* header = new QHBoxLayout;
     header->setSpacing(14);
 
@@ -74,7 +73,7 @@ PhaseBoardPage::PhaseBoardPage(PlanovaCore& core, CoreBridge& bridge, QWidget* p
     header->addWidget(newTask_, 0, Qt::AlignVCenter);
     root->addLayout(header);
 
-    // ---- columns (index == static_cast<int>(TaskStatus)), horizontally scrollable like Figma
+    // Columns (index == static_cast<int>(TaskStatus)), horizontally scrollable like Figma
     const QStringList titles = {tr("To Do"), tr("In Progress"), tr("Review / QA"), tr("Done")};
     const QStringList tones  = {"todo", "progress", "review", "done"};
 
@@ -99,7 +98,6 @@ PhaseBoardPage::PhaseBoardPage(PlanovaCore& core, CoreBridge& bridge, QWidget* p
     host->setAutoFillBackground(false);
     root->addWidget(scroll, 1);
 
-    // ---- wiring
     connect(&bridge, &CoreBridge::changed, this, [this] { refresh(); });
     connect(search_, &QLineEdit::textChanged, this, [this] { refresh(); });
     connect(memberFilter_, &QComboBox::currentIndexChanged, this, [this] { refresh(); });

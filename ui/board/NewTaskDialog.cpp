@@ -53,7 +53,6 @@ NewTaskDialog::NewTaskDialog(const std::vector<TaskDto>& existing,
     cardLayout->setContentsMargins(0, 0, 0, 0);
     cardLayout->setSpacing(0);
 
-    // ---------- header
     auto* header = new QFrame;
     header->setObjectName("DialogHeader");
     auto* hl = new QHBoxLayout(header);
@@ -69,7 +68,6 @@ NewTaskDialog::NewTaskDialog(const std::vector<TaskDto>& existing,
     hl->addWidget(close);
     cardLayout->addWidget(header);
 
-    // ---------- scrollable body
     auto* scroll = new QScrollArea;
     scroll->setObjectName("DialogScroll");
     scroll->setWidgetResizable(true);
@@ -173,7 +171,6 @@ NewTaskDialog::NewTaskDialog(const std::vector<TaskDto>& existing,
     bodyWidget->setAutoFillBackground(false);
     cardLayout->addWidget(scroll, 1);
 
-    // ---------- footer
     auto* footer = new QFrame;
     footer->setObjectName("DialogFooter");
     auto* fl = new QHBoxLayout(footer);

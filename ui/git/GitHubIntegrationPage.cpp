@@ -51,7 +51,6 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     mainLayout->setContentsMargins(24, 20, 24, 24);
     mainLayout->setSpacing(16);
 
-    // --- Header Row ---
     auto* headerLayout = new QHBoxLayout();
     headerLayout->setContentsMargins(0, 0, 0, 4);
 
@@ -90,7 +89,6 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
 
     mainLayout->addLayout(headerLayout);
 
-    // --- Repository Connection Card ---
     auto* connCard = new QFrame(contentWidget);
     connCard->setObjectName("card");
     auto* connLayout = new QVBoxLayout(connCard);
@@ -144,7 +142,6 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
 
     mainLayout->addWidget(connCard);
 
-    // --- Telemetry Summary Row ---
     auto* metricsCard = new QFrame(contentWidget);
     metricsCard->setObjectName("card");
     auto* metricsLayout = new QHBoxLayout(metricsCard);
@@ -174,7 +171,6 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
 
     mainLayout->addWidget(metricsCard);
 
-    // --- Commits History Card ---
     auto* commitsCard = new QFrame(contentWidget);
     commitsCard->setObjectName("card");
     auto* commitsLayout = new QVBoxLayout(commitsCard);
@@ -204,7 +200,6 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
 
     mainLayout->addWidget(commitsCard);
 
-    // --- Issues List Card ---
     auto* issuesCard = new QFrame(contentWidget);
     issuesCard->setObjectName("card");
     auto* issuesLayout = new QVBoxLayout(issuesCard);

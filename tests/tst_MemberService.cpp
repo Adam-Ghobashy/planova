@@ -93,7 +93,6 @@ private slots:
         MemberService svc(log, clock);
         Id id = svc.add("Adam", "Junior Dev", false);
 
-        // Normal update
         clock.advance(10);
         svc.update(id, "Senior Dev", 85);
         QCOMPARE(proj.byId(id)->role, string("Senior Dev"));
@@ -148,14 +147,12 @@ private slots:
 
         MemberService svc(log, clock);
 
-        // Default before setting
         QCOMPARE(proj.getSetting("auto_assign", false), false);
 
         clock.advance(10);
         svc.setSetting("auto_assign", true);
         QCOMPARE(proj.getSetting("auto_assign", false), true);
 
-        // Rebuild from EventLog store and verify state matches
         log.rebuild();
         QCOMPARE(proj.getSetting("auto_assign", false), true);
     }
@@ -211,7 +208,6 @@ private slots:
         // Out-of-bounds / empty ID must throw invalid_argument
         QVERIFY_THROWS_EXCEPTION(invalid_argument, svc.remove(""));
 
-        // Rebuild and verify removal persists
         log.rebuild();
         QCOMPARE(proj.all().size(), size_t(1));
         QCOMPARE(proj.byId(id1).has_value(), false);

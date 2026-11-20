@@ -155,7 +155,6 @@ QWidget* MainWindow::buildSidebar()
     }
     layout->addStretch();
 
-    // --- S2 Sidebar Git Sync Status Card ---
     auto* gitCard = new QFrame(sidebar);
     gitCard->setObjectName("SidebarGitCard");
     auto* gitLayout = new QHBoxLayout(gitCard);

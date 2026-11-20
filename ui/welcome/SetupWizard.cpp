@@ -59,7 +59,6 @@ public:
     }
 };
 
-// --- S2: Step 4 Team Skills Wizard Page ---
 const QStringList kKnownWizardRoles = {
     "Backend Developer",
     "Frontend Developer",
@@ -145,7 +144,6 @@ private:
     QListWidget* list_ = nullptr;
 };
 
-// --- S2: Step 8 Git Sync Wizard Page ---
 class GitSyncWizardPage : public QWizardPage {
 public:
     explicit GitSyncWizardPage(QWidget* parent)

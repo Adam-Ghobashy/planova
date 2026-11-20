@@ -14,18 +14,15 @@ public:
     void reset() override;
     void apply(const Event& event) override;
 
-    // Repository connection state
     bool isConnected() const;
     std::string repoUrl() const;
     std::string branch() const;
 
-    // Synced GitHub data queries
     std::vector<CommitDto> commits() const;
     std::vector<CommitDto> commitsByAuthor(const std::string& author) const;
     std::vector<IssueDto> issues() const;
     int openIssueCount() const;
 
-    // IConflictQuery implementation
     bool hasOpenConflict(const Id& memberId) const override;
 
 private:
