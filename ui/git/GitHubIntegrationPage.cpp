@@ -5,7 +5,6 @@
 #include <QFont>
 #include <QHBoxLayout>
 #include <QHeaderView>
-#include <QPalette>
 #include <QScrollArea>
 #include <QStyle>
 #include <exception>
@@ -24,14 +23,6 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     bridge_(bridge) {
     setObjectName("GitHubIntegrationPage");
 
-    auto& tm = ThemeManager::instance();
-    QPalette pal = palette();
-    pal.setColor(QPalette::Window, tm.color(Token::Background));
-    pal.setColor(QPalette::WindowText, tm.color(Token::TextPrimary));
-    pal.setColor(QPalette::Base, tm.color(Token::Surface));
-    pal.setColor(QPalette::AlternateBase, tm.color(Token::SurfaceAlt));
-    pal.setColor(QPalette::Text, tm.color(Token::TextPrimary));
-    setPalette(pal);
     setAutoFillBackground(true);
 
     // Styles come from github.qss, loaded once by ThemeManager.
@@ -235,6 +226,8 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     connect(&bridge_, &CoreBridge::changed, this, [this](const QString&) {
         if (!updating_) refresh();
     });
+    // Issue state colours are set on the items, so rebuild them for the new theme.
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this] { refresh(); });
 
     refresh();
 }

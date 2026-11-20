@@ -1,5 +1,7 @@
 #include "LeaderboardModel.h"
 
+#include "theme/ThemeManager.h"
+
 #include <QApplication>
 #include <QPainter>
 #include <QStringList>
@@ -69,6 +71,9 @@ QFont chipFontFor(const QFont& base, bool high)
 LeaderboardTable::LeaderboardTable(QWidget* parent)
     : QTableView(parent)
 {
+    // Cell delegates paint with the qproperty colours, which change with the theme.
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, viewport(),
+            qOverload<>(&QWidget::update));
 }
 
 

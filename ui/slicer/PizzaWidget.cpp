@@ -95,6 +95,7 @@ PizzaWidget::PizzaWidget(QWidget* parent) : QWidget(parent) {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     setMinimumSize(280, 420);
     setMouseTracking(true);
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this] { update(); });
 
     anim_ = new QVariantAnimation(this);
     anim_->setEasingCurve(QEasingCurve::Linear);

@@ -35,6 +35,14 @@ private slots:
         QCOMPARE(std::size(kDarkHex), std::size(kLightHex));
         QCOMPARE(std::size(kTokenNames), std::size(kLightHex));
     }
+    void disabledTextIsDimmed() {
+        auto& t = ThemeManager::instance();
+        for (ThemeMode mode : {ThemeMode::Dark, ThemeMode::Light}) {
+            t.apply(mode);
+            for (QPalette::ColorRole role : {QPalette::WindowText, QPalette::Text, QPalette::ButtonText})
+                QCOMPARE(qApp->palette().color(QPalette::Disabled, role), t.color(Token::TextMuted));
+        }
+    }
     void darkColorsDiffer() {
         auto& t = ThemeManager::instance();
         t.apply(ThemeMode::Dark);

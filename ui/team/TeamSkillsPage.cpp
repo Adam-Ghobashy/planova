@@ -1,11 +1,8 @@
 #include "team/TeamSkillsPage.h"
-#include "theme/ThemeManager.h"
-#include "theme/Tokens.h"
 #include <QFont>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
-#include <QPalette>
 #include <QScrollArea>
 #include <QSlider>
 #include <QStyle>
@@ -65,14 +62,6 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     : QWidget(parent), service_(service), members_(members), bridge_(bridge) {
     setObjectName("TeamSkillsPage");
 
-    auto& tm = ThemeManager::instance();
-    QPalette pal = palette();
-    pal.setColor(QPalette::Window, tm.color(Token::Background));
-    pal.setColor(QPalette::WindowText, tm.color(Token::TextPrimary));
-    pal.setColor(QPalette::Base, tm.color(Token::Surface));
-    pal.setColor(QPalette::AlternateBase, tm.color(Token::SurfaceAlt));
-    pal.setColor(QPalette::Text, tm.color(Token::TextPrimary));
-    setPalette(pal);
     setAutoFillBackground(true);
 
     // Styles come from team.qss, loaded once by ThemeManager.

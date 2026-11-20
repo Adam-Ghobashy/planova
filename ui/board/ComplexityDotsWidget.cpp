@@ -13,6 +13,7 @@ ComplexityDotsWidget::ComplexityDotsWidget(int level, QWidget* parent)
     : QWidget(parent), level_(qBound(0, level, kDots)) {
     setFixedSize(sizeHint());
     setToolTip(tr("Complexity %1/5").arg(level_));
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this] { update(); });
 }
 
 QSize ComplexityDotsWidget::sizeHint() const {

@@ -25,14 +25,6 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     : QWidget(parent), slicer_(slicer), tasks_(tasks), members_(members) {
     setObjectName("ChaosSlicerPage");
 
-    auto& tm = ThemeManager::instance();
-    QPalette pal = palette();
-    pal.setColor(QPalette::Window, tm.color(Token::Background));
-    pal.setColor(QPalette::WindowText, tm.color(Token::TextPrimary));
-    pal.setColor(QPalette::Base, tm.color(Token::Surface));
-    pal.setColor(QPalette::AlternateBase, tm.color(Token::SurfaceAlt));
-    pal.setColor(QPalette::Text, tm.color(Token::TextPrimary));
-    setPalette(pal);
     setAutoFillBackground(true);
 
     auto* rootLayout = new QVBoxLayout(this);
@@ -131,6 +123,9 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     table_->setObjectName("assignmentsTable");
     model_ = new AssignmentTableModel(this);
     table_->setModel(model_);
+    // The delegates read token colours while painting, so the view only needs a repaint.
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, table_->viewport(),
+            qOverload<>(&QWidget::update));
     connect(model_, &AssignmentTableModel::assignmentEdited, this, [this] {
         pizza_->setPortions(slicer_.portions(model_->currentAssignments()));
     });

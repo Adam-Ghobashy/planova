@@ -46,6 +46,10 @@ void applyPalette(ThemeMode mode)
     palette.setColor(QPalette::ToolTipBase, tokenColor(mode, Token::Surface));
     palette.setColor(QPalette::ToolTipText, text);
     palette.setColor(QPalette::PlaceholderText, tokenColor(mode, Token::TextMuted));
+    // Fusion draws disabled controls from the Disabled group, so dim their text explicitly.
+    const QColor muted = tokenColor(mode, Token::TextMuted);
+    for (QPalette::ColorRole role : {QPalette::WindowText, QPalette::Text, QPalette::ButtonText})
+        palette.setColor(QPalette::Disabled, role, muted);
     qApp->setPalette(palette);
 }
 }
