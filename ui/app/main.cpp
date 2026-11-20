@@ -13,11 +13,14 @@ int main(int argc, char* argv[])
     ThemeManager::instance().apply(ThemeMode::Light);
 
     const QString documents = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    PlanovaCore core(std::filesystem::path(documents.toStdString()) / "Planova");
+    const std::filesystem::path workspace = std::filesystem::path(documents.toStdString()) / "Planova";
+    PlanovaCore core(workspace);
 
     // Reopen the most recent project so its data shows right away.
+    // Only if it has its own event folder; otherwise stay on the root store so legacy data stays visible.
     const auto projects = core.projects().list();
-    if (!projects.empty())
+    if (!projects.empty()
+        && std::filesystem::is_directory(workspace / projects.back().id / "events"))
         core.openProject(projects.back().id);
 
     CoreBridge bridge(core);
