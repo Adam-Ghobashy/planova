@@ -1,8 +1,10 @@
 #pragma once
 #include "Tokens.h"
 #include <QColor>
+#include <QFont>
 #include <QObject>
 #include <QString>
+#include <QStringList>
 
 enum class ThemeMode { Light, Dark };
 
@@ -20,6 +22,13 @@ public:
     void toggle();
 
     QColor color(Token token) const;
+
+    // Registers every bundled font from :/fonts. Call once, before apply().
+    void loadFonts();
+    // Font for a role. Falls back to Segoe UI (Consolas for Mono) when the bundled family is missing.
+    QFont font(FontRole role, int pointSize) const;
+    // Pure helper behind font(): the wanted family if it is in `available`, otherwise the fallback.
+    static QString familyFor(FontRole role, const QStringList& available);
 
     // Replaces @TokenName with the token's hex value. Unknown names are left as they are and logged with qWarning.
     static QString resolveTokens(const QString& css, ThemeMode mode);

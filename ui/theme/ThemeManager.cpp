@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
+#include <QFontDatabase>
 #include <QFile>
 #include <QGuiApplication>
 #include <QPalette>
@@ -143,4 +144,40 @@ ThemeMode ThemeManager::savedOrSystemMode()
 void ThemeManager::saveMode() const
 {
     QSettings().setValue("ui/theme", m_mode == ThemeMode::Dark ? "dark" : "light");
+}
+
+void ThemeManager::loadFonts()
+{
+    const QStringList files = QDir(":/fonts").entryList({"*.ttf", "*.otf"}, QDir::Files, QDir::Name);
+    for (const QString& name : files) {
+        if (QFontDatabase::addApplicationFont(":/fonts/" + name) < 0)
+            qWarning().noquote() << "ThemeManager: could not load font" << name;
+    }
+}
+
+QString ThemeManager::familyFor(FontRole role, const QStringList& available)
+{
+    QString wanted;
+    QString fallback = "Segoe UI";
+    switch (role) {
+    case FontRole::Body:
+        wanted = "Inter";
+        break;
+    case FontRole::Display:
+        wanted = "Space Grotesk";
+        break;
+    case FontRole::Mono:
+        wanted = "JetBrains Mono";
+        fallback = "Consolas";
+        break;
+    case FontRole::Script:
+        wanted = "Macintosh Skeletal Filled";
+        break;
+    }
+    return available.contains(wanted) ? wanted : fallback;
+}
+
+QFont ThemeManager::font(FontRole role, int pointSize) const
+{
+    return QFont(familyFor(role, QFontDatabase::families()), pointSize);
 }

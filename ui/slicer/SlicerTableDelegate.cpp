@@ -33,6 +33,12 @@ QFont boldFont(const QFont& base, int pointSize) {
     return font;
 }
 
+// Cell width for a pill: text, the pill's own padding (16) and the 8 px margin on each side.
+int pillWidth(const QStyleOptionViewItem& option, const QModelIndex& index, int role) {
+    const QFontMetrics fm(boldFont(option.font, 9));
+    return fm.horizontalAdvance(index.data(role).toString()) + 16 + 16;
+}
+
 QColor complexityColor(int complexity) {
     static const Token ramp[5] = {Token::Member3, Token::Complexity2, Token::PizzaCheese,
                                   Token::Complexity4, Token::Accent};
@@ -59,8 +65,11 @@ QSize SlicerTableDelegate::sizeHint(const QStyleOptionViewItem& option,
                                     const QModelIndex& index) const {
     switch (index.column()) {
         case AssignmentTableModel::TaskComplexity: return QSize(260, 56);
-        case AssignmentTableModel::Skill: return QSize(110, 56);
-        case AssignmentTableModel::Priority: return QSize(95, 56);
+        // Pill width follows the text, so a wider body font never clips a long label such as DOCUMENTATION.
+        case AssignmentTableModel::Skill:
+            return QSize(std::max(110, pillWidth(option, index, AssignmentTableModel::RequiredSkillRole)), 56);
+        case AssignmentTableModel::Priority:
+            return QSize(std::max(95, pillWidth(option, index, AssignmentTableModel::PriorityRole)), 56);
         case AssignmentTableModel::Assignee: return QSize(180, 56);
         case AssignmentTableModel::Rationale: return QSize(240, 56);
         case AssignmentTableModel::Status: return QSize(135, 56);

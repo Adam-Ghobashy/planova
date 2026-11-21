@@ -2,7 +2,7 @@
 QWidget#ChaosSlicerPage {
     background-color: @Background;
     color: @TextPrimary;
-    font-family: "Segoe UI", sans-serif;
+    font-family: "Inter", "Segoe UI", sans-serif;
 }
 
 QWidget#ChaosSlicerPage QScrollArea#slicerScrollArea {

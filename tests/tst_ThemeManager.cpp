@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QFile>
+#include <QFontDatabase>
 #include <QFrame>
 #include <QRegularExpression>
 #include <QtTest>
@@ -58,7 +59,7 @@ private slots:
         QCOMPARE(ThemeManager::resolveTokens("x:@NoSuchToken;", ThemeMode::Light), QString("x:@NoSuchToken;"));
     }
     void unknownTokenWarnsOncePerName() {
-        // Only one message is expected for two uses of the same name.
+        // Only one message is expected for two uses of the same name (QtTest fails on an unexpected second warning).
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression("NoSuchToken"));
         const QString css = "x:@NoSuchToken; y:@NoSuchToken;";
         QCOMPARE(ThemeManager::resolveTokens(css, ThemeMode::Light), css);
@@ -91,6 +92,23 @@ private slots:
         ThemeManager::instance().apply(ThemeMode::Dark);
         QCOMPARE(qApp->palette().color(QPalette::Window), QColor("#0A0A0B"));
         ThemeManager::instance().apply(ThemeMode::Light);
+    }
+    void fontsRegistered() {
+        ThemeManager::instance().loadFonts();
+        const QStringList families = QFontDatabase::families();
+        QVERIFY(families.contains("Inter"));
+        QVERIFY(families.contains("Space Grotesk"));
+        QVERIFY(families.contains("JetBrains Mono"));
+        QVERIFY(families.contains("Macintosh Skeletal Filled"));
+        QCOMPARE(ThemeManager::instance().font(FontRole::Mono, 10).family(), QString("JetBrains Mono"));
+        QCOMPARE(ThemeManager::instance().font(FontRole::Display, 18).pointSize(), 18);
+    }
+    void fontFallback() {
+        QCOMPARE(ThemeManager::familyFor(FontRole::Body, {}), QString("Segoe UI"));
+        QCOMPARE(ThemeManager::familyFor(FontRole::Display, {}), QString("Segoe UI"));
+        QCOMPARE(ThemeManager::familyFor(FontRole::Script, {}), QString("Segoe UI"));
+        QCOMPARE(ThemeManager::familyFor(FontRole::Mono, {}), QString("Consolas"));
+        QCOMPARE(ThemeManager::familyFor(FontRole::Body, {"Inter"}), QString("Inter"));
     }
 };
 

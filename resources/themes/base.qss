@@ -2,7 +2,8 @@
    replaces them with the light or dark value. No colour literal belongs in this folder.
 
    Old light colour (hex without the hash sign) -> token. Values written "~" were merged into the nearest
-   existing token (largest channel difference 6 of 255, not visible); the prototype css gives the same intent.
+   existing token (small channel differences, up to 9 of 255 on the green channel for 4A2FC9 -> 4526CB, not
+   visible); the prototype css gives the same intent.
 
    Page and surfaces   FAF8F5 Background | F5F1E8 Sidebar | FFFFFF Surface (fills) or AccentText (text on Accent)
                        or TextInverse (text on member colours) | F5F2EA SurfaceAlt | ECE7DC Track, or SurfaceHover on :hover
@@ -25,12 +26,22 @@
                        93C5FD StickyBlueBorder | 1E3A8A StickyBlueText | FDE047 StickyYellowBorder | 713F12 StickyYellowText
    Members             EF4444 Member1 | 6366F1 Member2 | 10B981 Member3 | 8B5CF6 Member4 | F59E0B Member5 | EC4899 Member6
 
-   Contrast: tst_Contrast checks the text pairs of both themes at 4.5:1. No token value had to be changed. */
+   Contrast: tst_Contrast checks the text pairs of both themes at 4.5:1. Dark TextTertiary is 8E8E95, not the
+   design --text-3 (71717A), which is only 4.0:1 on the dark Background; the contrast test requires 4.5. */
 
 QWidget {
     background-color: @Background;
     color: @TextPrimary;
-    font-family: "Segoe UI";
+    font-family: "Inter", "Segoe UI";
+}
+
+/* Titles use the display face (Space Grotesk, falls back to the application font if it is missing). */
+QLabel#pageTitle,
+QLabel#PageTitle,
+QLabel#PinsTitle,
+QLabel#TrackingTitle,
+QLabel#homeTitle {
+    font-family: "Space Grotesk", "Segoe UI";
 }
 
 QPushButton {

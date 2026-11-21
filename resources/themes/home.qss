@@ -261,6 +261,7 @@ QLabel#statCardTitle {
 }
 
 QLabel#statCardValue {
+    font-family: "JetBrains Mono", "Consolas";
     color: @TextPrimary;
     font-size: 26px;
     font-weight: 800;

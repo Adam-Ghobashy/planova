@@ -57,7 +57,9 @@ int main(int argc, char* argv[])
 
     // The first theme is applied before the window exists, so every widget is built under it.
     const QStringList themes = options.theme == "both" ? QStringList{"light", "dark"} : QStringList{options.theme};
+    ThemeManager::instance().loadFonts();
     ThemeManager::instance().apply(themes.first() == "dark" ? ThemeMode::Dark : ThemeMode::Light);
+    QApplication::setFont(ThemeManager::instance().font(FontRole::Body, 10));
 
     QTemporaryDir workspace;
     if (!workspace.isValid())

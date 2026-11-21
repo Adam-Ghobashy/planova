@@ -13,7 +13,9 @@ int main(int argc, char* argv[])
     QCoreApplication::setOrganizationName("Planova");
     QCoreApplication::setApplicationName("Planova");
     Q_INIT_RESOURCE(planova);
+    ThemeManager::instance().loadFonts();
     ThemeManager::instance().apply(ThemeManager::savedOrSystemMode());
+    QApplication::setFont(ThemeManager::instance().font(FontRole::Body, 10));
 
     const QString documents = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     const std::filesystem::path workspace = std::filesystem::path(documents.toStdString()) / "Planova";

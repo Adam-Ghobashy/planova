@@ -9,5 +9,9 @@
     <file>themes/team.qss</file>
     <file>themes/tracking.qss</file>
     <file>icons/chevron-updown.svg</file>
+    <file>fonts/Inter.ttf</file>
+    <file>fonts/SpaceGrotesk.ttf</file>
+    <file>fonts/JetBrainsMono.ttf</file>
+    <file>fonts/MacintoshSkeletalFilled.otf</file>
   </qresource>
 </RCC>
