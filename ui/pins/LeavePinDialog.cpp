@@ -1,15 +1,13 @@
 #include "LeavePinDialog.h"
 
 #include <QComboBox>
+#include <QCoreApplication>
 #include <QFormLayout>
-#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPlainTextEdit>
-#include <QPropertyAnimation>
 #include <QPushButton>
 #include <QRegularExpression>
-#include <QShowEvent>
 #include <QVBoxLayout>
 #include <algorithm>
 
@@ -25,16 +23,15 @@ const PinCategory kCategories[] = {PinCategory::HandoffNote, PinCategory::Feedba
 QLabel* fieldLabel(const QString& text, QWidget* parent)
 {
     auto* l = new QLabel(text, parent);
-    l->setObjectName("DialogFieldLabel");
+    l->setObjectName("modalFieldLabel");
     return l;
 }
 }
 
 LeavePinDialog::LeavePinDialog(const std::vector<TaskDto>& tasks, const std::vector<MemberDto>& members,
                                const Id& defaultAuthorId, QWidget* parent)
-    : QDialog(parent)
+    : ModalDialog(QCoreApplication::translate("LeavePinDialog", "Leave a Pin"), parent)
 {
-    setWindowTitle(tr("Leave a Pin"));
     build(tasks, members, false);
     const int idx = author_->findData(QString::fromStdString(defaultAuthorId));
     if (idx >= 0) author_->setCurrentIndex(idx);
@@ -43,9 +40,8 @@ LeavePinDialog::LeavePinDialog(const std::vector<TaskDto>& tasks, const std::vec
 
 LeavePinDialog::LeavePinDialog(const PinView& pin, const std::vector<TaskDto>& tasks,
                                const std::vector<MemberDto>& members, QWidget* parent)
-    : QDialog(parent)
+    : ModalDialog(QCoreApplication::translate("LeavePinDialog", "Edit Pin"), parent)
 {
-    setWindowTitle(tr("Edit Pin"));
     build(tasks, members, true);
     author_->setCurrentIndex(std::max(0, author_->findData(QString::fromStdString(pin.pin.authorId))));
     category_->setCurrentIndex(std::max(0, category_->findData(static_cast<int>(pin.pin.category))));
@@ -59,17 +55,8 @@ LeavePinDialog::LeavePinDialog(const PinView& pin, const std::vector<TaskDto>& t
 
 void LeavePinDialog::build(const std::vector<TaskDto>& tasks, const std::vector<MemberDto>& members, bool edit)
 {
-    setObjectName("LeavePinDialog");
-    setModal(true);
-    setMinimumWidth(460);
-
-    auto* root = new QVBoxLayout(this);
-    root->setContentsMargins(20, 20, 20, 16);
+    QVBoxLayout* root = contentLayout();
     root->setSpacing(12);
-
-    auto* title = new QLabel(edit ? tr("Edit Pin") : tr("Leave a Pin"), this);
-    title->setObjectName("PinsTitle");
-    root->addWidget(title);
 
     auto* form = new QFormLayout;
     form->setLabelAlignment(Qt::AlignLeft);
@@ -98,7 +85,7 @@ void LeavePinDialog::build(const std::vector<TaskDto>& tasks, const std::vector<
     root->addWidget(fieldLabel(tr("Note"), this));
     root->addWidget(note_);
     hint_ = new QLabel(tr("A note is required."), this);
-    hint_->setObjectName("DialogHint");
+    hint_->setObjectName("modalHint");
     root->addWidget(hint_);
 
     tags_ = new QLineEdit(this);
@@ -106,33 +93,10 @@ void LeavePinDialog::build(const std::vector<TaskDto>& tasks, const std::vector<
     root->addWidget(fieldLabel(tr("Tags"), this));
     root->addWidget(tags_);
 
-    auto* buttons = new QHBoxLayout;
-    buttons->addStretch();
-    auto* cancel = new QPushButton(tr("Cancel"), this);
-    ok_ = new QPushButton(edit ? tr("Save changes") : tr("Post pin"), this);
-    ok_->setObjectName("PinPrimaryButton");
-    ok_->setDefault(true);
-    buttons->addWidget(cancel);
-    buttons->addWidget(ok_);
-    root->addLayout(buttons);
+    addButton(tr("Cancel"), Role::Secondary);
+    ok_ = addButton(edit ? tr("Save changes") : tr("Post pin"), Role::Primary);
 
-    connect(cancel, &QPushButton::clicked, this, &QDialog::reject);
-    connect(ok_, &QPushButton::clicked, this, &QDialog::accept);
     connect(note_, &QPlainTextEdit::textChanged, this, &LeavePinDialog::updateOk);
-}
-
-void LeavePinDialog::showEvent(QShowEvent* e)
-{
-    QDialog::showEvent(e);
-    if (fadedIn_) return;
-    fadedIn_ = true;
-    setWindowOpacity(0.0);
-    auto* fade = new QPropertyAnimation(this, "windowOpacity", this);
-    fade->setDuration(140);
-    fade->setStartValue(0.0);
-    fade->setEndValue(1.0);
-    fade->setEasingCurve(QEasingCurve::OutCubic);
-    fade->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
 void LeavePinDialog::updateOk()

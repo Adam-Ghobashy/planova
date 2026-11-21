@@ -65,6 +65,7 @@ target_sources(planova_ui PRIVATE
     tracking/TrackingPage.cpp
     widgets/BarChartWidget.cpp
     widgets/DonutWidget.cpp
+    widgets/ModalDialog.cpp
     widgets/StatCardWidget.cpp
 )
 # --- end S6 ---

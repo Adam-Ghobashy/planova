@@ -5,7 +5,6 @@
 #include <QDateTime>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -13,6 +12,7 @@
 #include <exception>
 
 #include "LeavePinDialog.h"
+#include "widgets/ModalDialog.h"
 #include "PinCardWidget.h"
 #include "PinColumnWidget.h"
 #include "PinUiHelpers.h"
@@ -104,7 +104,7 @@ void PinsPage::runCommand(const std::function<void()>& fn)
     try {
         fn();
     } catch (const std::exception& e) {
-        QMessageBox::warning(this, tr("Pins"), QString::fromUtf8(e.what()));
+        ModalDialog::info(this, tr("Pins"), QString::fromUtf8(e.what()));
     }
     scheduleRefresh();
     emit pinsChanged();
@@ -266,10 +266,9 @@ void PinsPage::onResolve(const Id& pinId)
 
 void PinsPage::onDelete(const Id& pinId)
 {
-    const auto answer = QMessageBox::question(this, tr("Delete pin"),
-                                              tr("Delete this pin? This cannot be undone."),
-                                              QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-    if (answer != QMessageBox::Yes) return;
+    if (!ModalDialog::confirm(this, tr("Delete pin"), tr("Delete this pin? This cannot be undone."),
+                              tr("Delete"), ModalDialog::Role::Danger))
+        return;
     const Id by = actorFor(pinId);
     auto act = [this, alive = alive_, pinId, by] {
         if (*alive) runCommand([&] { commands_.remove(pinId, by); });

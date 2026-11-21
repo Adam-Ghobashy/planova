@@ -114,3 +114,35 @@ QPushButton#SidebarSyncButton:hover {
     background-color: @AccentSoft;
     border-color: @Accent;
 }
+
+
+/* ---------- popups and scroll bars (every window; page and dialog files may override) ---------- */
+QToolTip {
+    background-color: @Surface; color: @TextPrimary; border: 1px solid @BorderStrong;
+    border-radius: 6px; padding: 4px 8px; font-size: 12px;
+}
+
+QMenu {
+    background-color: @Surface; color: @TextPrimary; border: 1px solid @BorderStrong;
+    border-radius: 10px; padding: 4px;
+}
+QMenu::item { padding: 7px 24px 7px 14px; border-radius: 6px; margin: 1px 0; background: transparent; }
+QMenu::item:selected { background-color: @AccentSoft; color: @Accent; }
+QMenu::item:disabled { color: @TextMuted; }
+QMenu::separator { height: 1px; background: @BorderSubtle; margin: 4px 8px; }
+
+/* drop-down list of a combo box */
+QComboBox QAbstractItemView {
+    background-color: @Surface; color: @TextPrimary; border: 1px solid @BorderStrong; outline: 0;
+    selection-background-color: @AccentSoft; selection-color: @Accent;
+}
+
+/* thin rounded handle: ScrollThumb at rest, ScrollThumbHover on hover, Accent while dragging */
+QScrollBar:vertical { background: transparent; width: 10px; margin: 0; }
+QScrollBar:horizontal { background: transparent; height: 10px; margin: 0; }
+QScrollBar::handle:vertical { background: @ScrollThumb; border-radius: 3px; min-height: 32px; margin: 2px; }
+QScrollBar::handle:horizontal { background: @ScrollThumb; border-radius: 3px; min-width: 32px; margin: 2px; }
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover { background: @ScrollThumbHover; }
+QScrollBar::handle:vertical:pressed, QScrollBar::handle:horizontal:pressed { background: @Accent; }
+QScrollBar::add-line, QScrollBar::sub-line { width: 0; height: 0; background: none; border: none; }
+QScrollBar::add-page, QScrollBar::sub-page { background: transparent; }

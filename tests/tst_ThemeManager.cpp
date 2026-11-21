@@ -24,10 +24,13 @@ private slots:
             QVERIFY2(css.contains(sel), sel);
     }
 
-    void comboPopupRulesAreScoped() {
+    void comboPopupRuleIsGlobalAndPagesKeepTheirOwn() {
         ThemeManager::instance().apply(ThemeMode::Light);
-        // A bare rule would restyle every combo popup in the app.
-        QVERIFY(!qApp->styleSheet().contains("\nQComboBox QAbstractItemView"));
+        const QString css = qApp->styleSheet();
+        // base.qss styles every combo popup (Task 6); the page rules below it are more specific and win.
+        QVERIFY(css.contains("\nQComboBox QAbstractItemView"));
+        QVERIFY(css.contains("QComboBox#BoardMemberFilter QAbstractItemView"));
+        QVERIFY(css.contains("QComboBox#PinCombo QAbstractItemView"));
     }
 
     void chevronIconIsBundled() { QVERIFY(QFile::exists(":/icons/chevron-updown.svg")); }

@@ -2,10 +2,10 @@
 #include <QFont>
 #include <QGridLayout>
 #include <QHBoxLayout>
-#include <QMessageBox>
 #include <QScrollArea>
 #include <QSlider>
 #include <QStyle>
+#include "widgets/ModalDialog.h"
 #include <exception>
 #include <numeric>
 
@@ -473,15 +473,14 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
     connect(editCustomRoleInput, &QLineEdit::returnPressed, this, doSaveRole);
 
     connect(removeBtn, &QPushButton::clicked, this, [this, id = member.id, name = QString::fromStdString(member.name)]() {
-        auto reply = QMessageBox::question(
+        const bool confirmed = ModalDialog::confirm(
             this,
             "Remove Team Member",
             QString("Are you sure you want to remove %1 from the team?\n\nThis action will record a MemberRemoved event in the event log.")
                 .arg(name),
-            QMessageBox::Yes | QMessageBox::No,
-            QMessageBox::No);
+            "Remove", ModalDialog::Role::Danger);
 
-        if (reply != QMessageBox::Yes) {
+        if (!confirmed) {
             return;
         }
 

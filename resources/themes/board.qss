@@ -25,20 +25,20 @@ QPushButton#BoardSecondary {
 QPushButton#BoardSecondary:hover { background: @SurfaceHover; }
 
 /* ---------- combo popup + arrow ---------- */
-QComboBox#BoardMemberFilter, QDialog#NewTaskDialog QComboBox { padding-right: 40px; }
-QComboBox#BoardMemberFilter::drop-down, QDialog#NewTaskDialog QComboBox::drop-down {
+QComboBox#BoardMemberFilter { padding-right: 40px; }
+QComboBox#BoardMemberFilter::drop-down {
     subcontrol-origin: padding; subcontrol-position: center right;
     width: 36px; border: none; background: transparent;
 }
-QComboBox#BoardMemberFilter::down-arrow, QDialog#NewTaskDialog QComboBox::down-arrow {
+QComboBox#BoardMemberFilter::down-arrow {
     image: url(:/icons/chevron-updown.svg); width: 16px; height: 16px;
 }
-QComboBox#BoardMemberFilter QAbstractItemView, QDialog#NewTaskDialog QComboBox QAbstractItemView {
+QComboBox#BoardMemberFilter QAbstractItemView {
     background: @Surface; border: 1px solid @Border; border-radius: 12px; padding: 6px;
     outline: 0; color: @TextPrimary; font-size: 15px;
     selection-background-color: @AccentSoft; selection-color: @TextPrimary;
 }
-QComboBox#BoardMemberFilter QAbstractItemView::item, QDialog#NewTaskDialog QComboBox QAbstractItemView::item { min-height: 34px; padding: 2px 10px; border-radius: 8px; }
+QComboBox#BoardMemberFilter QAbstractItemView::item { min-height: 34px; padding: 2px 10px; border-radius: 8px; }
 
 /* ---------- columns ---------- */
 QScrollArea#BoardScroll { background: transparent; border: none; }
@@ -89,42 +89,6 @@ QToolButton#AdvanceButton {
 }
 QToolButton#AdvanceButton:hover { background: @Border; }
 
-/* ---------- new task dialog ---------- */
-QDialog#NewTaskDialog { background: transparent; }
-QFrame#DialogCard   { background: @SurfaceDialog; border-radius: 30px; }
-QFrame#DialogHeader { background: transparent; border: none; border-bottom: 1px solid @Divider; }
-QLabel#DialogTitle  { font-size: 26px; font-weight: 800; color: @TextPrimary; background: transparent; }
-QToolButton#DialogClose {
-    border: none; background: transparent; color: @TextPrimary; font-size: 26px;
-    padding: 0 8px; border-radius: 12px;
-}
-QToolButton#DialogClose:hover { background: @Divider; }
-
-QScrollArea#DialogScroll { background: transparent; border: none; }
-QWidget#DialogViewport, QWidget#DialogBody { background: transparent; }
-QScrollArea#DialogScroll QScrollBar:vertical { width: 8px; background: transparent; margin: 4px 0; }
-QScrollArea#DialogScroll QScrollBar::handle:vertical { background: @ScrollHandleStrong; border-radius: 4px; min-height: 30px; }
-QScrollArea#DialogScroll QScrollBar::add-line:vertical,
-QScrollArea#DialogScroll QScrollBar::sub-line:vertical { height: 0; }
-
-QLabel#FieldLabel { font-size: 15px; font-weight: 600; color: @TextMuted; background: transparent; }
-QDialog#NewTaskDialog QLineEdit, QDialog#NewTaskDialog QComboBox,
-QDialog#NewTaskDialog QSpinBox, QDialog#NewTaskDialog QListWidget {
-    background: @Surface; border: 1px solid @BorderSoft; border-radius: 18px;
-    padding: 12px 18px; min-height: 26px; font-size: 16px; color: @TextPrimary;
-}
-QDialog#NewTaskDialog QLineEdit:focus, QDialog#NewTaskDialog QComboBox:focus,
-QDialog#NewTaskDialog QSpinBox:focus { border: 1px solid @Accent; }
-QDialog#NewTaskDialog QListWidget { padding: 8px; min-height: 0; }
-QComboBox#BoardMemberFilter, QDialog#NewTaskDialog QComboBox { padding-right: 40px; }
-
-QFrame#DialogFooter {
-    background: @SurfaceAlt; border: none;
-    border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;
-}
-QDialog#NewTaskDialog QPushButton#BoardPrimary   { padding: 14px 30px; border-radius: 20px; font-size: 17px; }
-QDialog#NewTaskDialog QPushButton#BoardSecondary { padding: 14px 30px; border-radius: 20px; font-size: 17px; }
-QLabel#FormError { background: @DangerSoft; color: @DangerText; border-radius: 10px; padding: 8px 12px; font-size: 14px; }
 /* pin badge on cards */
 QFrame#PinChip  { background: @ReviewSoft; border: 1px solid @ReviewBorder; border-radius: 10px; }
 QLabel#PinIcon  { font-size: 13px; background: transparent; }

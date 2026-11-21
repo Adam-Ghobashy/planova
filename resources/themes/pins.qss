@@ -96,30 +96,6 @@ QLineEdit#PinCommentInput {
     border-radius: 8px; padding: 5px 8px;
 }
 
-/* ---------- dialogs ---------- */
-QDialog#LeavePinDialog, QDialog#DeclineDialog { background-color: @Background; color: @TextPrimary; }
-QDialog#LeavePinDialog QLabel, QDialog#DeclineDialog QLabel { background: transparent; }
-QDialog#LeavePinDialog QPlainTextEdit, QDialog#DeclineDialog QPlainTextEdit,
-QDialog#LeavePinDialog QLineEdit {
-    background-color: @Surface; color: @TextPrimary; border: 1px solid @Border;
-    border-radius: 8px; padding: 6px 8px;
-}
-QDialog#LeavePinDialog QPushButton, QDialog#DeclineDialog QPushButton {
-    background-color: @SurfaceAlt; color: @TextPrimary; border: 1px solid @Border;
-    border-radius: 8px; padding: 8px 16px;
-}
-QDialog#LeavePinDialog QPlainTextEdit:focus, QDialog#DeclineDialog QPlainTextEdit:focus,
-QDialog#LeavePinDialog QLineEdit:focus { border: 1px solid @Accent; }
-QDialog#LeavePinDialog QPushButton:hover, QDialog#DeclineDialog QPushButton:hover { border-color: @Accent; }
-QLabel#DialogFieldLabel { color: @TextMuted; font-size: 12px; font-weight: 600; }
-QDialog#LeavePinDialog QPushButton#PinPrimaryButton { background-color: @Accent; color: @AccentText; border: none; }
-QDialog#LeavePinDialog QPushButton#PinPrimaryButton:hover { background-color: @AccentHover; }
-QDialog#LeavePinDialog QPushButton#PinPrimaryButton:disabled { background-color: @Track; color: @TextMuted; }
-QDialog#DeclineDialog QPushButton#DangerButton {
-    background-color: @DangerSoft; color: @TextPrimary; border: 1px solid @DangerSoft; font-weight: 600;
-}
-QDialog#DeclineDialog QPushButton#DangerButton:disabled { background-color: @Track; color: @TextMuted; border-color: @Track; }
-
 /* ---------- sidebar badge (open pins, from IPinQuery::openCount) ---------- */
 QLabel#NavBadge {
     background-color: @AccentSoft; color: @Accent; border-radius: 9px;
@@ -160,35 +136,23 @@ QMenu#PinCardMenu::item:selected { background-color: @AccentSoft; color: @Accent
 
 /* ---------- scroll bars: thin rounded handle, TextMuted at 35% / 60%, Accent while dragging ---------- */
 QWidget#PinsPage QScrollBar:vertical,
-QDialog#LeavePinDialog QScrollBar:vertical,
-QDialog#DeclineDialog QScrollBar:vertical,
 QComboBox#PinCombo QScrollBar:vertical { background: transparent; width: 10px; margin: 0; }
 
 QWidget#PinsPage QScrollBar::handle:vertical,
-QDialog#LeavePinDialog QScrollBar::handle:vertical,
-QDialog#DeclineDialog QScrollBar::handle:vertical,
 QComboBox#PinCombo QScrollBar::handle:vertical {
     background: @ScrollThumb; border-radius: 3px; min-height: 32px; margin: 2px;
 }
 QWidget#PinsPage QScrollBar::handle:vertical:hover,
-QDialog#LeavePinDialog QScrollBar::handle:vertical:hover,
-QDialog#DeclineDialog QScrollBar::handle:vertical:hover,
 QComboBox#PinCombo QScrollBar::handle:vertical:hover { background: @ScrollThumbHover; }
 
 QWidget#PinsPage QScrollBar::handle:vertical:pressed,
-QDialog#LeavePinDialog QScrollBar::handle:vertical:pressed,
-QDialog#DeclineDialog QScrollBar::handle:vertical:pressed,
 QComboBox#PinCombo QScrollBar::handle:vertical:pressed { background: @Accent; }
 
 QWidget#PinsPage QScrollBar::add-line:vertical, QWidget#PinsPage QScrollBar::sub-line:vertical,
-QDialog#LeavePinDialog QScrollBar::add-line:vertical, QDialog#LeavePinDialog QScrollBar::sub-line:vertical,
-QDialog#DeclineDialog QScrollBar::add-line:vertical, QDialog#DeclineDialog QScrollBar::sub-line:vertical,
 QComboBox#PinCombo QScrollBar::add-line:vertical, QComboBox#PinCombo QScrollBar::sub-line:vertical {
     height: 0; background: none; border: none;
 }
 QWidget#PinsPage QScrollBar::add-page:vertical, QWidget#PinsPage QScrollBar::sub-page:vertical,
-QDialog#LeavePinDialog QScrollBar::add-page:vertical, QDialog#LeavePinDialog QScrollBar::sub-page:vertical,
-QDialog#DeclineDialog QScrollBar::add-page:vertical, QDialog#DeclineDialog QScrollBar::sub-page:vertical,
 QComboBox#PinCombo QScrollBar::add-page:vertical, QComboBox#PinCombo QScrollBar::sub-page:vertical {
     background: transparent;
 }

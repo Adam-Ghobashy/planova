@@ -1,17 +1,26 @@
 // Dev tool: saves one PNG per page and theme so the UI can be compared with the Figma prototype.
-// Usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N]
+// Usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N] [--dialogs]
+// --dialogs saves one PNG per dialog and theme instead (each dialog opened over the Board page).
 #include "app/CoreBridge.h"
 #include "app/DemoData.h"
 #include "app/MainWindow.h"
+#include "board/NewTaskDialog.h"
+#include "pins/DeclineDialog.h"
+#include "pins/LeavePinDialog.h"
 #include "planova/PlanovaCore.h"
 #include "theme/ThemeManager.h"
+#include "widgets/ModalDialog.h"
 
 #include <QApplication>
 #include <QDir>
+#include <QLabel>
+#include <QPainter>
 #include <QPixmap>
+#include <QPushButton>
 #include <QStackedWidget>
 #include <QTemporaryDir>
 #include <QTimer>
+#include <QVBoxLayout>
 
 #include <cstdio>
 #include <functional>
@@ -23,6 +32,7 @@ struct Options {
     QString outDir;
     QString theme = "light";
     int page = -1; // -1 means every page
+    bool dialogs = false;
 };
 
 bool parseArgs(const QStringList& args, Options& options)
@@ -35,10 +45,32 @@ bool parseArgs(const QStringList& args, Options& options)
             options.theme = args[++i];
         else if (args[i] == "--page" && i + 1 < args.size())
             options.page = args[++i].toInt();
+        else if (args[i] == "--dialogs")
+            options.dialogs = true;
         else
             return false;
     }
     return options.theme == "light" || options.theme == "dark" || options.theme == "both";
+}
+
+// decline() is never reached: the screenshot only shows the dialog.
+struct NoOpConflicts : planova::IConflictCommands {
+    planova::Id decline(const planova::Id&, const planova::Id&, const std::string&) override { return {}; }
+};
+
+// A confirm or info box built by hand: ModalDialog::confirm() would block until it is answered.
+ModalDialog* messageBox(QWidget* parent, const QString& title, const QString& text, const QString& okText,
+                        ModalDialog::Role okRole, bool withCancel)
+{
+    auto* dlg = new ModalDialog(title, parent);
+    auto* message = new QLabel(text);
+    message->setObjectName("modalMessage");
+    message->setWordWrap(true);
+    dlg->contentLayout()->addWidget(message);
+    if (withCancel)
+        dlg->addButton("Cancel", ModalDialog::Role::Secondary);
+    dlg->addButton(okText, okRole);
+    return dlg;
 }
 
 } // namespace
@@ -50,7 +82,7 @@ int main(int argc, char* argv[])
 
     Options options;
     if (!parseArgs(app.arguments(), options)) {
-        std::fprintf(stderr, "usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N]\n");
+        std::fprintf(stderr, "usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N] [--dialogs]\n");
         return 2;
     }
     QDir().mkpath(options.outDir);
@@ -76,6 +108,59 @@ int main(int argc, char* argv[])
     auto* pages = window.findChild<QStackedWidget*>();
     if (!pages)
         return 1;
+
+    if (options.dialogs) {
+        // Dialogs sit on top of the Board page (index 5), as they do in the app.
+        pages->setCurrentIndex(5);
+        NoOpConflicts conflicts;
+        const auto tasks = core.taskQuery().all();
+        const auto members = core.memberProjection().all();
+        using Factory = std::function<ModalDialog*()>;
+        const QList<QPair<QString, Factory>> dialogs = {
+            {"new-task", [&] { return new NewTaskDialog(tasks, members, &window); }},
+            {"leave-pin", [&] { return new planova::s5::LeavePinDialog(tasks, members, members.empty() ? planova::Id{} : members.front().id, &window); }},
+            {"decline", [&] { return new planova::s5::DeclineDialog(tasks.empty() ? planova::Id{} : tasks.front().id, members.empty() ? planova::Id{} : members.front().id, "Implement Strategy Pattern", "Alice", conflicts, &window); }},
+            {"confirm-danger", [&] { return messageBox(&window, "Delete pin", "Delete this pin? This cannot be undone.", "Delete", ModalDialog::Role::Danger, true); }},
+            {"confirm-primary", [&] { return messageBox(&window, "Task declined", "Task declined. A blocker pin was added. To reassign, open the Slicer, press Recalculate, then Apply.", "Open Slicer", ModalDialog::Role::Primary, true); }},
+            {"info", [&] { return messageBox(&window, "Cannot move task", "The task is blocked by an unfinished dependency.", "OK", ModalDialog::Role::Primary, false); }},
+        };
+        QList<QPair<QString, Factory>> shots;
+        QStringList shotThemes;
+        for (const QString& theme : themes) {
+            for (const auto& d : dialogs) {
+                shots.append(d);
+                shotThemes.append(theme);
+            }
+        }
+        int next = 0;
+        std::function<void()> dialogStep = [&]() {
+            if (next >= shots.size()) {
+                app.quit();
+                return;
+            }
+            const int current = next++;
+            const ThemeMode mode = shotThemes[current] == "dark" ? ThemeMode::Dark : ThemeMode::Light;
+            if (ThemeManager::instance().mode() != mode)
+                ThemeManager::instance().apply(mode);
+            ModalDialog* dlg = shots[current].second();
+            dlg->open();   // shows it without blocking
+            QTimer::singleShot(600, [&, dlg, current]() {
+                // The dialog is a separate window, so the page is grabbed first and the dialog painted over it.
+                QPixmap picture = window.grab();
+                QPainter painter(&picture);
+                painter.drawPixmap(0, 0, dlg->grab());
+                painter.end();
+                const QString path = QString("%1/dialog-%2-%3.png").arg(options.outDir, shots[current].first, shotThemes[current]);
+                if (!picture.save(path))
+                    std::fprintf(stderr, "could not save %s\n", qPrintable(path));
+                dlg->close();
+                dlg->deleteLater();
+                QTimer::singleShot(100, dialogStep);
+            });
+        };
+        QTimer::singleShot(250, dialogStep);
+        return app.exec();
+    }
 
     // One entry per screenshot: (theme name, page index).
     QList<QPair<QString, int>> jobs;

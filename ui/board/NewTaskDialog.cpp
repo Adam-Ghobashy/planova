@@ -1,86 +1,37 @@
 #include "NewTaskDialog.h"
 #include <QAbstractSpinBox>
+#include <QCheckBox>
+#include <QCoreApplication>
 #include <QComboBox>
-#include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QListView>
-#include <QListWidget>
-#include <QPushButton>
 #include <QScrollArea>
 #include <QSpinBox>
-#include <QToolButton>
 #include <QVBoxLayout>
 #include "BoardUtil.h"
+#include "pins/StyledComboBox.h"
 
 namespace {
 QVBoxLayout* field(const QString& text, QWidget* w) {
     auto* box = new QVBoxLayout;
-    box->setSpacing(8);
+    box->setSpacing(6);
     auto* label = new QLabel(text);
-    label->setObjectName("FieldLabel");
+    label->setObjectName("modalFieldLabel");
     box->addWidget(label);
     box->addWidget(w);
     return box;
 }
 
 QComboBox* makeCombo() {
-    auto* c = new QComboBox;
-    c->setView(new QListView(c));      // lets the stylesheet control item height / look
-    return c;
+    return new planova::s5::StyledComboBox;
 }
 }
 
 NewTaskDialog::NewTaskDialog(const std::vector<TaskDto>& existing,
                              const std::vector<MemberDto>& members, QWidget* parent)
-    : QDialog(parent) {
-    setObjectName("NewTaskDialog");
-    setWindowTitle(tr("Create New Task"));
-    setModal(true);
-    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
-    setAttribute(Qt::WA_TranslucentBackground);
-    resize(780, 540);
-
-    auto* outer = new QVBoxLayout(this);
-    outer->setContentsMargins(0, 0, 0, 0);
-
-    auto* card = new QFrame;
-    card->setObjectName("DialogCard");
-    outer->addWidget(card);
-
-    auto* cardLayout = new QVBoxLayout(card);
-    cardLayout->setContentsMargins(0, 0, 0, 0);
-    cardLayout->setSpacing(0);
-
-    auto* header = new QFrame;
-    header->setObjectName("DialogHeader");
-    auto* hl = new QHBoxLayout(header);
-    hl->setContentsMargins(36, 26, 28, 22);
-    auto* heading = new QLabel(tr("Create New Task"));
-    heading->setObjectName("DialogTitle");
-    auto* close = new QToolButton;
-    close->setObjectName("DialogClose");
-    close->setText(QString::fromUtf16(u"\u00D7"));
-    close->setCursor(Qt::PointingHandCursor);
-    hl->addWidget(heading);
-    hl->addStretch(1);
-    hl->addWidget(close);
-    cardLayout->addWidget(header);
-
-    auto* scroll = new QScrollArea;
-    scroll->setObjectName("DialogScroll");
-    scroll->setWidgetResizable(true);
-    scroll->setFrameShape(QFrame::NoFrame);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    scroll->viewport()->setObjectName("DialogViewport");
-    scroll->viewport()->setAutoFillBackground(false);
-
-    auto* bodyWidget = new QWidget;
-    bodyWidget->setObjectName("DialogBody");
-    auto* root = new QVBoxLayout(bodyWidget);
-    root->setContentsMargins(36, 24, 36, 24);
-    root->setSpacing(22);
+    : ModalDialog(QCoreApplication::translate("NewTaskDialog", "Create New Task"), parent) {
+    QVBoxLayout* root = contentLayout();
 
     // title
     title_ = new QLineEdit;
@@ -104,7 +55,7 @@ NewTaskDialog::NewTaskDialog(const std::vector<TaskDto>& existing,
         skill_->addItem(board::skillLabel(s), static_cast<int>(s));
 
     auto* row1 = new QHBoxLayout;
-    row1->setSpacing(20);
+    row1->setSpacing(16);
     row1->addLayout(field(tr("Component"), component_), 1);
     row1->addLayout(field(tr("Required Skill"), skill_), 1);
     root->addLayout(row1);
@@ -125,7 +76,7 @@ NewTaskDialog::NewTaskDialog(const std::vector<TaskDto>& existing,
         assignee_->addItem(QString::fromStdString(m.name), QString::fromStdString(m.id));
 
     auto* row2 = new QHBoxLayout;
-    row2->setSpacing(20);
+    row2->setSpacing(16);
     row2->addLayout(field(tr("Complexity (1-5)"), complexity_), 1);
     row2->addLayout(field(tr("Priority"), priority_), 1);
     row2->addLayout(field(tr("Assignee"), assignee_), 1);
@@ -139,68 +90,56 @@ NewTaskDialog::NewTaskDialog(const std::vector<TaskDto>& existing,
     hours_->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
     auto* row3 = new QHBoxLayout;
-    row3->setSpacing(20);
+    row3->setSpacing(16);
     row3->addLayout(field(tr("Estimated Hours"), hours_), 1);
     row3->addStretch(2);
     root->addLayout(row3);
 
     // dependencies (optional)
-    deps_ = new QListWidget;
-    deps_->setObjectName("DepsList");
-    deps_->setMaximumHeight(130);
+    // One check box per open task, in a small scrolling box.
+    auto* depsBox = new QScrollArea;
+    depsBox->setObjectName("modalDeps");
+    depsBox->setWidgetResizable(true);
+    depsBox->setMaximumHeight(130);
+    depsBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    depsBox->viewport()->setObjectName("modalViewport");
+    auto* depsHost = new QWidget;
+    depsHost->setObjectName("modalDepsHost");
+    auto* depsLayout = new QVBoxLayout(depsHost);
+    depsLayout->setContentsMargins(8, 6, 8, 6);
+    depsLayout->setSpacing(4);
     for (const TaskDto& t : existing) {
         if (t.status == TaskStatus::Done) continue;
-        auto* item = new QListWidgetItem(QString::fromStdString(t.title), deps_);
-        item->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
-        item->setCheckState(Qt::Unchecked);
-        item->setData(Qt::UserRole, QString::fromStdString(t.id));
+        auto* check = new QCheckBox(QString::fromStdString(t.title).replace("&", "&&"));   // "&" alone would be a shortcut mark
+        check->setProperty("taskId", QString::fromStdString(t.id));
+        depsLayout->addWidget(check);
+        depChecks_.push_back(check);
     }
-    if (deps_->count() > 0)
-        root->addLayout(field(tr("Depends on (optional)"), deps_));
+    depsLayout->addStretch(1);
+    depsBox->setWidget(depsHost);
+    if (!depChecks_.empty())
+        root->addLayout(field(tr("Depends on (optional)"), depsBox));
     else
-        deps_->hide();
+        depsBox->hide();
 
     error_ = new QLabel;
-    error_->setObjectName("FormError");
+    error_->setObjectName("modalError");
     error_->setWordWrap(true);
     error_->hide();
     root->addWidget(error_);
-    root->addStretch(1);
 
-    scroll->setWidget(bodyWidget);
-    bodyWidget->setAutoFillBackground(false);
-    cardLayout->addWidget(scroll, 1);
-
-    auto* footer = new QFrame;
-    footer->setObjectName("DialogFooter");
-    auto* fl = new QHBoxLayout(footer);
-    fl->setContentsMargins(36, 22, 36, 22);
-    fl->setSpacing(14);
-    auto* cancel = new QPushButton(tr("Cancel"));
-    cancel->setObjectName("BoardSecondary");
-    cancel->setCursor(Qt::PointingHandCursor);
-    auto* add = new QPushButton(tr("Add Task"));
-    add->setObjectName("BoardPrimary");
-    add->setCursor(Qt::PointingHandCursor);
-    add->setDefault(true);
-    fl->addStretch(1);
-    fl->addWidget(cancel);
-    fl->addWidget(add);
-    cardLayout->addWidget(footer);
-
-    connect(close, &QToolButton::clicked, this, &QDialog::reject);
-    connect(cancel, &QPushButton::clicked, this, &QDialog::reject);
-    connect(add, &QPushButton::clicked, this, &NewTaskDialog::validateAndAccept);
+    addButton(tr("Cancel"), Role::Secondary);
+    addButton(tr("Add Task"), Role::Primary);
 }
 
-void NewTaskDialog::validateAndAccept() {
+void NewTaskDialog::accept() {
     if (title_->text().trimmed().isEmpty()) {
         error_->setText(tr("Please enter a task title."));
         error_->show();
         title_->setFocus();
         return;
     }
-    accept();
+    ModalDialog::accept();
 }
 
 NewTask NewTaskDialog::taskData() const {
@@ -210,10 +149,9 @@ NewTask NewTaskDialog::taskData() const {
     n.priority = static_cast<Priority>(priority_->currentData().toInt());
     n.complexity = complexity_->currentData().toInt();
     n.estHours = hours_->value();
-    for (int i = 0; i < deps_->count(); ++i) {
-        QListWidgetItem* item = deps_->item(i);
-        if (item->checkState() == Qt::Checked)
-            n.deps.push_back(item->data(Qt::UserRole).toString().toStdString());
+    for (const QCheckBox* check : depChecks_) {
+        if (check->isChecked())
+            n.deps.push_back(check->property("taskId").toString().toStdString());
     }
     return n;
 }

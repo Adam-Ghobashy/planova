@@ -5,13 +5,13 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListView>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSignalBlocker>
 #include <QVBoxLayout>
 #include "BoardUtil.h"
 #include "NewTaskDialog.h"
+#include "widgets/ModalDialog.h"
 #include "TaskCardWidget.h"
 #include "TaskColumnWidget.h"
 #include "app/CoreBridge.h"
@@ -185,7 +185,7 @@ void PhaseBoardPage::onAdvance(const Id& taskId) {
     try {
         core_.tasks().move(taskId, to);              // appends TaskMoved; bridge triggers refresh()
     } catch (const std::exception& e) {
-        QMessageBox::warning(this, tr("Cannot move task"), QString::fromUtf8(e.what()));
+        ModalDialog::info(this, tr("Cannot move task"), QString::fromUtf8(e.what()));
     }
 }
 
@@ -198,6 +198,6 @@ void PhaseBoardPage::onNewTask() {
         if (const auto member = dlg.assignee())
             core_.tasks().assign(id, *member, "board");
     } catch (const std::exception& e) {
-        QMessageBox::warning(this, tr("Cannot create task"), QString::fromUtf8(e.what()));
+        ModalDialog::info(this, tr("Cannot create task"), QString::fromUtf8(e.what()));
     }
 }

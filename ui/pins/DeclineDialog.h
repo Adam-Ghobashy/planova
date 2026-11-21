@@ -1,7 +1,6 @@
 #pragma once
-#include <QDialog>
-
 #include "planova/pins/PinBoardApi.h"
+#include "widgets/ModalDialog.h"
 
 class QPlainTextEdit;
 class QPushButton;
@@ -10,7 +9,7 @@ namespace planova::s5 {
 
 // Asks for a reason, then calls IConflictCommands::decline. Opened by S1's MainWindow
 // (entry points live in S3 board cards and S2 team rows, which only emit a signal).
-class DeclineDialog : public QDialog {
+class DeclineDialog : public ModalDialog {
     Q_OBJECT
 public:
     DeclineDialog(const Id& taskId, const Id& memberId, const QString& taskTitle,
