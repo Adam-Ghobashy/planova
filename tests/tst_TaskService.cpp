@@ -6,6 +6,8 @@
 #include "planova/store/EventLog.h"
 #include "planova/task/TaskProjection.h"
 #include "planova/task/TaskService.h"
+#include "planova/team/MemberProjection.h"
+#include "planova/team/MemberService.h"
 namespace {
 struct MemStore : IEventStore {
     std::vector<Event> evs;
@@ -115,6 +117,34 @@ private slots:
         QCOMPARE(proj->byId(a)->assignee.value(), std::string("m1"));
         svc->unassign(a, "declined");
         QVERIFY(!proj->byId(a)->assignee.has_value());
+    }
+    void assignUnknownMemberThrows() {
+        MemberProjection members;
+        log->add(members);
+        TaskService strict(*log, *proj, clock, &members);
+        Id a = strict.create(nt("A"));
+        const size_t before = store.evs.size();
+        QVERIFY_EXCEPTION_THROWN(strict.assign(a, "ghost", "x"), std::invalid_argument);
+        QCOMPARE(store.evs.size(), before);
+    }
+    void assignKnownMemberWorks() {
+        MemberProjection members;
+        log->add(members);
+        MemberService memberSvc(*log, clock);
+        const Id m = memberSvc.add("Ana", "Developer", false);
+        TaskService strict(*log, *proj, clock, &members);
+        Id a = strict.create(nt("A"));
+        strict.assign(a, m, "x");
+        QCOMPARE(proj->byId(a)->assignee.value(), m);
+    }
+    void assignDoneTaskThrows() {
+        Id a = svc->create(nt("A"));
+        svc->move(a, TaskStatus::InProgress);
+        svc->move(a, TaskStatus::Review);
+        svc->move(a, TaskStatus::Done);
+        const size_t before = store.evs.size();
+        QVERIFY_EXCEPTION_THROWN(svc->assign(a, "m1", "x"), std::invalid_argument);
+        QCOMPARE(store.evs.size(), before);
     }
     void unknownTaskThrows() {
         QVERIFY_EXCEPTION_THROWN(svc->move("nope", TaskStatus::InProgress), std::invalid_argument);

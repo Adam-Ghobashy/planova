@@ -66,7 +66,7 @@ PlanovaCore::PlanovaCore(std::filesystem::path workspaceDir)
     gitProjection_(),
     git_(log_, clock_),
     taskProjection_(),
-    tasks_(log_, taskProjection_, clock_),
+    tasks_(log_, taskProjection_, clock_, &memberProjection_),
     conflictProjection_(),
     strategy_(),
     slicer_(taskProjection_, memberProjection_, strategy_, log_, clock_, &conflictProjection_),

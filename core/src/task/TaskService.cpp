@@ -6,8 +6,9 @@
 #include "planova/task/TaskCodec.h"
 #include "planova/task/TaskFactory.h"
 #include "planova/task/TaskStateMachine.h"
-TaskService::TaskService(EventLog& log, TaskProjection& projection, IClock& clock)
-    : log_(log), proj_(projection), clock_(clock) {}
+TaskService::TaskService(EventLog& log, TaskProjection& projection, IClock& clock,
+                         const IMemberQuery* members)
+    : log_(log), proj_(projection), clock_(clock), members_(members) {}
 void TaskService::appendEvent(const std::string& type, const std::string& author, const QJsonObject& payload) {
     Event ev;
     ev.ts = clock_.nowMs();
@@ -54,8 +55,11 @@ void TaskService::move(const Id& taskId, TaskStatus to) {
     appendEvent(TaskMoved, "system", payload);
 }
 void TaskService::assign(const Id& taskId, const Id& memberId, const std::string& by) {
-    if (!proj_.byId(taskId)) throw std::invalid_argument("Task not found");
+    const auto task = proj_.byId(taskId);
+    if (!task) throw std::invalid_argument("Task not found");
+    if (task->status == TaskStatus::Done) throw std::invalid_argument("Cannot assign a finished task");
     if (memberId.empty()) throw std::invalid_argument("memberId must not be empty");
+    if (members_ && !members_->byId(memberId)) throw std::invalid_argument("Member not found: " + memberId);
     QJsonObject payload;
     payload["taskId"] = QString::fromStdString(taskId);
     payload["memberId"] = QString::fromStdString(memberId);
