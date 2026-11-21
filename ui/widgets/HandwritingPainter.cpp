@@ -26,7 +26,7 @@ QImage renderText(const QString& text, const QFont& font, const QColor& ink, con
 
 // Hides the part of the image beyond the reveal edge. The edge starts before the image and ends after it,
 // so reveal 0 hides everything and reveal 1 shows everything.
-void applyReveal(QImage& image, const QSizeF& size, double reveal, Qt::Orientation direction)
+void applyReveal(QImage& image, const QSizeF& size, const QColor& ink, double reveal, Qt::Orientation direction)
 {
     const double length = direction == Qt::Horizontal ? size.width() : size.height();
     const double edge = reveal * length * (1.0 + kEdgeSoftness) - kEdgeSoftness * length;
@@ -37,8 +37,10 @@ void applyReveal(QImage& image, const QSizeF& size, double reveal, Qt::Orientati
         mask = QLinearGradient(edge, 0, edge + fade, 0);
     else
         mask = QLinearGradient(0, edge, 0, edge + fade);
-    mask.setColorAt(0.0, Qt::black);                  // only the alpha matters for DestinationIn
-    mask.setColorAt(1.0, Qt::transparent);
+    QColor clear = ink;
+    clear.setAlpha(0);
+    mask.setColorAt(0.0, ink);                        // only the alpha matters for DestinationIn
+    mask.setColorAt(1.0, clear);
 
     QPainter painter(&image);
     painter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
@@ -65,12 +67,12 @@ void HandwritingPainter::paint(QPainter& p, const QRectF& area, const QFont& fon
 
     if (wordReveal > 0.0) {
         QImage image = renderText(word, font, ink, wordSize, ratio);
-        applyReveal(image, wordSize, qBound(0.0, wordReveal, 1.0), Qt::Horizontal);
+        applyReveal(image, wordSize, ink, qBound(0.0, wordReveal, 1.0), Qt::Horizontal);
         p.drawImage(QPointF(left, top), image);
     }
     if (markReveal > 0.0) {
         QImage image = renderText(mark, font, ink, markSize, ratio);
-        applyReveal(image, markSize, qBound(0.0, markReveal, 1.0), Qt::Vertical);
+        applyReveal(image, markSize, ink, qBound(0.0, markReveal, 1.0), Qt::Vertical);
         const double markLeft = left + wordSize.width() - 2 * pad + kMarkGap;
         p.drawImage(QPointF(markLeft, top), image);
     }
