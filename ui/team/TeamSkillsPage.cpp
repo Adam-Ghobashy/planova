@@ -112,11 +112,6 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     statusTimer_->setInterval(4000);
     connect(statusTimer_, &QTimer::timeout, statusLabel_, &QLabel::hide);
 
-    auto* seedBtn = new QPushButton("Seed Demo Team", contentWidget);
-    seedBtn->setObjectName("secondaryButton");
-    connect(seedBtn, &QPushButton::clicked, this, &TeamSkillsPage::onSeedDemoTeam);
-    headerLayout->addWidget(seedBtn);
-
     mainLayout->addLayout(headerLayout);
 
     auto* summaryCard = new QFrame(contentWidget);
@@ -211,7 +206,7 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     mainLayout->addLayout(cardsLayout_);
 
     emptyLabel_ = new QLabel(
-        "No team members registered yet. Add a member above or click 'Seed Demo Team' to populate.",
+        "No team members yet. Add the first one with 'Add Team Member' above.",
         contentWidget);
     emptyLabel_->setObjectName("emptyLabel");
     emptyLabel_->setAlignment(Qt::AlignCenter);
@@ -261,54 +256,6 @@ void TeamSkillsPage::onAddMember() {
     leadCheck_->setChecked(false);
     refresh();
     showStatus(QString("Added %1 to the team").arg(QString::fromStdString(name)));
-}
-
-void TeamSkillsPage::onSeedDemoTeam() {
-    updating_ = true;
-    try {
-        struct SeedMember {
-            const char* name;
-            const char* role;
-            bool lead;
-            int understanding;
-            int ratings[7];
-        };
-        constexpr SeedMember kSeeds[] = {
-            {"Adam",   "Team & Git Architect", true,  92, {5, 4, 4, 4, 5, 5, 4}},
-            {"Zeyad",  "Core & Systems Lead",  false, 90, {5, 3, 5, 3, 4, 4, 4}},
-            {"Hazem",  "Slicer & Algorithms",  false, 85, {4, 4, 3, 4, 4, 5, 3}},
-            {"Mai",    "UI / UX & Board Eng",  false, 88, {3, 5, 3, 5, 4, 4, 5}},
-            {"Basma",  "Analytics & QA Eng",   false, 86, {4, 4, 4, 4, 3, 5, 5}}
-        };
-
-        const auto existing = members_.all();
-        int addedCount = 0;
-        for (const auto& s : kSeeds) {
-            bool found = false;
-            for (const auto& m : existing) {
-                if (m.name == s.name) {
-                    found = true;
-                    break;
-                }
-            }
-            if (found) continue;
-
-            Id id = service_.add(s.name, s.role, s.lead);
-            service_.update(id, s.role, s.understanding);
-            for (int i = 0; i < 7; ++i) {
-                service_.rate(id, kAllSkills[i].category, s.ratings[i]);
-            }
-            ++addedCount;
-        }
-        updating_ = false;
-        refresh();
-        showStatus(addedCount > 0
-                       ? QString("Seeded %1 team members").arg(addedCount)
-                       : QString("Demo team already present"));
-    } catch (const exception& e) {
-        updating_ = false;
-        showStatus(QString("Seed failed: %1").arg(QString::fromUtf8(e.what())));
-    }
 }
 
 QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex) {

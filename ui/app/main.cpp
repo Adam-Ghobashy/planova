@@ -1,10 +1,12 @@
 #include "app/CoreBridge.h"
+#include "app/DemoData.h"
 #include "app/MainWindow.h"
 #include "app/SplashWindow.h"
 #include "planova/PlanovaCore.h"
 #include "theme/ThemeManager.h"
 
 #include <QApplication>
+#include <QCommandLineParser>
 #include <QPropertyAnimation>
 #include <QStandardPaths>
 
@@ -19,6 +21,12 @@ int main(int argc, char* argv[])
     QCoreApplication::setOrganizationName("Planova");
     QCoreApplication::setApplicationName("Planova");
     Q_INIT_RESOURCE(planova);
+
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Planova - team task planner");
+    parser.addHelpOption();
+    parser.addOption({"demo", "Fill an empty project with a sample team, tasks and pins."});
+    parser.process(app);
     ThemeManager::instance().loadFonts();
     ThemeManager::instance().apply(ThemeManager::savedOrSystemMode());
     QApplication::setFont(ThemeManager::instance().font(FontRole::Body, 10));
@@ -32,6 +40,16 @@ int main(int argc, char* argv[])
     const auto projects = core.projects().list();
     if (!projects.empty() && core.hasProjectData(projects.back().id))
         core.openProject(projects.back().id);
+
+    // Sample data only on request; a normal start shows the real (possibly empty) project.
+    if (parser.isSet("demo")) {
+        if (!core.currentProject()) {
+            const auto all = core.projects().list();
+            core.openProject(all.empty() ? core.createProject("Planova", "Team Six", "Agile/Scrum", "Sample project")
+                                         : all.back().id);
+        }
+        demo::seedIfEmpty(core);
+    }
 
     CoreBridge bridge(core);
     MainWindow window(core, bridge);

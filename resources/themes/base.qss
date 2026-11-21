@@ -243,3 +243,10 @@ QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover { backgro
 QScrollBar::handle:vertical:pressed, QScrollBar::handle:horizontal:pressed { background: @Accent; }
 QScrollBar::add-line, QScrollBar::sub-line { width: 0; height: 0; background: none; border: none; }
 QScrollBar::add-page, QScrollBar::sub-page { background: transparent; }
+
+/* Empty panel message (see ui/widgets/EmptyHint.h) */
+QLabel#EmptyHint {
+    color: @TextMuted;
+    background: transparent;
+    padding: 24px;
+}

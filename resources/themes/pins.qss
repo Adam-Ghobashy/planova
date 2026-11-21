@@ -16,6 +16,11 @@ QPushButton#LeavePinButton:hover,
 QPushButton#PinPrimaryButton:hover,
 QPushButton#PinCommentSend:hover { background-color: @AccentHover; }
 QPushButton#PinPrimaryButton:disabled { background-color: @Track; color: @TextMuted; }
+/* Keyboard focus: a 2px ring inside the button, in the text colour of the fill, so it shows in both themes. */
+QPushButton#LeavePinButton:focus,
+QPushButton#PinPrimaryButton:focus,
+QPushButton#PinCommentSend:focus { border: 2px solid @AccentText; padding: 6px 14px; }
+QPushButton#PinCommentSend:focus { padding: 3px 10px; }
 QPushButton#PinCommentSend { padding: 5px 12px; }
 
 /* ---------- filter chips ---------- */
@@ -25,6 +30,8 @@ QPushButton#PinFilterChip {
 }
 QPushButton#PinFilterChip[dot="true"] { padding-left: 28px; }
 QPushButton#PinFilterChip:hover { border-color: @Accent; color: @TextPrimary; }
+QPushButton#PinFilterChip:focus { border: 2px solid @Accent; padding: 5px 13px; }
+QPushButton#PinFilterChip[dot="true"]:focus { padding-left: 27px; }
 QPushButton#PinFilterChip:checked { background-color: @AccentSoft; color: @Accent; border-color: @Accent; }
 
 QLabel#ChipDot { border-radius: 4px; background-color: @TextMuted; }
@@ -73,8 +80,9 @@ QLabel#PinAvatar[member="4"] { background-color: @Member4; }
 QLabel#PinAvatar[member="5"] { background-color: @Member5; }
 QLabel#PinAvatar[member="6"] { background-color: @Member6; }
 
-QToolButton#PinMenuButton { border: none; background: transparent; color: @TextMuted; font-weight: 700; padding: 0 4px; }
+QToolButton#PinMenuButton { border: 2px solid transparent; border-radius: 6px; background: transparent; color: @TextMuted; font-weight: 700; padding: 0 4px; }
 QToolButton#PinMenuButton:hover { color: @Accent; }
+QToolButton#PinMenuButton:focus { border-color: @Accent; color: @Accent; }
 QToolButton#PinMenuButton::menu-indicator { image: none; width: 0px; }
 
 QPushButton#PinResolveButton {
@@ -82,9 +90,11 @@ QPushButton#PinResolveButton {
     border-radius: 8px; padding: 4px 12px; font-weight: 600;
 }
 QPushButton#PinResolveButton:hover { border-color: @Accent; }
+QPushButton#PinResolveButton:focus { border: 2px solid @Accent; padding: 3px 11px; }
 
-QToolButton#PinCommentChip { border: none; background: transparent; color: @TextMuted; font-size: 11px; font-weight: 600; }
+QToolButton#PinCommentChip { border: 2px solid transparent; border-radius: 6px; background: transparent; color: @TextMuted; font-size: 11px; font-weight: 600; }
 QToolButton#PinCommentChip:hover { color: @Accent; }
+QToolButton#PinCommentChip:focus { border-color: @Accent; color: @Accent; }
 QToolButton#PinCommentChip:checked { color: @Accent; }
 
 QFrame#PinCommentsPanel { background-color: @Surface; border: 1px solid @Border; border-radius: 8px; }

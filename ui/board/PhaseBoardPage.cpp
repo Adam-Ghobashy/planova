@@ -11,11 +11,12 @@
 #include <QVBoxLayout>
 #include "BoardUtil.h"
 #include "NewTaskDialog.h"
+#include "pins/StyledComboBox.h"
+#include "widgets/EmptyHint.h"
 #include "widgets/ModalDialog.h"
 #include "TaskCardWidget.h"
 #include "TaskColumnWidget.h"
 #include "app/CoreBridge.h"
-#include "app/DemoData.h"
 #include "planova/PlanovaCore.h"
 
 PhaseBoardPage::PhaseBoardPage(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
@@ -57,9 +58,8 @@ PhaseBoardPage::PhaseBoardPage(PlanovaCore& core, CoreBridge& bridge, QWidget* p
     search_->setClearButtonEnabled(true);
     search_->setFixedWidth(280);
 
-    memberFilter_ = new QComboBox;
+    memberFilter_ = new planova::s5::StyledComboBox;   // painted chevron, tinted by the theme
     memberFilter_->setObjectName("BoardMemberFilter");
-    memberFilter_->setView(new QListView(memberFilter_));
     memberFilter_->setMinimumWidth(190);
 
     newTask_ = new QPushButton(tr("+ New Task"));
@@ -96,6 +96,8 @@ PhaseBoardPage::PhaseBoardPage(PlanovaCore& core, CoreBridge& bridge, QWidget* p
     scroll->viewport()->setAutoFillBackground(false);
     scroll->setWidget(host);
     host->setAutoFillBackground(false);
+    emptyHint_ = makeEmptyHint(tr("No tasks yet. Use '+ New Task' to add the first one."));
+    root->addWidget(emptyHint_);
     root->addWidget(scroll, 1);
 
     connect(&bridge, &CoreBridge::changed, this, [this] { refresh(); });
@@ -121,6 +123,7 @@ void PhaseBoardPage::refresh() {
     const std::vector<TaskDto> tasks = core_.taskQuery().all();
     const std::vector<MemberDto> members = core_.memberProjection().all();
     rebuildMemberFilter(members);
+    emptyHint_->setVisible(tasks.empty());
 
     QString seModel;
     const auto current = core_.currentProject();
@@ -166,7 +169,7 @@ void PhaseBoardPage::refresh() {
 
         const int col = static_cast<int>(t.status);
         columns_[col]->addCard(
-            new TaskCardWidget(t, name, initials, color, demo::pinCountFor(t.title)));
+            new TaskCardWidget(t, name, initials, color, core_.pinQuery().pinCountForTask(t.id)));
         ++counts[col];
     }
 

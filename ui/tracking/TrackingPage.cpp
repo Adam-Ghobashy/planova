@@ -1,6 +1,7 @@
 #include "TrackingPage.h"
 
 #include "LeaderboardModel.h"
+#include "../widgets/EmptyHint.h"
 
 #include <QAbstractItemView>
 #include <QButtonGroup>
@@ -351,6 +352,8 @@ void TrackingPage::buildUi()
     table_->horizontalHeader()->setSectionResizeMode(LeaderboardModel::RoleColumn,
                                                      QHeaderView::Stretch);
     leaderboard.body->addWidget(table_, 1);
+    emptyLeaderboard_ = makeEmptyHint(tr("No team members yet. Add members on Team & Skills, then finish tasks to see rankings."), leaderboardCard);
+    leaderboard.body->addWidget(emptyLeaderboard_, 1);
     main->addWidget(leaderboardCard, kLeaderboardStretch);
 
     // Chart card: padding 18, title margin-bottom 12, chart centred vertically.
@@ -362,6 +365,8 @@ void TrackingPage::buildUi()
     chart_ = new ComplexityBarChart(chartCard);
     chartCardParts.body->addStretch(1);
     chartCardParts.body->addWidget(chart_);
+    emptyChart_ = makeEmptyHint(tr("Nothing to chart yet."), chartCard);
+    chartCardParts.body->addWidget(emptyChart_);
     chartCardParts.body->addStretch(1);
     main->addWidget(chartCard, kChartStretch);
 
@@ -371,6 +376,11 @@ void TrackingPage::buildUi()
 void TrackingPage::refresh()
 {
     model_->setRows(stats_.leaderboard(), members_.all());
+    const bool empty = model_->rowCount() == 0;
+    table_->setVisible(!empty);
+    emptyLeaderboard_->setVisible(empty);
+    chart_->setVisible(!empty);
+    emptyChart_->setVisible(empty);
     refreshCards();
     refreshChart();
 }

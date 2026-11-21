@@ -56,6 +56,8 @@ private:
 
     QTableWidget* commitsTable_ = nullptr;
     QTableWidget* issuesTable_ = nullptr;
+    QLabel* emptyCommits_ = nullptr;
+    QLabel* emptyIssues_ = nullptr;
 
     bool updating_ = false;
 };

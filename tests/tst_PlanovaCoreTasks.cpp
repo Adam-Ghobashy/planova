@@ -8,10 +8,10 @@ class tst_PlanovaCoreTasks : public QObject {
     Q_OBJECT
 private slots:
     void createdTaskSurvivesReopen();
-    void velocityUpdatesFromRealTaskFlow();
+    void velocityIgnoresInstantTaskFlow();
 };
 
-void tst_PlanovaCoreTasks::velocityUpdatesFromRealTaskFlow()
+void tst_PlanovaCoreTasks::velocityIgnoresInstantTaskFlow()
 {
     QTemporaryDir dir;
     QVERIFY(dir.isValid());
@@ -32,8 +32,8 @@ void tst_PlanovaCoreTasks::velocityUpdatesFromRealTaskFlow()
     core.tasks().move(task, TaskStatus::Review);
     core.tasks().move(task, TaskStatus::Done);
 
-    // The whole flow takes well under an hour, so velocity hits the 5.0 upper clamp.
-    QCOMPARE(core.memberQuery().byId(member)->velocity, 5.0);
+    // The whole flow takes milliseconds: that is bookkeeping, so velocity stays at its start value.
+    QCOMPARE(core.memberQuery().byId(member)->velocity, 1.0);
 }
 
 void tst_PlanovaCoreTasks::createdTaskSurvivesReopen()

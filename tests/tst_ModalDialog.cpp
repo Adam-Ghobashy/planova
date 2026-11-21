@@ -3,6 +3,7 @@
 
 #include <QAbstractButton>
 #include <QApplication>
+#include <QCheckBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -22,8 +23,32 @@ ModalDialog* visibleModal()
     return nullptr;
 }
 
+// If a helper cannot find its dialog, the test would wait forever inside exec().
+// After 2 s this timer rejects the visible modal, so the test fails instead of hanging.
+// cleanup() stops it, so it never touches the next test.
+QTimer& safetyNet()
+{
+    static QTimer* timer = new QTimer(qApp);   // owned by the application, so no static-destruction order issue
+    timer->setSingleShot(true);
+    return *timer;
+}
+
+void armSafetyNet()
+{
+    QTimer& timer = safetyNet();
+    timer.disconnect();
+    QObject::connect(&timer, &QTimer::timeout, [] {
+        if (ModalDialog* dlg = visibleModal()) {
+            qWarning("safety net: closing a ModalDialog nobody closed");
+            dlg->reject();
+        }
+    });
+    timer.start(2000);
+}
+
 void clickLater(const char* buttonName)
 {
+    armSafetyNet();
     QTimer::singleShot(0, [buttonName] {
         ModalDialog* dlg = visibleModal();
         QVERIFY2(dlg, "no visible ModalDialog");
@@ -35,6 +60,7 @@ void clickLater(const char* buttonName)
 
 void keyLater(Qt::Key key)
 {
+    armSafetyNet();
     QTimer::singleShot(0, [key] {
         ModalDialog* dlg = visibleModal();
         QVERIFY2(dlg, "no visible ModalDialog");
@@ -46,6 +72,8 @@ void keyLater(Qt::Key key)
 class TstModalDialog : public QObject {
     Q_OBJECT
 private slots:
+    void cleanup() { safetyNet().stop(); }
+
     void confirmTrueOnOk()
     {
         QWidget parent;
@@ -165,6 +193,39 @@ private slots:
         QTest::mouseClick(add, Qt::LeftButton);
         QCOMPARE(dlg.result(), static_cast<int>(QDialog::Accepted));
         QCOMPARE(QString::fromStdString(dlg.taskData().title), QString("Write tests"));
+    }
+
+    void newTaskDialogReturnsTickedDependencies()
+    {
+        auto task = [](const char* id, const char* title, TaskStatus status) {
+            TaskDto t{};
+            t.id = id;
+            t.title = title;
+            t.status = status;
+            return t;
+        };
+        const std::vector<TaskDto> existing = {task("t1", "Design API", TaskStatus::ToDo),
+                                               task("t2", "Write docs", TaskStatus::InProgress),
+                                               task("t3", "Old task", TaskStatus::Done)};
+        QWidget parent;
+        parent.show();
+        NewTaskDialog dlg(existing, {}, &parent);
+        dlg.show();
+
+        const auto checks = dlg.findChildren<QCheckBox*>();
+        QCOMPARE(checks.size(), 2);                       // the Done task is not offered
+        for (QCheckBox* check : checks)
+            QVERIFY(check->property("taskId").toString() != "t3");
+
+        QVERIFY(dlg.taskData().deps.empty());             // nothing ticked yet
+        for (QCheckBox* check : checks) {
+            if (check->property("taskId").toString() == "t2")
+                check->setChecked(true);
+        }
+        dlg.findChild<QLineEdit*>()->setText("Ship it");
+        const NewTask data = dlg.taskData();
+        QCOMPARE(data.deps.size(), size_t(1));
+        QCOMPARE(QString::fromStdString(data.deps.front()), QString("t2"));
     }
 
     void infoClosesOnOk()

@@ -25,6 +25,7 @@ private:
     PlanovaCore& core_;
     QLabel* modelValue_ = nullptr;
     QLabel* taskCount_ = nullptr;
+    QLabel* emptyHint_ = nullptr;
     QLineEdit* search_ = nullptr;
     QComboBox* memberFilter_ = nullptr;
     QPushButton* newTask_ = nullptr;

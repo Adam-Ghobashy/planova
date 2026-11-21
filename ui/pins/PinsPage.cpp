@@ -16,6 +16,7 @@
 #include "PinCardWidget.h"
 #include "PinColumnWidget.h"
 #include "PinUiHelpers.h"
+#include "widgets/EmptyHint.h"
 
 namespace planova::s5 {
 
@@ -41,7 +42,7 @@ PinsPage::PinsPage(IPinBoardQuery& query, IPinCommands& commands, IMemberQuery& 
     auto* header = new QHBoxLayout;
     auto* titles = new QVBoxLayout;
     titles->setSpacing(2);
-    auto* title = new QLabel(tr("Pins and Team Handoffs"), this);
+    auto* title = new QLabel(tr("Pins & Team Handoffs"), this);
     title->setObjectName("PinsTitle");
     auto* subtitle = new QLabel(tr("Context-rich notes for handoffs, blockers, testing and decisions."), this);
     subtitle->setObjectName("PinsSubtitle");
@@ -64,6 +65,9 @@ PinsPage::PinsPage(IPinBoardQuery& query, IPinCommands& commands, IMemberQuery& 
     chipGroup_ = new QButtonGroup(this);
     chipGroup_->setExclusive(true);
     root->addWidget(chipBar_);
+
+    emptyHint_ = makeEmptyHint(tr("No pins yet. Use 'Leave a Pin' to add a handoff, blocker, test request or decision."), this);
+    root->addWidget(emptyHint_);
 
     // Columns
     auto* cols = new QHBoxLayout;
@@ -166,6 +170,7 @@ void PinsPage::refresh()
     const std::vector<PinView> all = query_.openPins();
 
     rebuildChips(all);
+    emptyHint_->setVisible(all.empty());
 
     std::map<Id, QString> names;
     std::map<Id, int> indexOf;

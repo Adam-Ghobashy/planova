@@ -317,3 +317,7 @@ QWidget#barChartWidget {
     qproperty-member5Color: @Member5;
     qproperty-member6Color: @Member6;
 }
+/* Plain content areas inside a panel show the panel's own surface, not the page background. */
+QWidget#homePanelContent {
+    background: transparent;
+}

@@ -28,7 +28,6 @@ public:
 
 private slots:
     void onAddMember();
-    void onSeedDemoTeam();
 
 private:
     QFrame* buildMemberCard(const MemberDto& member, int colorIndex);

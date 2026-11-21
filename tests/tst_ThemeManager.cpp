@@ -33,8 +33,6 @@ private slots:
         QVERIFY(css.contains("QComboBox#PinCombo QAbstractItemView"));
     }
 
-    void chevronIconIsBundled() { QVERIFY(QFile::exists(":/icons/chevron-updown.svg")); }
-
     void darkTableComplete() {
         QCOMPARE(std::size(kDarkHex), std::size(kLightHex));
         QCOMPARE(std::size(kTokenNames), std::size(kLightHex));

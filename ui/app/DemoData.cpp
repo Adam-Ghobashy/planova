@@ -92,20 +92,28 @@ void seedIfEmpty(PlanovaCore& core) {
         // "Integrate Critical Path..." and "Construct GoogleTest..." wait on "Develop Weighted Scoring..."
         core.tasks().addDependency(ids[1], ids[2]); tick();
         core.tasks().addDependency(ids[5], ids[2]); tick();
+
+        // Four sample pins: different categories, one with no task, tags on each
+        core.pins().create(PinCategory::HandoffNote,
+                           "Columns and drag-and-drop are in. Card context menu and keyboard moves are still open.",
+                           {"ui", "board"}, memberId["Mai"], ids[3]);
+        tick();
+        core.pins().create(PinCategory::FeedbackBlocker,
+                           "Waiting on the team's final weights before tuning the skill score.",
+                           {"slicer", "scoring"}, memberId["Omar"], ids[2]);
+        tick();
+        core.pins().create(PinCategory::ReadyForTesting,
+                           "Syncer is ready for review. Please run it against a clean clone first.",
+                           {"git", "events"}, memberId["Zeyad"], ids[4]);
+        tick();
+        core.pins().create(PinCategory::ArchitectureDecision,
+                           "Events stay append-only. Projections rebuild all state on start-up.",
+                           {"architecture", "events"}, memberId["Adam"], std::nullopt);
+        tick();
     } catch (const std::exception& e) {
         qWarning() << "Demo seed failed:" << e.what();
     }
 }
 
-int pinCountFor(const std::string& title) {
-    static const std::map<std::string, int> kPins = {
-                                                      {"Develop Weighted Scoring Assignment Strategy", 1},
-                                                      {"Build Interactive Phase Board (Kanban Columns)", 2},
-                                                      {"Implement Append-Only JSON Git Event Syncer", 1},
-                                                      {"Implement Setup Wizard & Responsive Stepper", 1},
-                                                      };
-    const auto it = kPins.find(title);
-    return it == kPins.end() ? 0 : it->second;
-}
 
 } // namespace demo

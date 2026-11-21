@@ -497,6 +497,7 @@ void HomePage::buildUi()
     middleLayout->setContentsMargins(0, 0, 0, 0);
     middleLayout->setSpacing(18);
     auto* chartsContent = new QWidget(this);
+    chartsContent->setObjectName(QStringLiteral("homePanelContent"));
     auto* chartsLayout = new QVBoxLayout(chartsContent);
     chartsLayout->setContentsMargins(0, 0, 0, 0);
     chartsLayout->setSpacing(14);
@@ -523,7 +524,7 @@ void HomePage::buildUi()
     m_pinsPanel = createPinsPanel();
     m_pinsPanel->setMinimumWidth(260);
     middleLayout->addWidget(m_pinsPanel, 17);
-    pageLayout->addLayout(middleLayout, 1);
+    pageLayout->addLayout(middleLayout);   // natural height: no empty filler under the panels
 
     auto* quickLinksLayout = new QGridLayout;
     quickLinksLayout->setContentsMargins(0, 0, 0, 0);
@@ -550,6 +551,7 @@ void HomePage::buildUi()
     for (int column = 0; column < 3; ++column)
         quickLinksLayout->setColumnStretch(column, 1);
     pageLayout->addLayout(quickLinksLayout);
+    pageLayout->addStretch(1);
 }
 
 
@@ -606,12 +608,13 @@ QFrame* HomePage::createPinsPanel()
 
     // Sticky Note Cluster
     auto* cluster = new QWidget(panel);
+    cluster->setObjectName(QStringLiteral("homePanelContent"));
     m_pinsGrid = new QGridLayout(cluster);
     m_pinsGrid->setContentsMargins(0, 0, 0, 0);
     m_pinsGrid->setHorizontalSpacing(0);
     m_pinsGrid->setVerticalSpacing(0);
     layout->addWidget(cluster, 1);
-    m_pinsEmptyLabel = new QLabel(QStringLiteral("No pins yet"), panel);
+    m_pinsEmptyLabel = new QLabel(QStringLiteral("No pins yet. Open Pins to leave the first one."), panel);
     m_pinsEmptyLabel->setObjectName(QStringLiteral("homeEmptyLabel"));
     m_pinsEmptyLabel->setAlignment(Qt::AlignCenter);
     layout->addWidget(m_pinsEmptyLabel, 1);

@@ -3,6 +3,7 @@
 #include "git/GitHubIntegrationPage.h"
 #include "Sidebar.h"
 #include "home/HomePage.h"
+#include "pins/PinsPage.h"
 #include "slicer/ChaosSlicerPage.h"
 #include "team/TeamSkillsPage.h"
 #include "tracking/TrackingPage.h"
@@ -11,7 +12,6 @@
 #include "welcome/WelcomePage.h"
 #include <QDialog>
 #include <QHBoxLayout>
-#include <QLabel>
 #include <QStatusBar>
 
 MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
@@ -62,9 +62,8 @@ void MainWindow::buildPages()
     auto* hub = new ProjectsHubPage(core_, bridge_, pages_);
     auto* slicerPage = new planova::slicer::ChaosSlicerPage(
         core_.slicer(), core_.taskQuery(), core_.memberQuery(), pages_);
-    // Pins stays a placeholder until the S5 backend exists.
-    auto* pinsPage = new QLabel("Pins & Collab - Coming soon", pages_);
-    pinsPage->setAlignment(Qt::AlignCenter);
+    auto* pinsPage = new planova::s5::PinsPage(
+        core_.pinBoard(), core_.pins(), core_.memberQuery(), core_.taskQuery(), pages_);
     auto* teamPage = new planova::team::TeamSkillsPage(
         core_.members(), core_.memberQuery(), bridge_, pages_);
     auto* boardPage = new PhaseBoardPage(core_, bridge_, pages_);
@@ -89,6 +88,11 @@ void MainWindow::buildPages()
     connect(&bridge_, &CoreBridge::changed, slicerPage, &planova::slicer::ChaosSlicerPage::refreshFromBoard);
     connect(&bridge_, &CoreBridge::changed, trackingPage, &planova::s6::TrackingPage::refresh);
     connect(&bridge_, &CoreBridge::changed, homePage_, &planova::s6::HomePage::refresh);
+    connect(&bridge_, &CoreBridge::changed, pinsPage, &planova::s5::PinsPage::refresh);
+    // The Home footer counts every open pin, not just the four shown.
+    auto showOpenPinCount = [this] { homePage_->setOpenPinCount(core_.pinQuery().openCount()); };
+    connect(&bridge_, &CoreBridge::changed, homePage_, showOpenPinCount);
+    showOpenPinCount();
 
     connect(slicerPage, &planova::slicer::ChaosSlicerPage::assignmentsApplied, this,
             [this](int) { showPage(Page::Board); });

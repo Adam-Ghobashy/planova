@@ -12,6 +12,7 @@
 
 class QButtonGroup;
 class QHBoxLayout;
+class QLabel;
 
 namespace planova::s5 {
 
@@ -65,6 +66,7 @@ private:
     // Cleared in the destructor: a card that is deleted mid-fade (page teardown) must not run its command.
     std::shared_ptr<bool> alive_ = std::make_shared<bool>(true);
 
+    QLabel* emptyHint_ = nullptr;
     QWidget* chipBar_ = nullptr;
     QHBoxLayout* chipLayout_ = nullptr;
     QButtonGroup* chipGroup_ = nullptr;

@@ -108,6 +108,9 @@ void MemberProjection::apply(const Event& event)
 
             double estimatedHours = p["estHours"].toDouble(0.0);
             double actualHours = static_cast<double>(event.ts - tsIt->second) / 3600000.0;
+            if (actualHours < 0.05) {
+                return; // under 3 minutes is bookkeeping (a card moved straight to Done), not work
+            }
             memIt->second.velocity = VelocityCalculator::update(
                 memIt->second.velocity, estimatedHours, actualHours);
         }

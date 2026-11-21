@@ -1,5 +1,6 @@
 // Dev tool: saves one PNG per page and theme so the UI can be compared with the Figma prototype.
-// Usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N] [--dialogs] [--splash]
+// Usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N] [--dialogs] [--splash] [--empty]
+// --empty skips the demo data, to check the empty-project look.
 // --dialogs saves one PNG per dialog and theme instead (each dialog opened over the Board page).
 // --splash saves the welcome splash, grabbed 1600 ms into its animation, once per theme.
 #include "app/CoreBridge.h"
@@ -38,6 +39,7 @@ struct Options {
     int page = -1; // -1 means every page
     bool dialogs = false;
     bool splash = false;
+    bool empty = false;
 };
 
 bool parseArgs(const QStringList& args, Options& options)
@@ -50,6 +52,8 @@ bool parseArgs(const QStringList& args, Options& options)
             options.theme = args[++i];
         else if (args[i] == "--page" && i + 1 < args.size())
             options.page = args[++i].toInt();
+        else if (args[i] == "--empty")
+            options.empty = true;
         else if (args[i] == "--splash")
             options.splash = true;
         else if (args[i] == "--dialogs")
@@ -105,7 +109,8 @@ int main(int argc, char* argv[])
         return 1;
     PlanovaCore core(std::filesystem::path(workspace.path().toStdString()));
     core.openProject(core.createProject("Planova", "Team Six", "Agile", ""));
-    demo::seedIfEmpty(core);
+    if (!options.empty)
+        demo::seedIfEmpty(core);
 
     CoreBridge bridge(core);
     MainWindow window(core, bridge);

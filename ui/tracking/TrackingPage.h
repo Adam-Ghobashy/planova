@@ -8,6 +8,7 @@
 #include "../widgets/StatCardWidget.h"
 
 class QButtonGroup;
+class QLabel;
 class QPushButton;
 
 namespace planova::s6 {
@@ -47,6 +48,8 @@ private:
     LeaderboardModel* model_ = nullptr;
 
     ComplexityBarChart* chart_ = nullptr;
+    QLabel* emptyLeaderboard_ = nullptr;
+    QLabel* emptyChart_ = nullptr;
 
     QPushButton* contributionButton_ = nullptr;
     QPushButton* efficiencyButton_ = nullptr;

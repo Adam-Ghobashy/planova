@@ -1,4 +1,5 @@
 #include "git/GitHubIntegrationPage.h"
+#include "widgets/EmptyHint.h"
 #include "theme/ThemeManager.h"
 #include "theme/Tokens.h"
 #include <QDateTime>
@@ -188,6 +189,8 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     commitsTable_->horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
     commitsTable_->setMinimumHeight(180);
     commitsLayout->addWidget(commitsTable_);
+    emptyCommits_ = makeEmptyHint("No commits yet. Connect a repository, then use Simulate Git Sync.", commitsCard);
+    commitsLayout->addWidget(emptyCommits_);
 
     mainLayout->addWidget(commitsCard);
 
@@ -216,6 +219,8 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     issuesTable_->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
     issuesTable_->setMinimumHeight(150);
     issuesLayout->addWidget(issuesTable_);
+    emptyIssues_ = makeEmptyHint("No issues tracked yet.", issuesCard);
+    issuesLayout->addWidget(emptyIssues_);
 
     mainLayout->addWidget(issuesCard);
 
@@ -327,6 +332,11 @@ void GitHubIntegrationPage::refresh() {
     conflictsValue_->setText(conflictCount == 0
                                  ? QString("None")
                                  : QString("%1 Member(s)").arg(conflictCount));
+
+    commitsTable_->setVisible(!commits.empty());
+    emptyCommits_->setVisible(commits.empty());
+    issuesTable_->setVisible(!issues.empty());
+    emptyIssues_->setVisible(issues.empty());
 
     // Populate Commits Table
     commitsTable_->setRowCount(static_cast<int>(commits.size()));

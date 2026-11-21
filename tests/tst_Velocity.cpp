@@ -97,6 +97,35 @@ private slots:
         QVERIFY(std::abs(updatedVel - 1.3) < 1e-6);
     }
 
+    void instantMoveIgnored()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock(1000);
+
+        MemberProjection proj;
+        log.add(proj);
+
+        MemberService svc(log, clock);
+        Id memberId = svc.add("Adam", "Backend Lead", true);
+
+        appendEvent(log, "evt-assign", clock.nowMs(), TaskAssigned,
+                    {{"taskId", "task_1"},
+                     {"memberId", QString::fromStdString(memberId)},
+                     {"by", "board"}});
+        appendEvent(log, "evt-start", clock.nowMs(), TaskMoved,
+                    {{"taskId", "task_1"}, {"from", "ToDo"},
+                     {"to", "InProgress"}, {"estHours", 8}});
+
+        // One second later: bookkeeping, not work. Without the guard the ratio would be huge.
+        clock.advance(1000);
+        appendEvent(log, "evt-done", clock.nowMs(), TaskMoved,
+                    {{"taskId", "task_1"}, {"from", "Review"},
+                     {"to", "Done"}, {"estHours", 8}});
+
+        QCOMPARE(proj.byId(memberId)->velocity, 1.0);
+    }
+
     void doneWithoutAssigneeChangesNothing()
     {
         MemoryStore store;
