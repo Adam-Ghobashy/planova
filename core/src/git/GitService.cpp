@@ -4,18 +4,28 @@
 
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QString>
+#include <stdexcept>
 
-GitService::GitService(EventLog& log, IClock& clock)
+GitService::GitService(EventLog& log, IClock& clock, const GitProjection* state)
     : log_(log)
     , clock_(clock)
+    , state_(state)
 {
 }
 
 void GitService::connect(const std::string& repoUrl, const std::string& branch, const Id& author)
 {
+    const std::string url = QString::fromStdString(repoUrl).trimmed().toStdString();
+    const std::string branchName = QString::fromStdString(branch).trimmed().toStdString();
+    if (url.empty())
+        throw std::invalid_argument("Repository URL cannot be empty");
+    if (branchName.empty())
+        throw std::invalid_argument("Branch cannot be empty");
+
     QJsonObject payload;
-    payload["repoUrl"] = QString::fromStdString(repoUrl);
-    payload["branch"] = QString::fromStdString(branch);
+    payload["repoUrl"] = QString::fromStdString(url);
+    payload["branch"] = QString::fromStdString(branchName);
 
     Event evt;
     evt.ts = clock_.nowMs();
@@ -46,6 +56,10 @@ void GitService::sync(const std::vector<CommitDto>& commits,
                       const std::vector<Id>& conflictedMembers,
                       const Id& author)
 {
+    // Sync only makes sense with a saved repository (skipped when no projection was given).
+    if (state_ && !state_->isConnected())
+        throw std::invalid_argument("Connect a repository before syncing");
+
     QJsonArray commitArray;
     for (const auto& c : commits) {
         QJsonObject obj;

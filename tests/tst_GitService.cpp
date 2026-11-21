@@ -1,4 +1,5 @@
 #include <QtTest>
+#include <stdexcept>
 #include <vector>
 
 #include "planova/common/Clock.h"
@@ -129,6 +130,84 @@ private slots:
         QCOMPARE(gitProj.commits()[1].author, string("Zeyad"));
         QCOMPARE(gitProj.issues().size(), size_t(3));
         QCOMPARE(gitProj.openIssueCount(), 2);
+    }
+
+    void connectBlankUrlThrows()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock;
+        GitService svc(log, clock);
+
+        QVERIFY_EXCEPTION_THROWN(svc.connect("  ", "main"), std::invalid_argument);
+        QCOMPARE(store.events.size(), size_t(0));
+    }
+
+    void connectBlankBranchThrows()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock;
+        GitService svc(log, clock);
+
+        QVERIFY_EXCEPTION_THROWN(svc.connect("https://github.com/Zeyad-101/planova.git", "  "),
+                                 std::invalid_argument);
+        QCOMPARE(store.events.size(), size_t(0));
+    }
+
+    void connectTrimsUrlAndBranch()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock;
+        GitProjection proj;
+        log.add(proj);
+        GitService svc(log, clock, &proj);
+
+        svc.connect("  https://github.com/Zeyad-101/planova.git  ", "  main ");
+        QCOMPARE(proj.repoUrl(), string("https://github.com/Zeyad-101/planova.git"));
+        QCOMPARE(proj.branch(), string("main"));
+    }
+
+    void syncWhenDisconnectedThrows()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock;
+        GitProjection proj;
+        log.add(proj);
+        GitService svc(log, clock, &proj);
+
+        QVERIFY_EXCEPTION_THROWN(svc.sync({}, {}), std::invalid_argument);
+        QCOMPARE(store.events.size(), size_t(0));
+    }
+
+    void simulateSyncWhenDisconnectedThrows()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock;
+        GitProjection proj;
+        log.add(proj);
+        GitService svc(log, clock, &proj);
+
+        QVERIFY_EXCEPTION_THROWN(svc.simulateSync({}), std::invalid_argument);
+        QCOMPARE(store.events.size(), size_t(0));
+    }
+
+    void syncWhenConnectedWorks()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock;
+        GitProjection proj;
+        log.add(proj);
+        GitService svc(log, clock, &proj);
+
+        svc.connect("https://github.com/Zeyad-101/planova.git", "main");
+        clock.advance(10);
+        svc.simulateSync({});
+        QCOMPARE(proj.commits().size(), size_t(2));
     }
 };
 
