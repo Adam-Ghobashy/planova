@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include <QString>
 #include <stdexcept>
+#include <utility>
 
 namespace planova::slicer {
 
@@ -15,14 +16,22 @@ void requireValid(const ScoringWeights& w) {
 }
 
 SlicerService::SlicerService(ITaskQuery& tasks, IMemberQuery& members, IAssignmentStrategy& strategy,
-                             EventLog& log, IClock& clock)
-    : tasks_(tasks), members_(members), strategy_(strategy), log_(log), clock_(clock) {
+                             EventLog& log, IClock& clock, const IConflictQuery* conflicts)
+    : tasks_(tasks), members_(members), strategy_(strategy), log_(log), clock_(clock),
+      conflicts_(conflicts) {
     log_.add(weights_);
 }
 
 std::vector<Assignment> SlicerService::preview(const ScoringWeights& weights) const {
     requireValid(weights);
-    return strategy_.assign(tasks_.all(), members_.all(), weights);
+    auto members = members_.all();
+    if (conflicts_) {
+        std::vector<MemberDto> available;
+        for (const auto& m : members)
+            if (!conflicts_->hasOpenConflict(m.id)) available.push_back(m);
+        if (!available.empty()) members = std::move(available);
+    }
+    return strategy_.assign(tasks_.all(), members, weights);
 }
 
 int SlicerService::apply(const std::vector<Assignment>& assignments, const ScoringWeights& weights) {

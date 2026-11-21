@@ -40,6 +40,15 @@ public:
     }
 };
 
+// Says that one member has an open decline conflict.
+class FakeConflictQuery : public IConflictQuery {
+public:
+    explicit FakeConflictQuery(Id memberId) : member_(std::move(memberId)) {}
+    bool hasOpenConflict(const Id& memberId) const override { return memberId == member_; }
+private:
+    Id member_;
+};
+
 class tst_SlicerService : public QObject {
     Q_OBJECT
 private slots:
@@ -191,6 +200,41 @@ private slots:
         Fixture f;
         QVERIFY_EXCEPTION_THROWN(f.svc.saveWeights(ScoringWeights{60, 30, 20}), std::invalid_argument);
         QCOMPARE(int(f.store.events.size()), 0);
+    }
+    void previewSkipsMembersWithOpenConflict() {
+        FakeTaskQuery tq;
+        FakeMemberQuery mq;
+        FakeEventStore store;
+        EventLog log{store};
+        FakeClock clock{1000};
+        WeightedScoringStrategy strategy;
+        FakeConflictQuery conflicts{"1"};
+        SlicerService svc{tq, mq, strategy, log, clock, &conflicts};
+        tq.addTask(TaskDto{"t1", "Task 1", SkillCategory::Backend, Priority::Medium, 3, 5,
+                           TaskStatus::ToDo, std::nullopt, {}});
+        mq.addMember(MemberDto{"1", "Alice", "Dev", false, {{SkillCategory::Backend, 5}}, 100, 1.0});
+        mq.addMember(MemberDto{"2", "Bob", "Dev", false, {{SkillCategory::Backend, 2}}, 100, 1.0});
+
+        const auto preview = svc.preview(ScoringWeights{});
+        QCOMPARE(int(preview.size()), 1);
+        QCOMPARE(preview[0].memberId, Id("2"));  // Alice is the better match but has an open conflict
+    }
+    void previewUsesEveryoneWhenAllHaveConflicts() {
+        FakeTaskQuery tq;
+        FakeMemberQuery mq;
+        FakeEventStore store;
+        EventLog log{store};
+        FakeClock clock{1000};
+        WeightedScoringStrategy strategy;
+        FakeConflictQuery conflicts{"1"};
+        SlicerService svc{tq, mq, strategy, log, clock, &conflicts};
+        tq.addTask(TaskDto{"t1", "Task 1", SkillCategory::Backend, Priority::Medium, 3, 5,
+                           TaskStatus::ToDo, std::nullopt, {}});
+        mq.addMember(MemberDto{"1", "Alice", "Dev", false, {{SkillCategory::Backend, 5}}, 100, 1.0});
+
+        const auto preview = svc.preview(ScoringWeights{});
+        QCOMPARE(int(preview.size()), 1);  // a one-person team still gets its tasks
+        QCOMPARE(preview[0].memberId, Id("1"));
     }
     void portionsBoardVersusPreview() {
         Fixture f;

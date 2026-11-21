@@ -85,11 +85,11 @@ private:
     GitService git_;
     TaskProjection taskProjection_;
     TaskService tasks_;
+    planova::ConflictProjection conflictProjection_; // before slicer_, which skips members with open conflicts
     planova::slicer::WeightedScoringStrategy strategy_;
     planova::slicer::SlicerService slicer_;
     planova::PinProjection pinProjection_;
     planova::PinService pins_;
-    planova::ConflictProjection conflictProjection_;
     planova::ConflictService conflicts_;
     planova::s6::StatsService stats_;
     planova::s6::HomeService home_;
