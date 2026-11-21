@@ -52,5 +52,7 @@ target_sources(planova_core PRIVATE
 target_sources(planova_core PRIVATE
     src/pins/PinProjection.cpp
     src/pins/PinService.cpp
+    src/conflict/ConflictProjection.cpp
+    src/conflict/ConflictService.cpp
 )
 # --- end S5 ---
