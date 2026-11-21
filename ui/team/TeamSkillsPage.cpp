@@ -56,10 +56,14 @@ QString initialsFor(const string& name) {
 } // namespace
 
 TeamSkillsPage::TeamSkillsPage(MemberService& service,
-                               IMemberQuery& members,
+                               const MemberProjection& members,
+                               planova::ConflictService& conflicts,
+                               const planova::ConflictProjection& conflictView,
+                               ITaskQuery& tasks,
                                CoreBridge& bridge,
                                QWidget* parent)
-    : QWidget(parent), service_(service), members_(members), bridge_(bridge) {
+    : QWidget(parent), service_(service), members_(members), conflicts_(conflicts),
+      conflictView_(conflictView), tasks_(tasks), bridge_(bridge) {
     setObjectName("TeamSkillsPage");
 
     setAutoFillBackground(true);
@@ -142,6 +146,7 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     makeMetric("Avg Velocity (EMA)", avgVelocityValue_);
 
     mainLayout->addWidget(summaryCard);
+    mainLayout->addWidget(buildSettingsCard(contentWidget));
 
     auto* addCard = new QFrame(contentWidget);
     addCard->setObjectName("card");
@@ -206,7 +211,7 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     mainLayout->addLayout(cardsLayout_);
 
     emptyLabel_ = new QLabel(
-        "No team members yet. Add the first one with 'Add Team Member' above.",
+        "No team members yet. Add the first one with the '+ Add Member' button above.",
         contentWidget);
     emptyLabel_->setObjectName("emptyLabel");
     emptyLabel_->setAlignment(Qt::AlignCenter);
@@ -258,6 +263,120 @@ void TeamSkillsPage::onAddMember() {
     showStatus(QString("Added %1 to the team").arg(QString::fromStdString(name)));
 }
 
+QPushButton* TeamSkillsPage::makeSwitch(const QString& objectName, const QString& title,
+                                        const QString& settingKey, QWidget* parent) {
+    // A checkable push button reports its checked state to assistive tech; "On"/"Off" in the text
+    // means the state is not shown by colour alone.
+    auto* button = new QPushButton(parent);
+    button->setObjectName(objectName);
+    button->setCheckable(true);
+    button->setCursor(Qt::PointingHandCursor);
+    button->setMinimumHeight(32);
+    button->setChecked(members_.getSetting(settingKey.toStdString(), false));
+    auto showState = [button, title](bool on) {
+        button->setText(QString("%1: %2").arg(title, on ? "On" : "Off"));
+    };
+    showState(button->isChecked());
+    connect(button, &QPushButton::toggled, this, [this, showState, settingKey](bool on) {
+        showState(on);
+        try {
+            service_.setSetting(settingKey.toStdString(), on);
+        } catch (const exception& e) {
+            showStatus(QString::fromUtf8(e.what()));
+        }
+    });
+    return button;
+}
+
+QFrame* TeamSkillsPage::buildSettingsCard(QWidget* parent) {
+    auto* card = new QFrame(parent);
+    card->setObjectName("card");
+    auto* layout = new QHBoxLayout(card);
+    layout->setContentsMargins(20, 14, 20, 14);
+    layout->setSpacing(24);
+
+    auto addSwitch = [&](const QString& objectName, const QString& title, const QString& hint,
+                         const QString& key) {
+        auto* col = new QVBoxLayout();
+        col->setSpacing(4);
+        auto* button = makeSwitch(objectName, title, key, card);
+        button->setAccessibleDescription(hint);
+        auto* hintLabel = new QLabel(hint, card);
+        hintLabel->setObjectName("cardSubtitle");
+        col->addWidget(button, 0, Qt::AlignLeft);
+        col->addWidget(hintLabel);
+        layout->addLayout(col);
+    };
+    addSwitch("autoMatchSwitch", "Auto-Match Priority", "Match parameters to qualify capacity",
+              "autoMatch");
+    addSwitch("smartAssignSwitch", "Smart Assign", "Match task assignments and capacity triggers",
+              "smartAssign");
+    layout->addStretch();
+    return card;
+}
+
+QWidget* TeamSkillsPage::buildAssignmentColumn(const MemberDto& member, QWidget* parent) {
+    auto* column = new QWidget(parent);
+    column->setObjectName("assignmentColumn");
+    column->setFixedWidth(240);
+    auto* layout = new QVBoxLayout(column);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(6);
+
+    auto* heading = new QLabel("Assignment / Clash", column);
+    heading->setObjectName("cardSubtitle");
+    layout->addWidget(heading);
+
+    QStringList titles;
+    for (const TaskDto& task : tasks_.all()) {
+        if (task.assignee && *task.assignee == member.id && task.status != TaskStatus::Done)
+            titles << QString::fromStdString(task.title);
+    }
+    auto* current = new QLabel(titles.isEmpty() ? QString::fromUtf8("—") : titles.join(", "), column);
+    current->setObjectName("assignmentText");
+    current->setWordWrap(true);
+    layout->addWidget(current);
+
+    bool badgeShown = false;
+    for (const ConflictView& conflict : conflictView_.openConflicts()) {
+        if (conflict.memberId != member.id) continue;
+        if (!badgeShown) {
+            auto* badge = new QLabel("Decline and Clash", column);
+            badge->setObjectName("clashBadge");
+            layout->addWidget(badge, 0, Qt::AlignLeft);
+            badgeShown = true;
+        }
+        const auto task = tasks_.byId(conflict.taskId);
+        const QString taskTitle = task ? QString::fromStdString(task->title) : QString("a task");
+        auto* text = new QLabel(QString::fromUtf8("Task Conflict Detected: %1 — %2")
+                                    .arg(taskTitle, QString::fromStdString(conflict.reason)), column);
+        text->setObjectName("conflictText");
+        text->setWordWrap(true);
+        layout->addWidget(text);
+
+        // "&&" shows one ampersand; a single one would become a keyboard mnemonic.
+        auto* resolve = new QPushButton("Agree && Resolve", column);
+        resolve->setObjectName("resolveConflict");
+        resolve->setCursor(Qt::PointingHandCursor);
+        resolve->setMinimumHeight(28);
+        connect(resolve, &QPushButton::clicked, this,
+                [this, conflictId = conflict.id, memberId = member.id]() { resolveConflict(conflictId, memberId); });
+        layout->addWidget(resolve, 0, Qt::AlignLeft);
+    }
+    layout->addStretch();
+    return column;
+}
+
+void TeamSkillsPage::resolveConflict(const Id& conflictId, const Id& memberId) {
+    try {
+        conflicts_.resolve(conflictId, memberId);
+    } catch (const exception& e) {
+        ModalDialog::info(this, "Could not resolve", QString::fromUtf8(e.what()));
+        return;
+    }
+    showStatus("Conflict resolved");
+}
+
 QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex) {
     auto* card = new QFrame(this);
     card->setObjectName("card");
@@ -286,7 +405,7 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
     nameRow->addWidget(nameLbl);
 
     if (member.isLead) {
-        auto* leadBadge = new QLabel("TEAM LEAD", card);
+        auto* leadBadge = new QLabel(QString::fromUtf8("Lead 👑"), card);
         leadBadge->setObjectName("leadBadge");
         nameRow->addWidget(leadBadge);
     }
@@ -447,6 +566,8 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
     infoCol->addLayout(nameRow);
     infoCol->addLayout(roleRow);
     topRow->addLayout(infoCol, 1);
+    // Natural height, centred: a tall clash column must not stretch the name row.
+    topRow->setAlignment(infoCol, Qt::AlignVCenter);
 
     // Understanding Slider (0 - 100%)
     auto* undCol = new QVBoxLayout();
@@ -486,6 +607,8 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
     undCol->addLayout(undHeader);
     undCol->addWidget(undSlider);
     topRow->addLayout(undCol);
+    topRow->setAlignment(undCol, Qt::AlignVCenter);
+    topRow->addWidget(buildAssignmentColumn(member, card), 0, Qt::AlignVCenter);
 
     cardLayout->addLayout(topRow);
 

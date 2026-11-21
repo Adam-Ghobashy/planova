@@ -3,6 +3,8 @@
 #include "app/CoreBridge.h"
 #include "planova/common/Dtos.h"
 #include "planova/common/Queries.h"
+#include "planova/conflict/ConflictService.h"
+#include "planova/team/MemberProjection.h"
 #include "planova/team/MemberService.h"
 #include <QCheckBox>
 #include <QComboBox>
@@ -20,7 +22,10 @@ class TeamSkillsPage : public QWidget {
     Q_OBJECT
 public:
     TeamSkillsPage(MemberService& service,
-                   IMemberQuery& members,
+                   const MemberProjection& members,
+                   planova::ConflictService& conflicts,
+                   const planova::ConflictProjection& conflictView,
+                   ITaskQuery& tasks,
                    CoreBridge& bridge,
                    QWidget* parent = nullptr);
 
@@ -31,10 +36,18 @@ private slots:
 
 private:
     QFrame* buildMemberCard(const MemberDto& member, int colorIndex);
+    QFrame* buildSettingsCard(QWidget* parent);
+    QWidget* buildAssignmentColumn(const MemberDto& member, QWidget* parent);
+    QPushButton* makeSwitch(const QString& objectName, const QString& title, const QString& settingKey,
+                            QWidget* parent);
+    void resolveConflict(const Id& conflictId, const Id& memberId);
     void showStatus(const QString& text);
 
     MemberService& service_;
-    IMemberQuery& members_;
+    const MemberProjection& members_;
+    planova::ConflictService& conflicts_;
+    const planova::ConflictProjection& conflictView_;
+    ITaskQuery& tasks_;
     CoreBridge& bridge_;
 
     QLabel* statusLabel_ = nullptr;

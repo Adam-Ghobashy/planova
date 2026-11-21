@@ -1,5 +1,5 @@
 // Dev tool: saves one PNG per page and theme so the UI can be compared with the Figma prototype.
-// Usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N] [--dialogs] [--splash] [--empty]
+// Usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N]  [--clash] [--dialogs] [--splash] 
 // --empty skips the demo data, to check the empty-project look.
 // --dialogs saves one PNG per dialog and theme instead (each dialog opened over the Board page).
 // --splash saves the welcome splash, grabbed 1600 ms into its animation, once per theme.
@@ -44,6 +44,7 @@ struct Options {
     bool splash = false;
     bool cardMenu = false;
     bool empty = false;
+    bool clash = false;
 };
 
 bool parseArgs(const QStringList& args, Options& options)
@@ -56,6 +57,8 @@ bool parseArgs(const QStringList& args, Options& options)
             options.theme = args[++i];
         else if (args[i] == "--page" && i + 1 < args.size())
             options.page = args[++i].toInt();
+        else if (args[i] == "--clash")
+            options.clash = true;
         else if (args[i] == "--empty")
             options.empty = true;
         else if (args[i] == "--splash")
@@ -115,12 +118,25 @@ int main(int argc, char* argv[])
         return 1;
     PlanovaCore core(std::filesystem::path(workspace.path().toStdString()));
     core.openProject(core.createProject("Planova", "Team Six", "Agile", ""));
+    if (options.clash) // the first demo member becomes the lead, so the Lead chip shows
+        core.members().add("Zeyad Waled", "Team & Systems Lead", true);
     if (!options.empty)
         demo::seedIfEmpty(core);
+    if (options.clash) {
+        // The first member declines a task, so the Team page shows a clash.
+        core.members().setSetting("autoMatch", true);
+        const auto firstMember = core.memberProjection().all().front().id;
+        for (const TaskDto& task : core.taskQuery().all()) {
+            if (task.assignee && *task.assignee == firstMember) {
+                core.conflicts().decline(task.id, *task.assignee, "Overloaded this week");
+                break;
+            }
+        }
+    }
 
     CoreBridge bridge(core);
     MainWindow window(core, bridge);
-    window.resize(1440, 900);
+    window.resize(1440, options.clash ? 1800 : 900); // --clash is tall so every Team card is visible
     window.show();
 
     auto* pages = window.findChild<QStackedWidget*>();

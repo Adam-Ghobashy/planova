@@ -65,7 +65,8 @@ void MainWindow::buildPages()
     auto* pinsPage = new planova::s5::PinsPage(
         core_.pinBoard(), core_.pins(), core_.memberQuery(), core_.taskQuery(), pages_);
     auto* teamPage = new planova::team::TeamSkillsPage(
-        core_.members(), core_.memberQuery(), bridge_, pages_);
+        core_.members(), core_.memberProjection(), core_.conflicts(), core_.conflictProjection(),
+        core_.taskQuery(), bridge_, pages_);
     auto* boardPage = new PhaseBoardPage(core_, bridge_, pages_);
     auto* trackingPage = new planova::s6::TrackingPage(core_.stats(), core_.memberQuery(), pages_);
     auto* gitPage = new planova::git::GitHubIntegrationPage(
