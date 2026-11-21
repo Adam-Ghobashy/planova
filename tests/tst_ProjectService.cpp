@@ -1,5 +1,6 @@
 #include <QtTest>
 #include <QTemporaryDir>
+#include <stdexcept>
 #include "planova/project/ProjectService.h"
 #include "planova/store/FileEventStore.h"
 
@@ -19,6 +20,9 @@ class tst_ProjectService : public QObject
 private slots:
     void createThenList();
     void reopenRestoresProject();
+    void createRejectsBlankName();
+    void createRejectsUnknownModel();
+    void createTrimsName();
 };
 
 void tst_ProjectService::createThenList()
@@ -57,6 +61,48 @@ void tst_ProjectService::reopenRestoresProject()
     log.rebuild();
 
     QCOMPARE(service.list().size(), size_t(1));
+}
+
+void tst_ProjectService::createRejectsBlankName()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FileEventStore store(std::filesystem::path(dir.path().toStdString()));
+    EventLog log(store);
+    FixedClock clock;
+    ProjectService service(log, clock);
+
+    QVERIFY_THROWS_EXCEPTION(std::invalid_argument, service.create("   ", "team", "Agile", ""));
+    QVERIFY(service.list().empty());
+}
+
+void tst_ProjectService::createRejectsUnknownModel()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FileEventStore store(std::filesystem::path(dir.path().toStdString()));
+    EventLog log(store);
+    FixedClock clock;
+    ProjectService service(log, clock);
+
+    QVERIFY_THROWS_EXCEPTION(std::invalid_argument, service.create("App", "team", "Kanban", ""));
+    QVERIFY(service.list().empty());
+}
+
+void tst_ProjectService::createTrimsName()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FileEventStore store(std::filesystem::path(dir.path().toStdString()));
+    EventLog log(store);
+    FixedClock clock;
+    ProjectService service(log, clock);
+
+    service.create("  App  ", "team", "Agile", "");
+
+    const auto projects = service.list();
+    QCOMPARE(projects.size(), size_t(1));
+    QCOMPARE(projects[0].name, std::string("App"));
 }
 
 QTEST_MAIN(tst_ProjectService)

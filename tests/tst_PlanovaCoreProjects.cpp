@@ -1,6 +1,7 @@
 #include <QtTest>
 #include <QTemporaryDir>
 #include <filesystem>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -18,6 +19,7 @@ private slots:
     void legacyDataImportedOnFirstOpen();
     void newProjectStartsEmptyEvenWithLegacyRoot();
     void hasProjectDataReflectsFolder();
+    void openUnknownProjectThrows();
 };
 
 namespace {
@@ -169,6 +171,17 @@ void tst_PlanovaCoreProjects::hasProjectDataReflectsFolder()
     QVERIFY(!core.hasProjectData("p1"));
     const Id id = core.createProject("A", "team", "Agile", "idea");
     QVERIFY(core.hasProjectData(id));
+}
+
+void tst_PlanovaCoreProjects::openUnknownProjectThrows()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    PlanovaCore core(dir.path().toStdString());
+
+    QVERIFY_THROWS_EXCEPTION(std::invalid_argument, core.openProject("bogus"));
+    QVERIFY(!core.currentProject());
+    QVERIFY(!std::filesystem::exists(std::filesystem::path(dir.path().toStdString()) / "bogus"));
 }
 
 QTEST_APPLESS_MAIN(tst_PlanovaCoreProjects)

@@ -50,7 +50,7 @@ void tst_PlanovaCoreSlicer::applyShowsAssigneeOnTaskQuery()
     QVERIFY(dir.isValid());
 
     PlanovaCore core(std::filesystem::path(dir.path().toStdString()));
-    core.openProject("p1");
+    core.openProject(core.createProject("A", "team", "Agile", ""));
     const Id anaId = setUpTeamAndTask(core);
 
     const auto preview = core.slicer().preview(planova::slicer::ScoringWeights{});
@@ -65,9 +65,11 @@ void tst_PlanovaCoreSlicer::reapplyAfterRestartAppendsNothing()
     const std::filesystem::path ws(dir.path().toStdString());
 
     Id anaId;
+    Id projectId;
     {
         PlanovaCore core(ws);
-        core.openProject("p1");
+        projectId = core.createProject("A", "team", "Agile", "");
+        core.openProject(projectId);
         anaId = setUpTeamAndTask(core);
         const auto preview = core.slicer().preview(planova::slicer::ScoringWeights{});
         QCOMPARE(core.slicer().apply(preview, planova::slicer::ScoringWeights{}), 1);
@@ -75,8 +77,8 @@ void tst_PlanovaCoreSlicer::reapplyAfterRestartAppendsNothing()
 
     // simulate an app restart: a brand new core on the same folder
     PlanovaCore again(ws);
-    again.openProject("p1");
-    const auto eventsDir = ws / "p1" / "events";
+    again.openProject(projectId);
+    const auto eventsDir = ws / projectId / "events";
     const int before = countEventFiles(eventsDir);
 
     const auto preview = again.slicer().preview(planova::slicer::ScoringWeights{});

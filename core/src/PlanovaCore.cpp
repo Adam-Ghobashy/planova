@@ -8,7 +8,6 @@
 #include <QJsonObject>
 #include <QString>
 #include <algorithm>
-#include <iterator>
 #include <set>
 #include <stdexcept>
 #include <utility>
@@ -33,16 +32,10 @@ std::string trimmed(const std::string& text)
     return QString::fromStdString(text).trimmed().toStdString();
 }
 
-// Throws std::invalid_argument for the first problem found. Runs before anything is written.
+// Checks members and weights. The name and model are checked by ProjectService::create,
+// which setupProject calls before it writes anything else.
 void validateSetup(const ProjectSetup& setup)
 {
-    if (isBlank(setup.name))
-        throw std::invalid_argument("Project name cannot be empty");
-
-    static const char* const kModels[] = {"Agile", "Scrum", "Waterfall", "Spiral"};
-    if (std::find(std::begin(kModels), std::end(kModels), setup.seModel) == std::end(kModels))
-        throw std::invalid_argument("Unknown process model: " + setup.seModel);
-
     if (setup.members.empty())
         throw std::invalid_argument("Add at least one team member");
     for (const SetupMember& member : setup.members) {
@@ -138,6 +131,12 @@ bool PlanovaCore::hasProjectData(const Id& projectId) const
 
 void PlanovaCore::openProject(const Id& projectId)
 {
+    const auto known = projects_.list();
+    const bool exists = std::any_of(known.begin(), known.end(),
+                                    [&](const ProjectDto& project) { return project.id == projectId; });
+    if (!exists)
+        throw std::invalid_argument("Unknown project: " + projectId);
+
     const auto dir = projectEventsDir(projectId);
     if (!std::filesystem::is_directory(dir)) {
         // One-time import of data written by the pre-project app (workspace root).

@@ -16,7 +16,7 @@ void tst_PlanovaCoreTasks::velocityIgnoresInstantTaskFlow()
     QTemporaryDir dir;
     QVERIFY(dir.isValid());
     PlanovaCore core(std::filesystem::path(dir.path().toStdString()));
-    core.openProject("p1");
+    core.openProject(core.createProject("A", "team", "Agile", ""));
 
     const Id member = core.members().add("Ana", "Developer", false);
     NewTask t;
@@ -41,10 +41,12 @@ void tst_PlanovaCoreTasks::createdTaskSurvivesReopen()
     QTemporaryDir dir;
     QVERIFY(dir.isValid());
     const std::filesystem::path ws = dir.path().toStdString();
+    Id projectId;
 
     {
         PlanovaCore core(ws);
-        core.openProject("p1");
+        projectId = core.createProject("A", "team", "Agile", "");
+        core.openProject(projectId);
 
         NewTask t;
         t.title = "Design API";
@@ -59,7 +61,7 @@ void tst_PlanovaCoreTasks::createdTaskSurvivesReopen()
 
     // simulate an app restart: a brand new core on the same folder
     PlanovaCore again(ws);
-    again.openProject("p1");
+    again.openProject(projectId);
     QCOMPARE(again.taskQuery().all().size(), size_t(1));
     QCOMPARE(again.taskQuery().all().front().title, std::string("Design API"));
 }
