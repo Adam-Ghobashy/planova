@@ -52,21 +52,32 @@ int SlicerService::apply(const std::vector<Assignment>& assignments, const Scori
     }
 
     const auto lastWeights = weights_.last();
-    if (changed > 0 || !lastWeights || *lastWeights != weights) {
-        QJsonObject payload;
-        payload["skill"] = weights.skill;
-        payload["workload"] = weights.workload;
-        payload["priority"] = weights.priority;
-
-        Event e;
-        e.ts = now;
-        e.author = SLICER_AUTHOR;
-        e.type = SlicerWeightsChanged;
-        e.payload = payload;
-        e.id = makeEventId(e.ts, e.author, e.payload);
-        log_.append(e);
-    }
+    if (changed > 0 || !lastWeights || *lastWeights != weights) appendWeightsEvent(weights, now);
     return changed;
+}
+
+ScoringWeights SlicerService::savedWeights() const {
+    return weights_.last().value_or(ScoringWeights{});
+}
+
+void SlicerService::saveWeights(const ScoringWeights& weights) {
+    requireValid(weights);
+    if (weights != savedWeights()) appendWeightsEvent(weights, clock_.nowMs());
+}
+
+void SlicerService::appendWeightsEvent(const ScoringWeights& weights, int64_t now) {
+    QJsonObject payload;
+    payload["skill"] = weights.skill;
+    payload["workload"] = weights.workload;
+    payload["priority"] = weights.priority;
+
+    Event e;
+    e.ts = now;
+    e.author = SLICER_AUTHOR;
+    e.type = SlicerWeightsChanged;
+    e.payload = payload;
+    e.id = makeEventId(e.ts, e.author, e.payload);
+    log_.append(e);
 }
 
 std::vector<Portion> SlicerService::portions() const {

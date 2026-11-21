@@ -86,6 +86,7 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     mainLayout->addLayout(headerLayout);
 
     sliders_ = new WeightSlidersPanel(contentWidget);
+    sliders_->setWeights(slicer_.savedWeights());
     connect(sliders_, &WeightSlidersPanel::weightsCommitted, this, [this] { onRecalculate(); });
     mainLayout->addWidget(sliders_);
 
@@ -217,8 +218,10 @@ void ChaosSlicerPage::fitTableHeight() {
     table_->setFixedHeight(table_->horizontalHeader()->height() + rows * rowHeight + 2);
 }
 
-void ChaosSlicerPage::refreshFromBoard() {
+void ChaosSlicerPage::refreshFromBoard(const QString& eventType) {
     if (applying_) return;
+    if (eventType == "ProjectOpened" || eventType == "SlicerWeightsChanged")
+        sliders_->setWeights(slicer_.savedWeights());
     if (recalculate()) showStatus("Board changed: assignments recalculated");
 }
 

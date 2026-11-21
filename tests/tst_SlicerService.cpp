@@ -172,6 +172,26 @@ private slots:
         QCOMPARE(int(f.store.events.size()), afterFirst + 1);
         QCOMPARE(f.store.events.back().type, std::string("SlicerWeightsChanged"));
     }
+    void savedWeightsDefault() {
+        Fixture f;
+        const ScoringWeights w = f.svc.savedWeights();
+        QCOMPARE(w.skill, 50);
+        QCOMPARE(w.workload, 30);
+        QCOMPARE(w.priority, 20);
+    }
+    void saveWeightsAppendsOnce() {
+        Fixture f;
+        f.svc.saveWeights(ScoringWeights{60, 20, 20});
+        f.svc.saveWeights(ScoringWeights{60, 20, 20});  // unchanged: nothing more is written
+        QCOMPARE(int(f.store.events.size()), 1);
+        QCOMPARE(f.store.events[0].type, std::string("SlicerWeightsChanged"));
+        QCOMPARE(f.svc.savedWeights().skill, 60);
+    }
+    void saveInvalidRejected() {
+        Fixture f;
+        QVERIFY_EXCEPTION_THROWN(f.svc.saveWeights(ScoringWeights{60, 30, 20}), std::invalid_argument);
+        QCOMPARE(int(f.store.events.size()), 0);
+    }
     void portionsBoardVersusPreview() {
         Fixture f;
         QCOMPARE(f.svc.portions()[0].taskCount, 0);

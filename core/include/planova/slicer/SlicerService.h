@@ -24,7 +24,13 @@ public:
     std::vector<Portion> portions() const;
     std::vector<Portion> portions(const std::vector<Assignment>& preview) const;
 
+    // The weights last written to the log, or the 50/30/20 default if none were saved yet.
+    ScoringWeights savedWeights() const;
+    // Throws std::invalid_argument for bad weights. Writes nothing when they equal the saved ones.
+    void saveWeights(const ScoringWeights& weights);
+
 private:
+    void appendWeightsEvent(const ScoringWeights& weights, int64_t now);
     ITaskQuery& tasks_;
     IMemberQuery& members_;
     IAssignmentStrategy& strategy_;

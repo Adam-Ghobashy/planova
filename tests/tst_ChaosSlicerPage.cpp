@@ -223,6 +223,43 @@ private slots:
         QVERIFY(!pizza->isSliced());
         QVERIFY(!pizza->isAnimating());
     }
+    void pageStartsFromSavedWeights() {
+        Board b;
+        b.addAlice();
+        b.addTask("t1");
+        b.service.saveWeights(ScoringWeights{60, 20, 20});
+        const auto eventsBefore = b.store.events.size();
+
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+
+        QCOMPARE(page.findChild<WeightSlidersPanel*>()->weights().skill, 60);
+        QCOMPARE(b.store.events.size(), eventsBefore);  // loading the weights writes nothing
+    }
+    void pageReloadsSavedWeightsWhenProjectOpens() {
+        Board b;
+        b.addAlice();
+        b.addTask("t1");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        auto* sliders = page.findChild<WeightSlidersPanel*>();
+        QCOMPARE(sliders->weights().skill, 50);
+
+        b.service.saveWeights(ScoringWeights{20, 50, 30});  // like another project's saved weights
+        page.refreshFromBoard("ProjectOpened");
+
+        QCOMPARE(sliders->weights().skill, 20);
+        QCOMPARE(sliders->weights().workload, 50);
+    }
+    void setWeightsEmitsNoSignal() {
+        WeightSlidersPanel panel;
+        QSignalSpy changed(&panel, &WeightSlidersPanel::weightsChanged);
+        QSignalSpy committed(&panel, &WeightSlidersPanel::weightsCommitted);
+
+        panel.setWeights(ScoringWeights{70, 20, 10});
+
+        QCOMPARE(panel.weights().skill, 70);
+        QCOMPARE(changed.count(), 0);
+        QCOMPARE(committed.count(), 0);
+    }
     void pizzaSelectionHighlightsRows() {
         Board b;
         b.addAlice();
