@@ -7,7 +7,6 @@
 #include "slicer/ChaosSlicerPage.h"
 #include "team/TeamSkillsPage.h"
 #include "tracking/TrackingPage.h"
-#include "welcome/ProjectsHubPage.h"
 #include "welcome/SetupWizard.h"
 #include "welcome/WelcomePage.h"
 #include <QDialog>
@@ -58,8 +57,7 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
 
 void MainWindow::buildPages()
 {
-    auto* welcome = new WelcomePage(pages_);
-    auto* hub = new ProjectsHubPage(core_, bridge_, pages_);
+    welcome_ = new WelcomePage(core_, bridge_, pages_);
     auto* slicerPage = new planova::slicer::ChaosSlicerPage(
         core_.slicer(), core_.taskQuery(), core_.memberQuery(), pages_);
     auto* pinsPage = new planova::s5::PinsPage(
@@ -74,8 +72,8 @@ void MainWindow::buildPages()
     homePage_ = new planova::s6::HomePage(core_.home(), core_.memberQuery(), pages_);
 
     // One line per page, in Page enum order.
-    pages_->addWidget(welcome);
-    pages_->addWidget(hub);
+    pages_->addWidget(welcome_);
+    pages_->addWidget(new QWidget(pages_)); // Page::Hub placeholder: showPage(Hub) shows the Welcome widget in projects mode
     pages_->addWidget(new QWidget(pages_)); // Page::Setup placeholder until the setup page exists
     pages_->addWidget(slicerPage);
     pages_->addWidget(pinsPage);
@@ -105,21 +103,30 @@ void MainWindow::buildPages()
     connect(homePage_, &planova::s6::HomePage::githubRequested, this, [this] { showPage(Page::GitHub); });
     connect(homePage_, &planova::s6::HomePage::pinsRequested, this, [this] { showPage(Page::Pins); });
 
-    connect(welcome, &WelcomePage::continueProjects, this, [this] { showPage(Page::Hub); });
-
-    connect(welcome, &WelcomePage::startNewProject, this, [this] {
+    connect(welcome_, &WelcomePage::startNewProject, this, [this] {
         SetupWizard wizard(core_, this);
         if (wizard.exec() == QDialog::Accepted) {
             showHomeForCurrentProject();
         }
     });
-
-    connect(hub, &ProjectsHubPage::projectOpened, this, [this] { showHomeForCurrentProject(); });
+    // openProject publishes ProjectOpened on the bridge, which also refreshes the sidebar badges.
+    connect(welcome_, &WelcomePage::projectOpened, this, [this] { showHomeForCurrentProject(); });
+    connect(welcome_, &WelcomePage::manageGitRequested, this, [this] { showPage(Page::GitHub); });
+    // The Continue and Back buttons switch the mode inside the page; keep the sidebar in step.
+    connect(welcome_, &WelcomePage::modeChanged, this, [this](WelcomePage::Mode mode) {
+        sidebar_->setActivePage(mode == WelcomePage::Mode::Projects ? Page::Hub : Page::Welcome);
+    });
 }
 
 void MainWindow::showPage(Page page)
 {
-    pages_->setCurrentIndex(static_cast<int>(page));
+    // Welcome and Hub are one widget in two modes; the stack holds a spacer at the Hub index.
+    if (page == Page::Hub || page == Page::Welcome) {
+        welcome_->setMode(page == Page::Hub ? WelcomePage::Mode::Projects : WelcomePage::Mode::Intro);
+        pages_->setCurrentIndex(static_cast<int>(Page::Welcome));
+    } else {
+        pages_->setCurrentIndex(static_cast<int>(page));
+    }
     sidebar_->setActivePage(page);
 }
 

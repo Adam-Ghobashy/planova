@@ -69,7 +69,13 @@ private slots:
             addPair(Token::WarningText, Token::WarningSoft);
             addPair(Token::ReviewText, Token::ReviewSoft);
             addPair(Token::NavActiveText, Token::NavActiveBg);
-        }
+            // Welcome page: raised banner, hovered ghost button, current project card and its chip.
+            for (Token surface : {Token::SurfaceRaised, Token::SurfaceHover, Token::AccentSoft}) {
+                addPair(Token::TextPrimary, surface);
+                addPair(Token::TextSecondary, surface);
+            }
+            addPair(Token::Accent, Token::Surface);
+            addPair(Token::Accent, Token::AccentSoft);        }
     }
 
     void textPairsReachAA()

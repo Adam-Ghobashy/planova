@@ -52,6 +52,7 @@ planova_add_ui_test(tst_Sidebar)
 planova_add_ui_test(tst_BoardDecline)
 planova_add_ui_test(tst_TeamSkillsPage)
 planova_add_ui_test(tst_MainWindowSmoke)
+planova_add_ui_test(tst_WelcomePage)
 # --- end S1 ---
 # --- S6 ---
 planova_add_test(tst_ProgressCalculator)

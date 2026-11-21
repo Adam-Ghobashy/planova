@@ -10,6 +10,7 @@ class HomePage;
 }
 
 class Sidebar;
+class WelcomePage;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -26,4 +27,5 @@ private:
     Sidebar* sidebar_;
     QStackedWidget* pages_;
     planova::s6::HomePage* homePage_ = nullptr;
+    WelcomePage* welcome_ = nullptr;
 };

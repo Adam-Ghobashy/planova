@@ -4,7 +4,8 @@ add_library(planova_ui STATIC
     app/MainWindow.cpp
     app/Sidebar.cpp
     welcome/WelcomePage.cpp
-    welcome/ProjectsHubPage.cpp
+    welcome/HandwritingLabel.cpp
+    welcome/ProjectCardWidget.cpp
     ../resources/planova.qrc
     welcome/SetupWizard.cpp
 

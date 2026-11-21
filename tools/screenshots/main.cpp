@@ -2,6 +2,7 @@
 // Usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N]  [--clash] [--dialogs] [--splash] 
 // --empty skips the demo data, to check the empty-project look.
 // --dialogs saves one PNG per dialog and theme instead (each dialog opened over the Board page).
+// --welcome-states saves the Welcome page with no projects, with no search match and with focus on a card.
 // --splash saves the welcome splash, grabbed 1600 ms into its animation, once per theme.
 // --card-menu saves the Board with one task card focused and its context menu open, once per theme.
 #include "app/CoreBridge.h"
@@ -16,11 +17,13 @@
 #include "pins/LeavePinDialog.h"
 #include "planova/PlanovaCore.h"
 #include "theme/ThemeManager.h"
+#include "welcome/WelcomePage.h"
 #include "widgets/ModalDialog.h"
 
 #include <QApplication>
 #include <QDir>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMenu>
 #include <QPainter>
 #include <QPixmap>
@@ -45,6 +48,7 @@ struct Options {
     bool cardMenu = false;
     bool empty = false;
     bool clash = false;
+    bool welcomeStates = false;
 };
 
 bool parseArgs(const QStringList& args, Options& options)
@@ -61,6 +65,8 @@ bool parseArgs(const QStringList& args, Options& options)
             options.clash = true;
         else if (args[i] == "--empty")
             options.empty = true;
+        else if (args[i] == "--welcome-states")
+            options.welcomeStates = true;
         else if (args[i] == "--splash")
             options.splash = true;
         else if (args[i] == "--card-menu")
@@ -118,6 +124,9 @@ int main(int argc, char* argv[])
         return 1;
     PlanovaCore core(std::filesystem::path(workspace.path().toStdString()));
     core.openProject(core.createProject("Planova", "Team Six", "Agile", ""));
+    // Two more workspaces, so the Welcome page shows a row of cards. They are never opened.
+    core.createProject("Library Portal", "ECU Team", "Scrum", "");
+    core.createProject("Campus Navigator", "Wayfinders", "Waterfall", "");
     if (options.clash) // the first demo member becomes the lead, so the Lead chip shows
         core.members().add("Zeyad Waled", "Team & Systems Lead", true);
     if (!options.empty)
@@ -142,6 +151,35 @@ int main(int argc, char* argv[])
     auto* pages = window.findChild<QStackedWidget*>();
     if (!pages)
         return 1;
+
+    if (options.welcomeStates) {
+        // The Welcome states the normal run cannot reach: no projects, no search match, keyboard focus on a card.
+        QTemporaryDir emptyWorkspace;
+        PlanovaCore emptyCore(std::filesystem::path(emptyWorkspace.path().toStdString()));
+        CoreBridge emptyBridge(emptyCore);
+        WelcomePage emptyPage(emptyCore, emptyBridge);
+        WelcomePage fullPage(core, bridge);
+        for (WelcomePage* page : {&emptyPage, &fullPage}) {
+            page->resize(1100, 700);
+            page->setMode(WelcomePage::Mode::Projects);
+            page->show();
+        }
+        for (const QString& theme : themes) {
+            ThemeManager::instance().apply(theme == "dark" ? ThemeMode::Dark : ThemeMode::Light);
+            QApplication::processEvents();
+            emptyPage.grab().save(QString("%1/welcome-empty-%2.png").arg(options.outDir, theme));
+            fullPage.findChild<QLineEdit*>("projectSearch")->setText("zzz");
+            QApplication::processEvents();
+            fullPage.grab().save(QString("%1/welcome-nomatch-%2.png").arg(options.outDir, theme));
+            fullPage.findChild<QLineEdit*>("projectSearch")->clear();
+            // Tab from the search box: Start New Project, Manage Git, then the first card's Open button.
+            auto* open = fullPage.findChildren<QPushButton*>("openProject").first();
+            open->setFocus(Qt::TabFocusReason);
+            QApplication::processEvents();
+            fullPage.grab().save(QString("%1/welcome-focus-%2.png").arg(options.outDir, theme));
+        }
+        return 0;
+    }
 
     if (options.splash) {
         // The splash runs in real time; each theme gets a fresh one, grabbed mid-animation (subtitle fading in).
@@ -288,10 +326,21 @@ int main(int argc, char* argv[])
         const ThemeMode mode = job.first == "dark" ? ThemeMode::Dark : ThemeMode::Light;
         if (ThemeManager::instance().mode() != mode)
             ThemeManager::instance().apply(mode);
-        pages->setCurrentIndex(job.second);
+        // Welcome and Hub are one widget (see MainWindow::showPage): index 1 shows it in projects mode.
+        auto* welcomePage = window.findChild<WelcomePage*>();
+        const bool welcomeShot = job.second <= static_cast<int>(Page::Hub);
+        if (welcomeShot) {
+            welcomePage->setMode(job.second == static_cast<int>(Page::Hub) ? WelcomePage::Mode::Projects
+                                                                              : WelcomePage::Mode::Intro);
+            pages->setCurrentIndex(static_cast<int>(Page::Welcome));
+        } else {
+            pages->setCurrentIndex(job.second);
+        }
         // The stack is switched directly, so tell the sidebar which item to highlight.
         window.findChild<Sidebar*>()->setActivePage(static_cast<Page>(job.second));
-        QTimer::singleShot(250, [&, job]() {
+        // The intro writes "Welcome!" on for about 1.9 s; wait for it to finish before grabbing.
+        const int waitMs = job.second == static_cast<int>(Page::Welcome) ? 2300 : 250;
+        QTimer::singleShot(waitMs, [&, job]() {
             const QString path = QString("%1/page%2-%3.png").arg(options.outDir).arg(job.second).arg(job.first);
             if (!window.grab().save(path))
                 std::fprintf(stderr, "could not save %s\n", qPrintable(path));

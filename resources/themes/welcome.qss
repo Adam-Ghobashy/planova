@@ -1,0 +1,102 @@
+/* Welcome page: intro card and workspaces view (ui/welcome). Follows css/welcome.css of the Figma prototype.
+   Colours are token placeholders. Every rule is scoped by QWidget#WelcomePage.
+   Buttons: property kind is primary, secondary or ghost. On keyboard focus the border becomes a 3 px double line
+   in TextPrimary and the fill shrinks inside it, so the ring shows on the Accent fill in both themes
+   (same approach as the modal buttons). */
+
+QWidget#WelcomePage { background-color: @Background; }
+
+QWidget#WelcomePage QScrollArea#welcomeScroll,
+QWidget#WelcomePage QWidget#welcomeViewport,
+QWidget#WelcomePage QWidget#welcomeContent,
+QWidget#WelcomePage QWidget#welcomeButtons,
+QWidget#WelcomePage QWidget#welcomeGrid,
+QWidget#WelcomePage QWidget#workspaceStatePanel {
+    background: transparent;
+    border: none;
+}
+
+QWidget#WelcomePage QFrame#welcomeCard {
+    background-color: @Surface;
+    border: 1px solid @BorderDefault;
+    border-radius: 20px;
+}
+
+QWidget#WelcomePage QFrame#welcomeCard QLabel { background: transparent; border: none; }
+
+/* ---------- intro ---------- */
+QWidget#WelcomePage QLabel#welcomeSubtitle { font-size: 15px; color: @TextSecondary; padding: 0 4px; }
+
+/* ---------- buttons ---------- */
+QWidget#WelcomePage QPushButton {
+    border: 1px solid transparent; border-radius: 10px; padding: 7px 14px; min-height: 20px;
+    font-size: 13px; font-weight: 600;
+}
+QWidget#WelcomePage QPushButton[size="large"] {
+    border-radius: 12px; padding: 13px 28px; font-size: 15px; font-weight: 700;
+}
+QWidget#WelcomePage QPushButton:focus { border: 3px double @TextPrimary; padding: 5px 12px; background-clip: padding; }
+QWidget#WelcomePage QPushButton[size="large"]:focus { padding: 11px 26px; }
+
+QWidget#WelcomePage QPushButton[kind="primary"] { background-color: @Accent; color: @AccentText; border-color: @Accent; }
+QWidget#WelcomePage QPushButton[kind="primary"]:hover { background-color: @AccentHover; border-color: @AccentHover; }
+QWidget#WelcomePage QPushButton[kind="primary"]:pressed { background-color: @AccentPressed; border-color: @AccentPressed; }
+
+QWidget#WelcomePage QPushButton[kind="secondary"] {
+    background-color: @SurfaceRaised; color: @TextPrimary; border-color: @BorderDefault;
+}
+QWidget#WelcomePage QPushButton[kind="secondary"]:hover { background-color: @SurfaceHover; border-color: @BorderStrong; }
+QWidget#WelcomePage QPushButton[kind="secondary"]:pressed { background-color: @Track; }
+
+QWidget#WelcomePage QPushButton[kind="ghost"] { background-color: transparent; color: @TextSecondary; padding: 4px 10px; }
+QWidget#WelcomePage QPushButton[kind="ghost"]:focus { padding: 2px 8px; }
+QWidget#WelcomePage QPushButton[kind="ghost"]:hover { background-color: @SurfaceHover; color: @TextPrimary; }
+QWidget#WelcomePage QPushButton[kind="ghost"]:pressed { background-color: @Track; color: @TextPrimary; }
+
+QWidget#WelcomePage QPushButton:disabled { background-color: @SurfaceAlt; color: @TextMuted; border-color: @BorderSubtle; }
+
+/* ---------- workspaces view ---------- */
+QWidget#WelcomePage QLabel#welcomeTitle {
+    font-family: "Space Grotesk", "Segoe UI"; font-size: 20px; font-weight: 800; color: @TextPrimary;
+}
+QWidget#WelcomePage QFrame#welcomeDivider { background-color: @BorderSubtle; border: none; }
+
+QWidget#WelcomePage QLineEdit#projectSearch {
+    background-color: @Surface; color: @TextPrimary; border: 1px solid @BorderDefault; border-radius: 10px;
+    padding: 9px 14px; font-size: 13px; min-height: 20px;
+    selection-background-color: @Accent; selection-color: @AccentText;
+}
+QWidget#WelcomePage QLineEdit#projectSearch:hover { border-color: @BorderStrong; }
+QWidget#WelcomePage QLineEdit#projectSearch:focus { border: 2px solid @Accent; padding: 8px 13px; }
+
+QWidget#WelcomePage QFrame#gitBanner {
+    background-color: @SurfaceRaised; border: 1px solid @BorderDefault; border-radius: 12px;
+}
+QWidget#WelcomePage QLabel#gitBannerCaption { font-size: 11px; color: @TextSecondary; }
+QWidget#WelcomePage QLabel#gitBannerRepo { font-family: "JetBrains Mono", "Consolas"; font-size: 12px; font-weight: 500; color: @TextPrimary; }
+QWidget#WelcomePage QLabel#gitBannerRepo[connected="false"] { font-family: "Inter", "Segoe UI"; font-size: 13px; color: @TextSecondary; }
+
+QWidget#WelcomePage QLabel#workspacesTitle {
+    font-family: "Space Grotesk", "Segoe UI"; font-size: 14px; font-weight: 700; color: @TextPrimary;
+}
+QWidget#WelcomePage QLabel#workspacesCount { font-size: 11px; color: @TextSecondary; }
+QWidget#WelcomePage QLabel#workspaceState { font-size: 14px; color: @TextSecondary; }
+
+/* ---------- project card ---------- */
+QWidget#WelcomePage QFrame#ProjectCard {
+    background-color: @Surface; border: 1px solid @BorderDefault; border-radius: 12px; min-height: 120px;
+}
+QWidget#WelcomePage QFrame#ProjectCard:hover { border: 1px solid @BorderStrong; background-color: @SurfaceRaised; }
+QWidget#WelcomePage QFrame#ProjectCard[current="true"] { border: 1px solid @Accent; background-color: @AccentSoft; }
+QWidget#WelcomePage QFrame#ProjectCard QLabel { background: transparent; border: none; }
+QWidget#WelcomePage QLabel#projectName { font-size: 14px; font-weight: 700; color: @TextPrimary; }
+QWidget#WelcomePage QLabel#projectTeam { font-size: 12px; color: @TextSecondary; }
+QWidget#WelcomePage QLabel#projectModel {
+    font-size: 11px; font-weight: 600; color: @TextSecondary; background-color: @SurfaceAlt;
+    border-radius: 8px; padding: 3px 8px;
+}
+QWidget#WelcomePage QFrame#ProjectCard[current="true"] QLabel#projectModel { background-color: @SurfaceRaised; }
+QWidget#WelcomePage QLabel#projectCurrentChip {
+    font-size: 10px; font-weight: 700; color: @Accent; background-color: @Surface;
+    border: 1px solid @Accent; border-radius: 8px; padding: 2px 8px;
+}
