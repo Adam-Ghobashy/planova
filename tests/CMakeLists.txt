@@ -5,6 +5,14 @@ function(planova_add_test name)
     add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
+# Same as planova_add_test, for a source file that is not named after the target (tests/integration/...).
+function(planova_add_test_at name source)
+    add_executable(${name} ${source})
+    target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR})
+    target_link_libraries(${name} PRIVATE Qt6::Test planova_core)
+    add_test(NAME ${name} COMMAND ${name})
+endfunction()
+
 function(planova_add_ui_test name)
     add_executable(${name} ${name}.cpp)
     target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR})
@@ -71,3 +79,6 @@ planova_add_test(tst_ConflictService)
 planova_add_test(tst_PlanovaCorePins)
 planova_add_test(tst_PlanovaCoreSetup)
 # --- end S5 ---
+# --- integration ---
+planova_add_test_at(tst_EndToEnd integration/tst_EndToEnd.cpp)
+# --- end integration ---
