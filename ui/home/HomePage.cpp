@@ -368,6 +368,27 @@ QString shortName(const QString& fullName)
            + QLatin1Char('.');
 }
 
+// Label on the sticky note, by pin type.
+QString stickyTagText(PinCategory category)
+{
+    QString label;
+    switch (category) {
+    case PinCategory::HandoffNote:
+        label = QStringLiteral("Handoff");
+        break;
+    case PinCategory::FeedbackBlocker:
+        label = QStringLiteral("Blocker");
+        break;
+    case PinCategory::ReadyForTesting:
+        label = QStringLiteral("Testing");
+        break;
+    case PinCategory::ArchitectureDecision:
+        label = QStringLiteral("Architecture");
+        break;
+    }
+    return QStringLiteral("\U0001F4CC ") + label;
+}
+
 // Pin status
 
 QString statusText(PinCategory category)
@@ -514,10 +535,12 @@ void HomePage::buildUi()
     m_contributionChart = new BarChartWidget(chartsContent);
     m_contributionChart->setMinScale(20.0);
     chartsLayout->addWidget(m_contributionChart, 1);   // spare height goes to the bars, not to an empty band
-    auto* sprintBadge = new QLabel(QStringLiteral("Active Sprint"));
-    sprintBadge->setObjectName(QStringLiteral("homeBadge"));
+    // Only sprint-based models (Agile, Scrum) show this badge; setProcessModel() decides.
+    m_sprintBadge = new QLabel(QStringLiteral("Active Sprint"));
+    m_sprintBadge->setObjectName(QStringLiteral("homeBadge"));
     QFrame* chartsPanel = createPanel(QStringLiteral("Task Status & Sprint Velocity"),
-        chartsContent, sprintBadge);
+        chartsContent, m_sprintBadge);
+    m_sprintBadge->hide();   // hidden until setProcessModel() says otherwise
     chartsPanel->setMinimumWidth(330);
     middleLayout->addWidget(chartsPanel, 23);
     m_pinsPanel = createPinsPanel();
@@ -698,6 +721,12 @@ void HomePage::setProjectName(const QString& name)
 }
 
 
+void HomePage::setProcessModel(const QString& model)
+{
+    m_sprintBadge->setVisible(model == QStringLiteral("Agile") || model == QStringLiteral("Scrum"));
+}
+
+
 void HomePage::refresh()
 {
     const DashboardData data = m_homeService.dashboard();
@@ -734,7 +763,7 @@ QWidget* HomePage::createPinNote(const PinDto& pin, const QString& authorName, i
 {
     auto* note = new detail::PinNote;
     note->setProperty("category", categoryProperty(pin.category));
-    note->setContent(QStringLiteral("\U0001F4CC PINS"), toQString(pin.text), shortName(authorName),
+    note->setContent(stickyTagText(pin.category), toQString(pin.text), shortName(authorName),
         statusText(pin.category), pin.category == PinCategory::FeedbackBlocker);
     note->setTiltDegrees(kTilts[index % kMaxPins]);
     const QString time = relativeTime(pin.ts);

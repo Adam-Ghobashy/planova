@@ -21,6 +21,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QStackedWidget>
+#include <QStatusBar>
 #include <QTableWidget>
 #include <QTemporaryDir>
 #include <QTest>
@@ -635,6 +636,39 @@ private slots:
                              && !text.contains("Adam's") && !text.contains("Oliver's"),
                          qPrintable(text));
             }
+        }
+    }
+
+    // The status bar names the project and the last saved change in plain words.
+    void statusBarUsesPlainWording()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        QCOMPARE(window.statusBar()->currentMessage(), QString("No project open  •  Git: Not connected"));
+
+        core.openProject(core.createProject("Alpha", "team", "Agile", "idea"));
+        emit bridge.changed(QString("TaskMoved"));
+        QCOMPARE(window.statusBar()->currentMessage(),
+                 QString("Alpha  •  Git: Not connected  •  Saved: Task moved"));
+        const QString message = window.statusBar()->currentMessage();
+        QVERIFY(!message.contains("C++17") && !message.contains("Workspace") && !message.contains("Team Members"));
+    }
+
+    // "Active Sprint" belongs to sprint-based models only.
+    void sprintBadgeOnlyForAgileAndScrum()
+    {
+        for (const char* model : {"Agile", "Scrum", "Waterfall", "Spiral"}) {
+            QTemporaryDir dir;
+            PlanovaCore core(dir.path().toStdString());
+            core.openProject(core.createProject("P", "team", model, "idea"));
+            CoreBridge bridge(core);
+            MainWindow window(core, bridge);
+            auto* badge = window.findChild<QLabel*>("homeBadge");
+            QVERIFY(badge);
+            const bool sprintModel = QString(model) == "Agile" || QString(model) == "Scrum";
+            QCOMPARE(!badge->isHidden(), sprintModel);
         }
     }
 };

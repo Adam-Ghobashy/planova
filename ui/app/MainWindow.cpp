@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "EventText.h"
 #include "board/PhaseBoardPage.h"
 #include "git/GitHubIntegrationPage.h"
 #include "Sidebar.h"
@@ -39,24 +40,10 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     else
         showPage(Page::Hub);
 
-    auto updateTelemetry = [this](const QString& lastEvent = QString()) {
-        const size_t memberCount = core_.memberProjection().all().size();
-        const QString gitState = core_.gitProjection().isConnected() ? "Synced" : "Disconnected";
-        QString msg = QString("Workspace: Ready  •  Git: %1  •  Core Engine: C++17  •  %2 Team Members")
-                          .arg(gitState)
-                          .arg(memberCount);
-        if (!lastEvent.isEmpty()) {
-            msg += "  •  Last Event: " + lastEvent;
-        }
-        statusBar()->showMessage(msg);
-    };
-
     connect(&bridge_, &CoreBridge::changed, sidebar_, &Sidebar::refresh);
     connect(sidebar_, &Sidebar::pageRequested, this, &MainWindow::showPage);
-    connect(&bridge_, &CoreBridge::changed, this, [updateTelemetry](const QString& eventType) {
-        updateTelemetry(eventType);
-    });
-    updateTelemetry();
+    connect(&bridge_, &CoreBridge::changed, this, &MainWindow::updateStatusBar);
+    updateStatusBar();
 }
 
 void MainWindow::buildPages()
@@ -130,16 +117,34 @@ void MainWindow::showPage(Page page)
     sidebar_->setActivePage(page);
 }
 
-void MainWindow::showHomeForCurrentProject()
+std::optional<ProjectDto> MainWindow::currentProjectInfo() const
 {
     const auto current = core_.currentProject();
-    if (current) {
-        for (const auto& project : core_.projects().list()) {
-            if (project.id == *current) {
-                homePage_->setProjectName(QString::fromStdString(project.name));
-                break;
-            }
-        }
+    if (!current)
+        return std::nullopt;
+    for (const auto& project : core_.projects().list()) {
+        if (project.id == *current)
+            return project;
+    }
+    return std::nullopt;
+}
+
+void MainWindow::updateStatusBar(const QString& lastEvent)
+{
+    const auto project = currentProjectInfo();
+    const QString projectName = project ? QString::fromStdString(project->name) : tr("No project open");
+    const QString gitState = core_.gitProjection().isConnected() ? tr("Synced") : tr("Not connected");
+    QString message = tr("%1  •  Git: %2").arg(projectName, gitState);
+    if (!lastEvent.isEmpty())
+        message += tr("  •  Saved: %1").arg(friendlyEventText(lastEvent));
+    statusBar()->showMessage(message);
+}
+
+void MainWindow::showHomeForCurrentProject()
+{
+    if (const auto project = currentProjectInfo()) {
+        homePage_->setProjectName(QString::fromStdString(project->name));
+        homePage_->setProcessModel(QString::fromStdString(project->seModel));
     }
     showPage(Page::Home);
 }

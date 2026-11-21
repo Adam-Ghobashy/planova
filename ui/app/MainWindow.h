@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QStackedWidget>
 #include <QWidget>
+#include <optional>
 
 namespace planova::s6 {
 class HomePage;
@@ -25,6 +26,8 @@ private:
     void buildPages();
     void showPage(Page page);
     void showHomeForCurrentProject();
+    std::optional<ProjectDto> currentProjectInfo() const;
+    void updateStatusBar(const QString& lastEvent = QString());
 
     PlanovaCore& core_;
     CoreBridge& bridge_;

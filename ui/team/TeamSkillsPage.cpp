@@ -176,7 +176,7 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     auto* addTitle = new QLabel("Add Team Member", addCard);
     addTitle->setObjectName("cardTitle");
     auto* addSubtitle = new QLabel(
-        "Register a new member into the event log to include them in Chaos Slicer and Velocity tracking.",
+        "Add a new member to the team.",
         addCard);
     addSubtitle->setObjectName("cardSubtitle");
     addCardLayout->addWidget(addTitle);
@@ -595,7 +595,7 @@ QWidget* TeamSkillsPage::buildProfileColumn(const MemberDto& member, int colorIn
         const bool confirmed = ModalDialog::confirm(
             this,
             "Remove Team Member",
-            QString("Are you sure you want to remove %1 from the team?\n\nThis action will record a MemberRemoved event in the event log.")
+            QString("This removes %1 from the team. Their open tasks go back to unassigned.")
                 .arg(name),
             "Remove", ModalDialog::Role::Danger);
 
