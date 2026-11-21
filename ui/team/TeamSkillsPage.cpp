@@ -2,6 +2,7 @@
 #include <QFont>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QProgressBar>
 #include <QScrollArea>
 #include <QSlider>
 #include <QStyle>
@@ -42,6 +43,14 @@ const QStringList kKnownRoles = {
     "Team & Systems Lead",
     "Other..."
 };
+
+// Table columns. Profile, Understanding and Assignment have fixed widths; Technical Skills takes the rest.
+// Three skill cells (five 24 px steps each) fit the skills column down to the default 1280 px window.
+constexpr int kProfileCol = 0, kSkillsCol = 1, kUnderstandingCol = 2, kAssignmentCol = 3;
+constexpr int kProfileWidth = 205;
+constexpr int kUnderstandingWidth = 140;
+constexpr int kAssignmentWidth = 160;
+constexpr int kColumnGap = 10;
 
 QString initialsFor(const string& name) {
     QString qname = QString::fromStdString(name).trimmed();
@@ -207,9 +216,16 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
 
     mainLayout->addWidget(addCard);
 
+    // One header row for the whole table (hidden while there are no members).
+    tableHeader_ = buildTableHeader(contentWidget);
+    auto* tableLayout = new QVBoxLayout();
+    tableLayout->setSpacing(10);
+    tableLayout->addWidget(tableHeader_);
+
     cardsLayout_ = new QVBoxLayout();
     cardsLayout_->setSpacing(14);
-    mainLayout->addLayout(cardsLayout_);
+    tableLayout->addLayout(cardsLayout_);
+    mainLayout->addLayout(tableLayout);
 
     emptyLabel_ = new QLabel(
         "No team members yet. Add the first one with the '+ Add Member' button above.",
@@ -316,24 +332,51 @@ QFrame* TeamSkillsPage::buildSettingsCard(QWidget* parent) {
     return card;
 }
 
+void TeamSkillsPage::applyColumnWidths(QGridLayout* grid) {
+    // The same widths are used by the header row and by every member row, so the columns line up.
+    // Technical Skills takes whatever is left.
+    grid->setColumnMinimumWidth(kProfileCol, kProfileWidth);
+    grid->setColumnMinimumWidth(kUnderstandingCol, kUnderstandingWidth);
+    grid->setColumnMinimumWidth(kAssignmentCol, kAssignmentWidth);
+    grid->setColumnStretch(kSkillsCol, 1);
+}
+
+QWidget* TeamSkillsPage::buildTableHeader(QWidget* parent) {
+    auto* header = new QWidget(parent);
+    header->setObjectName("teamTableHeader");
+    auto* grid = new QGridLayout(header);
+    // 1 px card border + 20 px card padding, so the titles start where the row content starts.
+    grid->setContentsMargins(21, 0, 21, 0);
+    grid->setHorizontalSpacing(kColumnGap);
+    applyColumnWidths(grid);
+
+    const char* titles[] = {"Role / Teammate", "Technical Skills", "Project Understanding & Velocity",
+                            "Assignment / Clash"};
+    const int fixedWidths[] = {kProfileWidth, 0, kUnderstandingWidth, kAssignmentWidth};
+    for (int col = 0; col < 4; ++col) {
+        auto* title = new QLabel(titles[col], header);
+        title->setObjectName("tableHeaderCell");
+        title->setWordWrap(true);
+        if (fixedWidths[col] > 0) title->setFixedWidth(fixedWidths[col]);
+        grid->addWidget(title, 0, col, Qt::AlignBottom);
+    }
+    return header;
+}
+
 QWidget* TeamSkillsPage::buildAssignmentColumn(const MemberDto& member, QWidget* parent) {
     auto* column = new QWidget(parent);
     column->setObjectName("assignmentColumn");
-    column->setFixedWidth(240);
+    column->setFixedWidth(kAssignmentWidth);
     auto* layout = new QVBoxLayout(column);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(6);
-
-    auto* heading = new QLabel("Assignment / Clash", column);
-    heading->setObjectName("cardSubtitle");
-    layout->addWidget(heading);
 
     QStringList titles;
     for (const TaskDto& task : tasks_.all()) {
         if (task.assignee && *task.assignee == member.id && task.status != TaskStatus::Done)
             titles << QString::fromStdString(task.title);
     }
-    auto* current = new QLabel(titles.isEmpty() ? QString::fromUtf8("—") : titles.join(", "), column);
+    auto* current = new QLabel(titles.isEmpty() ? QString::fromUtf8("—") : titles.join("\n"), column);
     current->setObjectName("assignmentText");
     current->setWordWrap(true);
     layout->addWidget(current);
@@ -364,7 +407,6 @@ QWidget* TeamSkillsPage::buildAssignmentColumn(const MemberDto& member, QWidget*
                 [this, conflictId = conflict.id, memberId = member.id]() { resolveConflict(conflictId, memberId); });
         layout->addWidget(resolve, 0, Qt::AlignLeft);
     }
-    layout->addStretch();
     return column;
 }
 
@@ -378,78 +420,96 @@ void TeamSkillsPage::resolveConflict(const Id& conflictId, const Id& memberId) {
     showStatus("Conflict resolved");
 }
 
-QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex) {
-    auto* card = new QFrame(this);
-    card->setObjectName("card");
-    auto* cardLayout = new QVBoxLayout(card);
-    cardLayout->setContentsMargins(20, 16, 20, 16);
-    cardLayout->setSpacing(14);
+QWidget* TeamSkillsPage::buildProfileColumn(const MemberDto& member, int colorIndex, QWidget* parent) {
+    auto* column = new QWidget(parent);
+    column->setObjectName("profileColumn");
+    column->setFixedWidth(kProfileWidth);
+    auto* layout = new QVBoxLayout(column);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(8);
+    auto* top = new QHBoxLayout();   // avatar and identity; the buttons below get the full column width
+    top->setSpacing(10);
 
-    auto* topRow = new QHBoxLayout();
-    topRow->setSpacing(12);
-
-    auto* avatar = new QLabel(initialsFor(member.name), card);
+    auto* avatar = new QLabel(initialsFor(member.name), column);
     avatar->setFixedSize(40, 40);
     avatar->setAlignment(Qt::AlignCenter);
     avatar->setObjectName("memberAvatar");
     // team.qss maps memberColor 1..6 to the Member1..Member6 colours.
     avatar->setProperty("memberColor", colorIndex % 6 + 1);
-    topRow->addWidget(avatar);
+    top->addWidget(avatar, 0, Qt::AlignTop);
 
-    auto* infoCol = new QVBoxLayout();
-    infoCol->setSpacing(2);
+    auto* info = new QVBoxLayout();
+    info->setSpacing(4);
 
-    auto* nameRow = new QHBoxLayout();
-    nameRow->setSpacing(8);
-    auto* nameLbl = new QLabel(QString::fromStdString(member.name), card);
+    auto* nameLbl = new QLabel(QString::fromStdString(member.name), column);
     nameLbl->setObjectName("cardTitle");
-    nameRow->addWidget(nameLbl);
-
+    nameLbl->setWordWrap(true);
+    info->addWidget(nameLbl);
     if (member.isLead) {
-        auto* leadBadge = new QLabel(QString::fromUtf8("Lead 👑"), card);
+        auto* leadBadge = new QLabel(QString::fromUtf8("Lead 👑"), column);
         leadBadge->setObjectName("leadBadge");
-        nameRow->addWidget(leadBadge);
+        info->addWidget(leadBadge, 0, Qt::AlignLeft);
     }
 
-    auto* velBadge = new QLabel(
-        QString("Velocity: %1").arg(member.velocity, 0, 'f', 2), card);
-    velBadge->setObjectName("velocityBadge");
-    nameRow->addWidget(velBadge);
-    nameRow->addStretch();
-
-    auto* roleRow = new QHBoxLayout();
-    roleRow->setSpacing(8);
-    roleRow->setContentsMargins(0, 0, 0, 0);
-
-    auto* roleLbl = new QLabel(QString::fromStdString(member.role), card);
+    auto* roleLbl = new QLabel(QString::fromStdString(member.role), column);
     roleLbl->setObjectName("cardSubtitle");
-    roleRow->addWidget(roleLbl);
+    roleLbl->setWordWrap(true);
+    info->addWidget(roleLbl);
 
-    auto* editRoleBtn = new QPushButton("✎ Edit Role", card);
+    // Edit Role and Remove, hidden while the role is being edited.
+    auto* actions = new QWidget(column);
+    actions->setObjectName("roleActions");
+    auto* actionsLayout = new QHBoxLayout(actions);
+    actionsLayout->setContentsMargins(0, 0, 0, 0);
+    actionsLayout->setSpacing(6);
+    auto* editRoleBtn = new QPushButton("✎ Edit Role", actions);
     editRoleBtn->setCursor(Qt::PointingHandCursor);
     editRoleBtn->setToolTip("Change this member's role");
     editRoleBtn->setObjectName("editRoleButton");
-    roleRow->addWidget(editRoleBtn);
-
-    auto* removeBtn = new QPushButton("✕ Remove", card);
+    editRoleBtn->setMinimumHeight(24);   // pointer target of at least 24 px
+    auto* removeBtn = new QPushButton("✕ Remove", actions);
     removeBtn->setCursor(Qt::PointingHandCursor);
     removeBtn->setToolTip("Remove member from the team");
     removeBtn->setObjectName("removeMemberButton");
-    roleRow->addWidget(removeBtn);
+    removeBtn->setMinimumHeight(24);
+    actionsLayout->addWidget(editRoleBtn);
+    actionsLayout->addWidget(removeBtn);
+    actionsLayout->addStretch();
+    layout->addWidget(actions);
 
-    // Inline edit widgets: Dropdown of known roles + custom text input
-    auto* editRoleCombo = new QComboBox(card);
+    // Inline role editor: a dropdown of known roles, a custom text input and Save / Cancel.
+    auto* editBox = new QWidget(column);
+    editBox->setObjectName("roleEditBox");
+    auto* editLayout = new QVBoxLayout(editBox);
+    editLayout->setContentsMargins(0, 0, 0, 0);
+    editLayout->setSpacing(6);
+    auto* editRoleCombo = new QComboBox(editBox);
     editRoleCombo->setObjectName("roleCombo");
+    editRoleCombo->setAccessibleName("Role");
     editRoleCombo->addItems(kKnownRoles);
-    editRoleCombo->hide();
-    roleRow->addWidget(editRoleCombo);
-
-    auto* editCustomRoleInput = new QLineEdit(card);
+    editLayout->addWidget(editRoleCombo);
+    auto* editCustomRoleInput = new QLineEdit(editBox);
     editCustomRoleInput->setObjectName("lightInput");
+    editCustomRoleInput->setAccessibleName("Custom role");
     editCustomRoleInput->setPlaceholderText("Write custom role...");
-    editCustomRoleInput->setFixedWidth(180);
     editCustomRoleInput->hide();
-    roleRow->addWidget(editCustomRoleInput);
+    editLayout->addWidget(editCustomRoleInput);
+    auto* editButtons = new QHBoxLayout();
+    editButtons->setSpacing(6);
+    auto* saveRoleBtn = new QPushButton("Save", editBox);
+    saveRoleBtn->setCursor(Qt::PointingHandCursor);
+    saveRoleBtn->setObjectName("saveRoleButton");
+    saveRoleBtn->setMinimumHeight(24);
+    auto* cancelRoleBtn = new QPushButton("Cancel", editBox);
+    cancelRoleBtn->setCursor(Qt::PointingHandCursor);
+    cancelRoleBtn->setObjectName("cancelRoleButton");
+    cancelRoleBtn->setMinimumHeight(24);
+    editButtons->addWidget(saveRoleBtn);
+    editButtons->addWidget(cancelRoleBtn);
+    editButtons->addStretch();
+    editLayout->addLayout(editButtons);
+    editBox->hide();
+    layout->addWidget(editBox);
 
     connect(editRoleCombo, &QComboBox::currentTextChanged, [editCustomRoleInput](const QString& text) {
         if (text == "Other..." || text == "Other") {
@@ -461,24 +521,9 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
         }
     });
 
-    auto* saveRoleBtn = new QPushButton("Save", card);
-    saveRoleBtn->setCursor(Qt::PointingHandCursor);
-    saveRoleBtn->setObjectName("saveRoleButton");
-    saveRoleBtn->hide();
-    roleRow->addWidget(saveRoleBtn);
-
-    auto* cancelRoleBtn = new QPushButton("Cancel", card);
-    cancelRoleBtn->setCursor(Qt::PointingHandCursor);
-    cancelRoleBtn->setObjectName("cancelRoleButton");
-    cancelRoleBtn->hide();
-    roleRow->addWidget(cancelRoleBtn);
-
-    roleRow->addStretch();
-
     connect(editRoleBtn, &QPushButton::clicked, this, [=]() {
         roleLbl->hide();
-        editRoleBtn->hide();
-        removeBtn->hide();
+        actions->hide();
 
         const QString currentRole = QString::fromStdString(member.role);
         int idx = editRoleCombo->findText(currentRole, Qt::MatchFixedString);
@@ -492,9 +537,7 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
             editCustomRoleInput->show();
         }
 
-        editRoleCombo->show();
-        saveRoleBtn->show();
-        cancelRoleBtn->show();
+        editBox->show();
         if (editCustomRoleInput->isVisible()) {
             editCustomRoleInput->setFocus();
             editCustomRoleInput->selectAll();
@@ -504,13 +547,10 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
     });
 
     connect(cancelRoleBtn, &QPushButton::clicked, this, [=]() {
-        editRoleCombo->hide();
-        editCustomRoleInput->hide();
-        saveRoleBtn->hide();
-        cancelRoleBtn->hide();
+        editBox->hide();
         roleLbl->show();
-        editRoleBtn->show();
-        removeBtn->show();
+        actions->show();
+        editRoleBtn->setFocus();
     });
 
     auto doSaveRole = [this, id = member.id, und = member.understanding, name = member.name, editRoleCombo, editCustomRoleInput]() {
@@ -564,63 +604,21 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
         showStatus(QString("Removed %1 from the team").arg(name));
     });
 
-    infoCol->addLayout(nameRow);
-    infoCol->addLayout(roleRow);
-    topRow->addLayout(infoCol, 1);
-    // Natural height, centred: a tall clash column must not stretch the name row.
-    topRow->setAlignment(infoCol, Qt::AlignVCenter);
+    top->addLayout(info, 1);
+    layout->insertLayout(0, top);
+    return column;
+}
 
-    // Understanding Slider (0 - 100%)
-    auto* undCol = new QVBoxLayout();
-    undCol->setSpacing(4);
-    auto* undHeader = new QHBoxLayout();
-    auto* undTitle = new QLabel("Project Understanding", card);
-    undTitle->setObjectName("cardSubtitle");
-    auto* undVal = new QLabel(QString("%1%").arg(member.understanding), card);
-    undVal->setObjectName("sliderValueLabel");
-    undHeader->addWidget(undTitle);
-    undHeader->addStretch();
-    undHeader->addWidget(undVal);
-
-    auto* undSlider = new QSlider(Qt::Horizontal, card);
-    undSlider->setRange(0, 100);
-    undSlider->setValue(member.understanding);
-    undSlider->setFixedWidth(180);
-
-    connect(undSlider, &QSlider::valueChanged, this, [undVal](int v) {
-        undVal->setText(QString("%1%").arg(v));
-    });
-    connect(undSlider, &QSlider::sliderReleased, this,
-            [this, id = member.id, role = member.role, undSlider]() {
-                updating_ = true;
-                try {
-                    service_.update(id, role, undSlider->value());
-                } catch (const exception& e) {
-                    updating_ = false;
-                    showStatus(QString::fromUtf8(e.what()));
-                    return;
-                }
-                updating_ = false;
-                refresh();
-                showStatus("Updated project understanding");
-            });
-
-    undCol->addLayout(undHeader);
-    undCol->addWidget(undSlider);
-    topRow->addLayout(undCol);
-    topRow->setAlignment(undCol, Qt::AlignVCenter);
-    topRow->addWidget(buildAssignmentColumn(member, card), 0, Qt::AlignVCenter);
-
-    cardLayout->addLayout(topRow);
-
-    auto* divider = new QFrame(card);
-    divider->setFrameShape(QFrame::HLine);
-    divider->setObjectName("cardDivider");
-    cardLayout->addWidget(divider);
-
-    auto* skillsGrid = new QGridLayout();
-    skillsGrid->setHorizontalSpacing(18);
-    skillsGrid->setVerticalSpacing(8);
+QWidget* TeamSkillsPage::buildSkillsColumn(const MemberDto& member, QWidget* parent) {
+    auto* column = new QWidget(parent);
+    column->setObjectName("skillsColumn");
+    auto* grid = new QGridLayout(column);
+    grid->setContentsMargins(0, 0, 0, 0);
+    grid->setHorizontalSpacing(10);
+    grid->setVerticalSpacing(6);
+    grid->setColumnStretch(0, 1);
+    grid->setColumnStretch(1, 1);
+    grid->setColumnStretch(2, 1);
 
     for (int i = 0; i < 7; ++i) {
         const auto& meta = kAllSkills[i];
@@ -630,24 +628,27 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
             currentRating = it->second;
         }
 
-        const int row = i / 4;
-        const int col = i % 4;
-
-        auto* cellWidget = new QWidget(card);
+        auto* cellWidget = new QWidget(column);
         cellWidget->setObjectName("skillCell");
-        auto* cellLayout = new QHBoxLayout(cellWidget);
+        // Label above, five 24 px steps below; three cells per row keep the column narrow enough for 1280 px.
+        auto* cellLayout = new QVBoxLayout(cellWidget);
         cellLayout->setContentsMargins(0, 0, 0, 0);
-        cellLayout->setSpacing(4);
+        cellLayout->setSpacing(2);
+        auto* stepsLayout = new QHBoxLayout();
+        stepsLayout->setSpacing(1);
 
         auto* skillLbl = new QLabel(meta.label, cellWidget);
-        skillLbl->setFixedWidth(92);
         skillLbl->setObjectName("skillLabel");
         cellLayout->addWidget(skillLbl);
+        cellLayout->addLayout(stepsLayout);
 
         for (int r = 1; r <= 5; ++r) {
             auto* rateBtn = new QPushButton(QString::number(r), cellWidget);
             rateBtn->setFixedSize(24, 24);
             rateBtn->setCursor(Qt::PointingHandCursor);
+            // The step number is the text; the name says which skill and member it belongs to.
+            rateBtn->setAccessibleName(QString("%1 rating %2 of 5 for %3")
+                                           .arg(meta.label).arg(r).arg(QString::fromStdString(member.name)));
             const bool active = (r <= currentRating);
             rateBtn->setObjectName("ratingButton");
             rateBtn->setProperty("active", active);
@@ -669,13 +670,97 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
                         refresh();
                         showStatus(QString("Rated %1: %2/5").arg(label).arg(r));
                     });
-            cellLayout->addWidget(rateBtn);
+            stepsLayout->addWidget(rateBtn);
         }
-        cellLayout->addStretch();
-        skillsGrid->addWidget(cellWidget, row, col);
+        stepsLayout->addStretch();
+        grid->addWidget(cellWidget, i / 3, i % 3);
     }
+    return column;
+}
 
-    cardLayout->addLayout(skillsGrid);
+QWidget* TeamSkillsPage::buildUnderstandingColumn(const MemberDto& member, QWidget* parent) {
+    auto* column = new QWidget(parent);
+    column->setObjectName("understandingColumn");
+    column->setFixedWidth(kUnderstandingWidth);
+    auto* layout = new QVBoxLayout(column);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(10);
+
+    // Project understanding: editable, 0 - 100 %.
+    auto* undHeader = new QHBoxLayout();
+    auto* undTitle = new QLabel("Understanding", column);
+    undTitle->setObjectName("meterLabel");
+    auto* undVal = new QLabel(QString("%1%").arg(member.understanding), column);
+    undVal->setObjectName("sliderValueLabel");
+    undHeader->addWidget(undTitle);
+    undHeader->addStretch();
+    undHeader->addWidget(undVal);
+
+    auto* undSlider = new QSlider(Qt::Horizontal, column);
+    undSlider->setRange(0, 100);
+    undSlider->setValue(member.understanding);
+    undSlider->setAccessibleName(QString("Project understanding of %1").arg(QString::fromStdString(member.name)));
+
+    connect(undSlider, &QSlider::valueChanged, this, [undVal](int v) {
+        undVal->setText(QString("%1%").arg(v));
+    });
+    connect(undSlider, &QSlider::sliderReleased, this,
+            [this, id = member.id, role = member.role, undSlider]() {
+                updating_ = true;
+                try {
+                    service_.update(id, role, undSlider->value());
+                } catch (const exception& e) {
+                    updating_ = false;
+                    showStatus(QString::fromUtf8(e.what()));
+                    return;
+                }
+                updating_ = false;
+                refresh();
+                showStatus("Updated project understanding");
+            });
+    auto* undBlock = new QVBoxLayout();
+    undBlock->setSpacing(4);
+    undBlock->addLayout(undHeader);
+    undBlock->addWidget(undSlider);
+    layout->addLayout(undBlock);
+
+    // Velocity (EMA, 0.25x to 5x): read-only, two decimals, bar scaled to the 5x maximum.
+    auto* velHeader = new QHBoxLayout();
+    auto* velTitle = new QLabel("Velocity", column);
+    velTitle->setObjectName("meterLabel");
+    auto* velVal = new QLabel(QString("%1x").arg(member.velocity, 0, 'f', 2), column);
+    velVal->setObjectName("velocityValue");
+    velHeader->addWidget(velTitle);
+    velHeader->addStretch();
+    velHeader->addWidget(velVal);
+
+    auto* velBar = new QProgressBar(column);
+    velBar->setObjectName("velocityBar");
+    velBar->setRange(0, 100);
+    velBar->setValue(qBound(0, qRound(member.velocity / 5.0 * 100.0), 100));
+    velBar->setTextVisible(false);
+    velBar->setFixedHeight(6);
+    velBar->setAccessibleName(QString("Velocity of %1").arg(QString::fromStdString(member.name)));
+    velBar->setAccessibleDescription(velVal->text());
+    auto* velBlock = new QVBoxLayout();
+    velBlock->setSpacing(4);
+    velBlock->addLayout(velHeader);
+    velBlock->addWidget(velBar);
+    layout->addLayout(velBlock);
+    return column;
+}
+
+QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex) {
+    auto* card = new QFrame(this);
+    card->setObjectName("card");
+    auto* grid = new QGridLayout(card);
+    grid->setContentsMargins(20, 18, 20, 18);
+    grid->setHorizontalSpacing(kColumnGap);
+    applyColumnWidths(grid);
+    grid->addWidget(buildProfileColumn(member, colorIndex, card), 0, kProfileCol, Qt::AlignVCenter);
+    grid->addWidget(buildSkillsColumn(member, card), 0, kSkillsCol, Qt::AlignVCenter);
+    grid->addWidget(buildUnderstandingColumn(member, card), 0, kUnderstandingCol, Qt::AlignVCenter);
+    grid->addWidget(buildAssignmentColumn(member, card), 0, kAssignmentCol, Qt::AlignVCenter);
     return card;
 }
 
@@ -689,6 +774,7 @@ void TeamSkillsPage::refresh() {
 
     const vector<MemberDto> allMembers = members_.all();
     emptyLabel_->setVisible(allMembers.empty());
+    tableHeader_->setVisible(!allMembers.empty());
 
     totalMembersValue_->setText(QString::number(allMembers.size()));
 

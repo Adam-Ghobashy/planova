@@ -70,10 +70,12 @@ QScrollArea#PinColumnScroll, QWidget#PinColumnBody { background: transparent; }
 
 /* ---------- cards ---------- */
 QFrame#PinCard { border: 1px solid @Border; border-radius: 10px; background-color: @Surface; }
-QFrame#PinCard[category="handoff"]      { background-color: @PinHandoff; }
-QFrame#PinCard[category="blocker"]      { background-color: @PinBlocker; }
-QFrame#PinCard[category="testing"]      { background-color: @PinTesting; }
-QFrame#PinCard[category="architecture"] { background-color: @PinArchitecture; }
+/* Each category is a sticky-note colour: tint, border and text come from the design's sticky tokens
+   (Handoff green, Blocker pink, Testing yellow, Architecture blue). */
+QFrame#PinCard[category="handoff"]      { background-color: @PinHandoff;      border-color: @StickyGreenBorder; }
+QFrame#PinCard[category="blocker"]      { background-color: @PinBlocker;      border-color: @StickyPinkBorder; }
+QFrame#PinCard[category="testing"]      { background-color: @PinTesting;      border-color: @StickyYellowBorder; }
+QFrame#PinCard[category="architecture"] { background-color: @PinArchitecture; border-color: @StickyBlueBorder; }
 QFrame#PinCard:hover { border: 1px solid @Accent; }
 QFrame#PinCard[dragging="true"] { border: 1px dashed @Accent; background-color: @AccentSoft; }
 QFrame#PinCard QLabel { background: transparent; }
@@ -83,6 +85,27 @@ QLabel#PinCardTime { color: @TextMuted; font-size: 11px; font-weight: 600; }
 QLabel#PinCardTag { color: @TextMuted; font-size: 11px; font-weight: 600; }
 QLabel#PinTaskLine { color: @TextMuted; font-size: 11px; }
 QLabel#PinAuthorName { color: @TextPrimary; font-size: 12px; font-weight: 600; }
+/* Text on a sticky note uses the matching sticky text colour (contrast pairs are in tst_Contrast). */
+QFrame#PinCard[category="handoff"] QLabel#PinCardText,
+QFrame#PinCard[category="handoff"] QLabel#PinCardTime,
+QFrame#PinCard[category="handoff"] QLabel#PinCardTag,
+QFrame#PinCard[category="handoff"] QLabel#PinTaskLine,
+QFrame#PinCard[category="handoff"] QLabel#PinAuthorName { color: @StickyGreenText; }
+QFrame#PinCard[category="blocker"] QLabel#PinCardText,
+QFrame#PinCard[category="blocker"] QLabel#PinCardTime,
+QFrame#PinCard[category="blocker"] QLabel#PinCardTag,
+QFrame#PinCard[category="blocker"] QLabel#PinTaskLine,
+QFrame#PinCard[category="blocker"] QLabel#PinAuthorName { color: @StickyPinkText; }
+QFrame#PinCard[category="testing"] QLabel#PinCardText,
+QFrame#PinCard[category="testing"] QLabel#PinCardTime,
+QFrame#PinCard[category="testing"] QLabel#PinCardTag,
+QFrame#PinCard[category="testing"] QLabel#PinTaskLine,
+QFrame#PinCard[category="testing"] QLabel#PinAuthorName { color: @StickyYellowText; }
+QFrame#PinCard[category="architecture"] QLabel#PinCardText,
+QFrame#PinCard[category="architecture"] QLabel#PinCardTime,
+QFrame#PinCard[category="architecture"] QLabel#PinCardTag,
+QFrame#PinCard[category="architecture"] QLabel#PinTaskLine,
+QFrame#PinCard[category="architecture"] QLabel#PinAuthorName { color: @StickyBlueText; }
 
 QLabel#PinAvatar {
     border-radius: 12px; color: @TextInverse; font-size: 10px; font-weight: 700;

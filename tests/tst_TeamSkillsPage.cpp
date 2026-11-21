@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QLabel>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QTemporaryDir>
 #include <QTest>
 
@@ -113,6 +114,49 @@ private slots:
             QVERIFY(!badge->isVisible());
         QVERIFY(page->findChildren<QPushButton*>("resolveConflict").isEmpty()
                 || !page->findChild<QPushButton*>("resolveConflict")->isVisible());
+    }
+
+    // The members form one table: a single header row above the member rows, not a heading inside every card.
+    void oneColumnHeaderRowAndTwoDecimalVelocity()
+    {
+        Fixture f;
+        f.core.members().add("Ana", "Backend Developer", false);
+        f.core.members().add("Ben", "Frontend Developer", false);
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1440, 900);
+        page->show();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+
+        QStringList titles;
+        for (const QLabel* l : page->findChildren<QLabel*>("tableHeaderCell"))
+            titles << l->text();
+        QCOMPARE(titles, (QStringList{"Role / Teammate", "Technical Skills", "Project Understanding & Velocity",
+                                      "Assignment / Clash"}));
+        for (const QLabel* l : page->findChildren<QLabel*>())
+            QVERIFY2(l->text() != "Assignment / Clash" || l->objectName() == "tableHeaderCell", "heading repeated in a row");
+
+        const auto values = page->findChildren<QLabel*>("velocityValue");
+        QCOMPARE(values.size(), 2);
+        for (const QLabel* v : values)
+            QVERIFY2(QRegularExpression("^\\d+\\.\\d{2}x$").match(v->text()).hasMatch(), qPrintable(v->text()));
+    }
+
+    // Header cells and the row columns start at the same x: it is one table.
+    void headerColumnsAlignWithRows()
+    {
+        Fixture f;
+        f.core.members().add("Ana", "Backend Developer", false);
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1440, 900);
+        page->show();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+        const auto headers = page->findChildren<QLabel*>("tableHeaderCell");
+        QCOMPARE(headers.size(), 4);
+        auto* understanding = page->findChild<QWidget*>("understandingColumn");
+        auto* assignment = page->findChild<QWidget*>("assignmentColumn");
+        QVERIFY(understanding && assignment);
+        QCOMPARE(headers[2]->mapTo(page.get(), QPoint(0, 0)).x(), understanding->mapTo(page.get(), QPoint(0, 0)).x());
+        QCOMPARE(headers[3]->mapTo(page.get(), QPoint(0, 0)).x(), assignment->mapTo(page.get(), QPoint(0, 0)).x());
     }
 
     void noSeedButton()

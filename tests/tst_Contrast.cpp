@@ -90,6 +90,15 @@ private slots:
             // Home: pin count line, quick link subtitles and the empty pins message.
             addPair(Token::TextTertiary, Token::Surface);
             addPair(Token::TextTertiary, Token::Background);
+            // Pins: text on the four sticky-note tints, and the muted comment chip that stays TextMuted.
+            addPair(Token::StickyGreenText, Token::PinHandoff);
+            addPair(Token::StickyPinkText, Token::PinBlocker);
+            addPair(Token::StickyYellowText, Token::PinTesting);
+            addPair(Token::StickyBlueText, Token::PinArchitecture);
+            for (Token tint : {Token::PinHandoff, Token::PinBlocker, Token::PinTesting, Token::PinArchitecture})
+                addPair(Token::TextMuted, tint);
+            // GitHub: the notice bar (TextSecondary on SurfaceAlt) and disabled buttons (TextMuted on SurfaceAlt)
+            // are already covered by the general Text-on-Surface pairs above.
         }
     }
 

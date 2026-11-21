@@ -220,6 +220,12 @@ QPushButton#SidebarSyncButton:focus {
     border: 2px solid @TextPrimary;
 }
 
+/* No saved repository: flat and muted (the icon is tinted TextMuted in Sidebar.cpp); the tooltip says why. */
+QPushButton#SidebarSyncButton:disabled {
+    background-color: @SurfaceAlt;
+    border-color: @Border;
+}
+
 
 /* ---------- popups and scroll bars (every window; page and dialog files may override) ---------- */
 QToolTip {

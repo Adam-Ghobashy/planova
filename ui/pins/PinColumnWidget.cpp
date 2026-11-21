@@ -60,7 +60,7 @@ PinColumnWidget::PinColumnWidget(PinCategory category, const QString& title, QWi
     cardsLayout_->insertWidget(0, empty_);
 }
 
-void PinColumnWidget::setCards(const std::vector<PinCardWidget*>& cards)
+void PinColumnWidget::setCards(const std::vector<PinCardWidget*>& cards, bool showEmptyLabel)
 {
     // Remove every card (all layout items except the trailing stretch and the empty label).
     for (int i = cardsLayout_->count() - 1; i >= 0; --i) {
@@ -80,7 +80,7 @@ void PinColumnWidget::setCards(const std::vector<PinCardWidget*>& cards)
     // The empty label is item 0 only while it is the first widget; keep it first, hide when cards exist.
     cardsLayout_->removeWidget(empty_);
     cardsLayout_->insertWidget(0, empty_);
-    empty_->setVisible(cards.empty());
+    empty_->setVisible(cards.empty() && showEmptyLabel);
     count_->setText(QString::number(cards.size()));
 }
 

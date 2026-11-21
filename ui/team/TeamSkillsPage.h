@@ -9,6 +9,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFrame>
+#include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -37,7 +38,12 @@ private slots:
 private:
     QFrame* buildMemberCard(const MemberDto& member, int colorIndex);
     QFrame* buildSettingsCard(QWidget* parent);
+    QWidget* buildTableHeader(QWidget* parent);
+    QWidget* buildProfileColumn(const MemberDto& member, int colorIndex, QWidget* parent);
+    QWidget* buildSkillsColumn(const MemberDto& member, QWidget* parent);
+    QWidget* buildUnderstandingColumn(const MemberDto& member, QWidget* parent);
     QWidget* buildAssignmentColumn(const MemberDto& member, QWidget* parent);
+    static void applyColumnWidths(QGridLayout* grid);
     QPushButton* makeSwitch(const QString& objectName, const QString& title, const QString& settingKey,
                             QWidget* parent);
     void resolveConflict(const Id& conflictId, const Id& memberId);
@@ -63,6 +69,7 @@ private:
     QLabel* avgVelocityValue_ = nullptr;
     QLabel* teamLeadValue_ = nullptr;
 
+    QWidget* tableHeader_ = nullptr;
     QVBoxLayout* cardsLayout_ = nullptr;
     QLabel* emptyLabel_ = nullptr;
 

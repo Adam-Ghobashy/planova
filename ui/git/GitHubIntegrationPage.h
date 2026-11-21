@@ -33,6 +33,8 @@ private slots:
 
 private:
     void showStatus(const QString& text);
+    void updateButtons();          // Connect, Disconnect and Sync follow the URL field and the saved state
+    void recolorIssueStates();     // issue state colours are set per item, so a theme change recolours them
 
     GitService& gitService_;
     const GitProjection& gitProjection_;
@@ -48,6 +50,7 @@ private:
     QPushButton* disconnectBtn_ = nullptr;
     QPushButton* syncBtn_ = nullptr;
 
+    QLabel* connectHint_ = nullptr;
     QLabel* connectionBadge_ = nullptr;
     QLabel* branchValue_ = nullptr;
     QLabel* commitsValue_ = nullptr;

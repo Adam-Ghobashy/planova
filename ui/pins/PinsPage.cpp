@@ -218,7 +218,7 @@ void PinsPage::refresh()
             nowShown[v.pin.id] = v.pin.category;
             cards.push_back(card);
         }
-        col->setCards(cards);
+        col->setCards(cards, !all.empty());
         // The scroll range is only valid after the layout ran.
         QTimer::singleShot(0, col, [col, scroll] { col->setScrollValue(scroll); });
     }

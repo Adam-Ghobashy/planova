@@ -50,6 +50,7 @@ Sidebar::Sidebar(PlanovaCore& core, QWidget* parent)
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this] {
         updateIcons();
         updateThemeToggle();
+        updateGitCard();
     });
     updateIcons();
     updateThemeToggle();
@@ -151,30 +152,30 @@ QWidget* Sidebar::buildGitCard()
     textCol->setSpacing(1);
     gitTitle_ = new QLabel("Synced with Git", gitCard);
     gitTitle_->setObjectName("SidebarGitTitle");
+    gitTitle_->setWordWrap(true);   // "No repository connected" is longer than the card
     gitSubtitle_ = new QLabel("Peer Event Store", gitCard);
     gitSubtitle_->setObjectName("SidebarGitSubtitle");
+    gitSubtitle_->setWordWrap(true);
     textCol->addWidget(gitTitle_);
     textCol->addWidget(gitSubtitle_);
     gitLayout->addLayout(textCol, 1);
 
-    auto* syncBtn = new QPushButton("⟳", gitCard);
-    syncBtn->setFixedSize(28, 28);
-    syncBtn->setCursor(Qt::PointingHandCursor);
-    syncBtn->setToolTip("Simulate Git Sync");
-    syncBtn->setAccessibleName("Simulate Git Sync");
-    syncBtn->setObjectName("SidebarSyncButton");
-    connect(syncBtn, &QPushButton::clicked, this, [this] {
-        // Not connected yet: the GitHub page is where the user enters the repository.
-        if (core_.gitProjection().isConnected()) {
-            try {
-                core_.git().simulateSync(core_.memberProjection().all());
-            } catch (const std::exception&) {
-                // The GitHub page shows the current state; no exception may leave a slot.
-            }
+    gitSyncButton_ = new QPushButton(gitCard);
+    gitSyncButton_->setFixedSize(28, 28);
+    gitSyncButton_->setIconSize(QSize(16, 16));
+    gitSyncButton_->setCursor(Qt::PointingHandCursor);
+    gitSyncButton_->setAccessibleName("Simulate Git Sync");
+    gitSyncButton_->setObjectName("SidebarSyncButton");
+    connect(gitSyncButton_, &QPushButton::clicked, this, [this] {
+        // The button is only enabled with a saved repository (see updateGitCard).
+        try {
+            core_.git().simulateSync(core_.memberProjection().all());
+        } catch (const std::exception&) {
+            // The GitHub page shows the current state; no exception may leave a slot.
         }
         emit pageRequested(Page::GitHub);
     });
-    gitLayout->addWidget(syncBtn);
+    gitLayout->addWidget(gitSyncButton_);
     return gitCard;
 }
 
@@ -255,6 +256,7 @@ void Sidebar::updateBadges()
 
 void Sidebar::updateGitCard()
 {
+    // Only the saved repository counts; whatever is typed on the GitHub page is not used here.
     const bool connected = core_.gitProjection().isConnected();
     // The colour comes from the qss; the property selects it. Re-polish so it takes effect.
     gitDot_->setProperty("state", connected ? "connected" : "disconnected");
@@ -265,9 +267,13 @@ void Sidebar::updateGitCard()
             "Branch: " + core_.gitProjection().branch() + " (" +
             std::to_string(core_.gitProjection().commits().size()) + " commits)"));
     } else {
-        gitTitle_->setText("Git Disconnected");
-        gitSubtitle_->setText("Click ⟳ to sync");
+        gitTitle_->setText("No repository connected");
+        gitSubtitle_->setText("Connect one on GitHub Integration");
     }
+    gitSyncButton_->setEnabled(connected);
+    gitSyncButton_->setToolTip(connected ? "Simulate Git Sync" : "Connect a repository first (GitHub Integration)");
+    // The glyph is tinted for the state, so a disabled button is muted and the icon follows the theme.
+    gitSyncButton_->setIcon(ThemeManager::instance().icon("refresh", connected ? Token::Accent : Token::TextMuted));
 }
 
 void Sidebar::refresh()

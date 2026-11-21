@@ -82,6 +82,13 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
 
     mainLayout->addLayout(headerLayout);
 
+    // No real GitHub provider exists yet; say so where the user starts, not only in a footer.
+    auto* notice = new QLabel("Simulated data: commits and issues are generated locally until a real GitHub provider exists.",
+                              contentWidget);
+    notice->setObjectName("simulatedNotice");
+    notice->setWordWrap(true);
+    mainLayout->addWidget(notice);
+
     auto* connCard = new QFrame(contentWidget);
     connCard->setObjectName("card");
     auto* connLayout = new QVBoxLayout(connCard);
@@ -109,18 +116,19 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     formRow->setSpacing(12);
 
     repoInput_ = new QLineEdit(connCard);
-    repoInput_->setObjectName("lightInput");
-    repoInput_->setPlaceholderText("https://github.com/Zeyad-101/planova.git");
-    repoInput_->setText("https://github.com/Zeyad-101/planova.git");
+    repoInput_->setObjectName("repoInput");
+    repoInput_->setAccessibleName("Repository URL");
+    repoInput_->setPlaceholderText("https://github.com/<owner>/<repo>.git");   // empty until the user types or one is saved
 
     branchInput_ = new QLineEdit(connCard);
-    branchInput_->setObjectName("lightInput");
+    branchInput_->setObjectName("branchInput");
+    branchInput_->setAccessibleName("Branch");
     branchInput_->setPlaceholderText("Branch (e.g., main)");
     branchInput_->setText("main");
     branchInput_->setFixedWidth(180);
 
     connectBtn_ = new QPushButton("Connect Repo", connCard);
-    connectBtn_->setObjectName("primaryButton");
+    connectBtn_->setObjectName("connectButton");
     connect(connectBtn_, &QPushButton::clicked, this, &GitHubIntegrationPage::onConnectClicked);
 
     disconnectBtn_ = new QPushButton("Disconnect", connCard);
@@ -132,6 +140,12 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     formRow->addWidget(connectBtn_);
     formRow->addWidget(disconnectBtn_);
     connLayout->addLayout(formRow);
+
+    // Says why Connect is off; hidden as soon as a URL is typed.
+    connectHint_ = new QLabel("Enter a repository URL to enable Connect.", connCard);
+    connectHint_->setObjectName("connectHint");
+    connLayout->addWidget(connectHint_);
+    connect(repoInput_, &QLineEdit::textChanged, this, &GitHubIntegrationPage::updateButtons);
 
     mainLayout->addWidget(connCard);
 
@@ -172,7 +186,7 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
 
     auto* commitsTitle = new QLabel("Recent Commits", commitsCard);
     commitsTitle->setObjectName("cardTitle");
-    auto* commitsSub = new QLabel("Latest commits recorded in the GitProjection state.", commitsCard);
+    auto* commitsSub = new QLabel("Latest commits synced from the repository.", commitsCard);
     commitsSub->setObjectName("cardSubtitle");
     commitsLayout->addWidget(commitsTitle);
     commitsLayout->addWidget(commitsSub);
@@ -232,10 +246,30 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     connect(&bridge_, &CoreBridge::changed, this, [this](const QString&) {
         if (!updating_) refresh();
     });
-    // Issue state colours are set on the items, so rebuild them for the new theme.
-    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this] { refresh(); });
+    // Issue state colours are set on the items. Only they are recoloured: a full refresh() would overwrite
+    // repository and branch text the user typed but has not connected yet.
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, &GitHubIntegrationPage::recolorIssueStates);
 
     refresh();
+}
+
+void GitHubIntegrationPage::updateButtons() {
+    const bool hasUrl = !repoInput_->text().trimmed().isEmpty();
+    const bool connected = gitProjection_.isConnected();
+    connectBtn_->setEnabled(hasUrl);
+    connectHint_->setVisible(!hasUrl);
+    disconnectBtn_->setEnabled(connected);
+    // Sync needs a saved repository, or a typed one that it connects first.
+    syncBtn_->setEnabled(connected || hasUrl);
+}
+
+void GitHubIntegrationPage::recolorIssueStates() {
+    for (int row = 0; row < issuesTable_->rowCount(); ++row) {
+        QTableWidgetItem* item = issuesTable_->item(row, 2);
+        if (!item) continue;
+        const bool open = item->text() == "OPEN";
+        item->setForeground(ThemeManager::instance().color(open ? Token::Accent : Token::TextMuted));
+    }
 }
 
 void GitHubIntegrationPage::onConnectClicked() {
@@ -282,8 +316,12 @@ void GitHubIntegrationPage::onSimulateSyncClicked() {
     updating_ = true;
     try {
         if (!gitProjection_.isConnected()) {
-            std::string url = repoInput_->text().trimmed().toStdString();
-            if (url.empty()) url = "https://github.com/Zeyad-101/planova.git";
+            const std::string url = repoInput_->text().trimmed().toStdString();
+            if (url.empty()) {
+                updating_ = false;
+                showStatus("Enter a repository URL first");
+                return;
+            }
             std::string branch = branchInput_->text().trimmed().toStdString();
             if (branch.empty()) branch = "main";
             gitService_.connect(url, branch);
@@ -303,7 +341,7 @@ void GitHubIntegrationPage::refresh() {
     const bool connected = gitProjection_.isConnected();
 
     if (connected) {
-        connectionBadge_->setText("● Connected");
+        connectionBadge_->setText("● Connected (simulated)");
         connectionBadge_->setProperty("state", "connected");
         repoInput_->setText(QString::fromStdString(gitProjection_.repoUrl()));
         branchInput_->setText(QString::fromStdString(gitProjection_.branch()));
@@ -362,6 +400,7 @@ void GitHubIntegrationPage::refresh() {
         stateItem->setForeground(ThemeManager::instance().color(iss.open ? Token::Accent : Token::TextMuted));
         issuesTable_->setItem(i, 2, stateItem);
     }
+    updateButtons();
 }
 
 void GitHubIntegrationPage::showStatus(const QString& text) {

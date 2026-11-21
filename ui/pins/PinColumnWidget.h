@@ -21,7 +21,8 @@ public:
     PinCategory category() const { return category_; }
 
     // Replaces all cards. Old cards are deleted later (safe inside their own signal handlers).
-    void setCards(const std::vector<PinCardWidget*>& cards);
+    // showEmptyLabel: false when the page already says that there are no pins at all (one hint, not five).
+    void setCards(const std::vector<PinCardWidget*>& cards, bool showEmptyLabel = true);
 
     int scrollValue() const;
     void setScrollValue(int v);

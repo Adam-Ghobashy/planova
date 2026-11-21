@@ -205,15 +205,6 @@ QWidget#TeamSkillsPage QFrame#card QLabel#leadBadge {
     font-weight: 700;
 }
 
-QWidget#TeamSkillsPage QFrame#card QLabel#velocityBadge {
-    background-color: @Background;
-    color: @TextPrimary;
-    border: 1px solid @Border;
-    border-radius: 8px;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-weight: 600;
-}
 
 QWidget#TeamSkillsPage QPushButton#editRoleButton {
     background-color: @Background;
@@ -274,11 +265,6 @@ QWidget#TeamSkillsPage QPushButton#cancelRoleButton:hover {
     background-color: @SurfaceAlt;
 }
 
-QWidget#TeamSkillsPage QFrame#card QFrame#cardDivider {
-    background-color: @SurfaceAlt;
-    border: none;
-    max-height: 1px;
-}
 
 /* ---------- skill rating matrix ---------- */
 QWidget#TeamSkillsPage QWidget#skillCell {
@@ -287,7 +273,7 @@ QWidget#TeamSkillsPage QWidget#skillCell {
 
 QWidget#TeamSkillsPage QFrame#card QLabel#skillLabel {
     color: @TextMuted;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
 }
 
@@ -509,4 +495,50 @@ QWidget#TeamSkillsPage QSlider::handle:horizontal:focus {
     height: 14px;
     margin: -7px 0;
     border-radius: 10px;
+}
+
+/* ---------- table header and meters ---------- */
+/* One header row above the member rows. TextTertiary on the page background is a tested pair (tst_Contrast). */
+QWidget#TeamSkillsPage QWidget#teamTableHeader {
+    background: transparent;
+}
+
+QWidget#TeamSkillsPage QLabel#tableHeaderCell {
+    color: @TextTertiary;
+    font-size: 11px;
+    font-weight: 700;
+    background: transparent;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel#meterLabel {
+    color: @TextSecondary;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel#velocityValue {
+    color: @TextPrimary;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Read-only velocity bar; the number next to it carries the value, the bar is the second cue. */
+QWidget#TeamSkillsPage QProgressBar#velocityBar {
+    background: @Track;
+    border: none;
+    border-radius: 3px;
+}
+
+QWidget#TeamSkillsPage QProgressBar#velocityBar::chunk {
+    background: @Accent;
+    border-radius: 3px;
+}
+
+/* Layout containers inside a member row must not paint the page colour over the card (visible in dark). */
+QWidget#TeamSkillsPage QWidget#profileColumn,
+QWidget#TeamSkillsPage QWidget#skillsColumn,
+QWidget#TeamSkillsPage QWidget#understandingColumn,
+QWidget#TeamSkillsPage QWidget#roleActions,
+QWidget#TeamSkillsPage QWidget#roleEditBox {
+    background: transparent;
 }

@@ -5,6 +5,7 @@
 #include "board/PhaseBoardPage.h"
 #include "board/TaskCardWidget.h"
 #include "board/TaskColumnWidget.h"
+#include "git/GitHubIntegrationPage.h"
 #include "home/HomePage.h"
 #include "pins/PinsPage.h"
 #include "planova/PlanovaCore.h"
@@ -292,6 +293,147 @@ private slots:
         pages->setCurrentIndex(static_cast<int>(Page::Home));
         window.findChild<QPushButton*>("homePinsLink")->click();
         QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Pins));
+    }
+
+    // ---- GitHub page ----
+    // The page shows the repository form; no repository is pre-filled.
+    void repoFieldEmptyByDefaultWithPlaceholder()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        auto* repo = window.findChild<QLineEdit*>("repoInput");
+        QVERIFY(repo);
+        QVERIFY(repo->text().isEmpty());
+        QCOMPARE(repo->placeholderText(), QString("https://github.com/<owner>/<repo>.git"));
+    }
+
+    void connectDisabledWhenEmpty()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        window.resize(1440, 900);
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        window.findChild<QStackedWidget*>()->setCurrentIndex(static_cast<int>(Page::GitHub));
+        QApplication::processEvents();
+
+        auto* repo = window.findChild<QLineEdit*>("repoInput");
+        auto* connect = window.findChild<QPushButton*>("connectButton");
+        auto* hint = window.findChild<QLabel*>("connectHint");
+        QVERIFY(repo && connect && hint);
+        QVERIFY(!connect->isEnabled());
+        QVERIFY(hint->isVisible());          // the reason is written next to the field
+
+        repo->setText("   ");                // blanks are still empty
+        QVERIFY(!connect->isEnabled());
+        repo->setText("https://github.com/acme/portal.git");
+        QVERIFY(connect->isEnabled());
+        QVERIFY(!hint->isVisible());
+        repo->clear();
+        QVERIFY(!connect->isEnabled());
+    }
+
+    void githubShowsSimulatedNotice()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        window.resize(1440, 900);
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        window.findChild<QStackedWidget*>()->setCurrentIndex(static_cast<int>(Page::GitHub));
+        QApplication::processEvents();
+        auto* notice = window.findChild<QLabel*>("simulatedNotice");
+        QVERIFY(notice);
+        QVERIFY(notice->isVisible());
+        QCOMPARE(notice->text(), QString("Simulated data: commits and issues are generated locally until a real GitHub provider exists."));
+    }
+
+    // Typed but unsaved text must not be overwritten when the theme changes, connected or not.
+    void unsavedInputSurvivesThemeToggle()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        auto* repo = window.findChild<QLineEdit*>("repoInput");
+        auto* branch = window.findChild<QLineEdit*>("branchInput");
+        QVERIFY(repo && branch);
+
+        repo->setText("https://github.com/acme/typed.git");
+        branch->setText("draft");
+        ThemeManager::instance().apply(ThemeMode::Dark);
+        QApplication::processEvents();
+        QCOMPARE(repo->text(), QString("https://github.com/acme/typed.git"));
+        QCOMPARE(branch->text(), QString("draft"));
+
+        core.git().connect("https://github.com/acme/saved.git", "main");   // the saved state differs from what is typed next
+        QApplication::processEvents();
+        repo->setText("https://github.com/acme/typed-again.git");
+        ThemeManager::instance().apply(ThemeMode::Light);
+        QApplication::processEvents();
+        QCOMPARE(repo->text(), QString("https://github.com/acme/typed-again.git"));
+    }
+
+    // The sidebar card shows the saved repository only; without one it says so and sync is off.
+    void sidebarGitCardUsesSavedRepoOnly()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        auto* title = window.findChild<QLabel*>("SidebarGitTitle");
+        auto* sync = window.findChild<QPushButton*>("SidebarSyncButton");
+        QVERIFY(title && sync);
+        QCOMPARE(title->text(), QString("No repository connected"));
+        QVERIFY(!sync->isEnabled());
+
+        core.git().connect("https://github.com/acme/portal.git", "main");
+        QApplication::processEvents();
+        QVERIFY(title->text() != QString("No repository connected"));
+        QVERIFY(sync->isEnabled());
+    }
+
+    // ---- Pins page ----
+    // An empty board says so once, not once per column plus once for the page.
+    void pinsEmptyStateShowsOneHint()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        window.resize(1440, 900);
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        window.findChild<QStackedWidget*>()->setCurrentIndex(static_cast<int>(Page::Pins));
+        QApplication::processEvents();
+        auto* pins = window.findChild<planova::s5::PinsPage*>();
+        QVERIFY(pins);
+        auto visibleHints = [pins] {
+            int n = 0;
+            for (const QLabel* l : pins->findChildren<QLabel*>())
+                if (l->isVisible() && (l->objectName() == "EmptyHint" || l->objectName() == "PinColumnEmpty")) ++n;
+            return n;
+        };
+        QCOMPARE(visibleHints(), 1);
+
+        // With one pin, the three empty columns say "No pins here" and the page hint is gone.
+        const Id member = core.members().add("Ana Lopez", "Backend Developer", false);
+        core.pins().create(PinCategory::HandoffNote, "one", {}, member, {});
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        QApplication::processEvents();
+        QCOMPARE(visibleHints(), 3);
     }
 
     // No page copy mentions SQLite or a database, and no first-person titles remain.

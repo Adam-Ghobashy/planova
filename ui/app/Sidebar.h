@@ -53,5 +53,6 @@ private:
     QLabel* gitDot_ = nullptr;
     QLabel* gitTitle_ = nullptr;
     QLabel* gitSubtitle_ = nullptr;
+    QPushButton* gitSyncButton_ = nullptr;
     QPushButton* themeToggle_ = nullptr;
 };
