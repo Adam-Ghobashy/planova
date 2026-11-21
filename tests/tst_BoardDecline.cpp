@@ -7,6 +7,7 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QLabel>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSignalSpy>
@@ -116,16 +117,53 @@ private slots:
 
         TaskCardWidget unassigned(t, "", "", Token::Member1);
         QVERIFY(!actionTexts(unassigned).contains(declineText()));
-        QCOMPARE(unassigned.focusPolicy(), Qt::StrongFocus);
+        // No menu means nothing to do with the keyboard on the card itself, so it is not a (dead) Tab stop.
+        QCOMPARE(unassigned.focusPolicy(), Qt::NoFocus);
 
         t.assignee = Id("m1");
         TaskCardWidget assigned(t, "Ana", "A", Token::Member1);
+        QCOMPARE(assigned.focusPolicy(), Qt::StrongFocus);   // the Menu key opens "Decline task..."
         QVERIFY(actionTexts(assigned).contains(declineText()));
         std::vector<Id> requested;
         connect(&assigned, &TaskCardWidget::declineRequested, this, [&](const Id& id) { requested.push_back(id); });
         assigned.actions().first()->trigger();
         QCOMPARE(requested.size(), size_t(1));
         QCOMPARE(requested[0], Id("t1"));
+    }
+
+    // A screen reader hears the title and status, then who has it and how many pins it carries.
+    void cardHasAccessibleNameAndDescription()
+    {
+        TaskDto t;
+        t.id = "t1";
+        t.title = "Build API";
+        t.status = TaskStatus::Review;
+        t.complexity = 2;
+        t.estHours = 4;
+
+        TaskCardWidget unassigned(t, "", "", Token::Member1);
+        QVERIFY(unassigned.accessibleName().contains("Build API"));
+        QVERIFY(unassigned.accessibleName().contains("Review / QA"));
+        QVERIFY(unassigned.accessibleDescription().contains("Unassigned"));
+
+        t.assignee = Id("m1");
+        TaskCardWidget assigned(t, "Ana", "A", Token::Member1, 2);
+        QVERIFY(assigned.accessibleDescription().contains("Ana"));
+        QVERIFY(assigned.accessibleDescription().contains("2 pins"));
+    }
+
+    // Every card shows who has the task; an unassigned one says so in words.
+    void unassignedCardSaysUnassigned()
+    {
+        TaskDto t;
+        t.id = "t1";
+        t.title = "Build API";
+        t.complexity = 2;
+        t.estHours = 4;
+        TaskCardWidget card(t, "", "", Token::Member1);
+        QStringList metas;
+        for (const QLabel* l : card.findChildren<QLabel*>("CardMeta")) metas << l->text();
+        QVERIFY(metas.contains("Unassigned"));
     }
 
     void declineFlowUnassigns()

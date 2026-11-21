@@ -83,6 +83,13 @@ private slots:
             addPair(Token::DangerText, Token::Background);   // the other text pairs on Surface are covered above
             // Chaos Slicer table: match badge and Ready pill text.
             addPair(Token::TextPrimary, Token::SuccessSoft);
+            // Board and Tracking: column count chips, skill and pin chips, the member efficiency chip.
+            addPair(Token::DoneChipText, Token::SuccessSoft);
+            addPair(Token::Accent, Token::AccentSoftStrong);
+            addPair(Token::WarningText, Token::ReviewSoft);
+            // Home: pin count line, quick link subtitles and the empty pins message.
+            addPair(Token::TextTertiary, Token::Surface);
+            addPair(Token::TextTertiary, Token::Background);
         }
     }
 

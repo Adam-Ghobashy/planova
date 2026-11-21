@@ -291,6 +291,9 @@ private slots:
         sweepNamed(&window, "BoardPrimary", "Board", true, failures, checked);
         sweepNamed(&window, "BoardSearch", "Board", true, failures, checked);
         sweepNamed(&window, "BoardMemberFilter", "Board", true, failures, checked);
+        goTo(Page::Home);
+        for (const char* name : {"homePinsLink", "homePinsMore"})
+            sweepNamed(&window, name, "Home", true, failures, checked);
         goTo(Page::Pins);
         for (const char* name : {"LeavePinButton", "PinFilterChip", "PinResolveButton"})
             sweepNamed(&window, name, "Pins", true, failures, checked);

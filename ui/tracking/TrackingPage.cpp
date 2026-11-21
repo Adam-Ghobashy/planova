@@ -78,6 +78,7 @@ Card makeCard(const QString& title, const QString& headerObjectName, const QMarg
     outer->addWidget(header);
 
     auto* body = new QWidget(card);
+    body->setObjectName(QStringLiteral("TrackingCardBody"));   // transparent in tracking.qss, so the card keeps its Surface
     auto* bodyLayout = new QVBoxLayout(body);
     bodyLayout->setContentsMargins(bodyMargins);
     bodyLayout->setSpacing(0);
@@ -356,14 +357,13 @@ void TrackingPage::buildUi()
     leaderboard.body->addWidget(emptyLeaderboard_, 1);
     main->addWidget(leaderboardCard, kLeaderboardStretch);
 
-    // Chart card: padding 18, title margin-bottom 12, chart centred vertically.
+    // Chart card: padding 18, title margin-bottom 12, chart starts right under the title (top-aligned).
     const Card chartCardParts = makeCard(tr("Complexity Distribution Chart"),
                                          QStringLiteral("TrackingCardHeaderPlain"),
                                          QMargins(kCardPadding, kCardPadding, kCardPadding, 0),
                                          QMargins(kCardPadding, 12, kCardPadding, kCardPadding));
     QFrame* chartCard = chartCardParts.frame;
     chart_ = new ComplexityBarChart(chartCard);
-    chartCardParts.body->addStretch(1);
     chartCardParts.body->addWidget(chart_);
     emptyChart_ = makeEmptyHint(tr("Nothing to chart yet."), chartCard);
     chartCardParts.body->addWidget(emptyChart_);

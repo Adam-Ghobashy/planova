@@ -184,7 +184,7 @@ QVariant LeaderboardModel::data(const QModelIndex& index, int role) const
         case RankMemberColumn:
             return entry.name;
         case RoleColumn:
-            return entry.role; // role is optional, may be empty
+            return entry.role.isEmpty() ? QString(QChar(0x2014)) : entry.role; // role is optional: an em dash, never a blank cell
         case DoneAssignedColumn:
             return QStringLiteral("%1 / %2").arg(row.done).arg(row.assigned);
         case PointsColumn:

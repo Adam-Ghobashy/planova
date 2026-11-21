@@ -1,5 +1,6 @@
 // Dev tool: saves one PNG per page and theme so the UI can be compared with the Figma prototype.
 // Usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N]  [--clash] [--dialogs] [--splash] 
+// --height N / --width N set the window size (default 1440x900), to see the bottom or the right side of a page.
 // --empty skips the demo data, to check the empty-project look.
 // --dialogs saves one PNG per dialog and theme instead (each dialog opened over the Board page).
 // --setup-steps saves every step of the Setup page (filled with sample data) and its error and blocked states.
@@ -56,6 +57,8 @@ struct Options {
     bool clash = false;
     bool welcomeStates = false;
     bool setupSteps = false;
+    int height = 0; // 0 keeps the default window height
+    int width = 0;  // 0 keeps the default window width
 };
 
 bool parseArgs(const QStringList& args, Options& options)
@@ -66,6 +69,10 @@ bool parseArgs(const QStringList& args, Options& options)
     for (int i = 2; i < args.size(); ++i) {
         if (args[i] == "--theme" && i + 1 < args.size())
             options.theme = args[++i];
+        else if (args[i] == "--width" && i + 1 < args.size())
+            options.width = args[++i].toInt();
+        else if (args[i] == "--height" && i + 1 < args.size())
+            options.height = args[++i].toInt();
         else if (args[i] == "--page" && i + 1 < args.size())
             options.page = args[++i].toInt();
         else if (args[i] == "--clash")
@@ -154,7 +161,7 @@ int main(int argc, char* argv[])
 
     CoreBridge bridge(core);
     MainWindow window(core, bridge);
-    window.resize(1440, options.clash ? 1800 : 900); // --clash is tall so every Team card is visible
+    window.resize(options.width > 0 ? options.width : 1440, options.height > 0 ? options.height : (options.clash ? 1800 : 900)); // --clash is tall so every Team card is visible
     window.show();
 
     auto* pages = window.findChild<QStackedWidget*>();

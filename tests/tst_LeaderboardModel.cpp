@@ -48,11 +48,19 @@ private slots:
                  QStringLiteral("#2"));
     }
 
-    void emptyRoleIsBlank()
+    // The design leaves no blank cell: a member without a role shows an em dash.
+    void emptyRoleShowsDash()
     {
         LeaderboardModel model;
         model.setRows({makeRow("b", 0, 0, 0, 0.0, 1)}, {makeMember("b", "Bob Ray", "")});
-        QVERIFY(model.index(0, LeaderboardModel::RoleColumn).data().toString().isEmpty());
+        QCOMPARE(model.index(0, LeaderboardModel::RoleColumn).data().toString(), QString(QChar(0x2014)));
+    }
+
+    void filledRoleIsShownAsIs()
+    {
+        LeaderboardModel model;
+        model.setRows({makeRow("a", 0, 0, 0, 0.0, 1)}, {makeMember("a", "Ada Lovelace", "Dev")});
+        QCOMPARE(model.index(0, LeaderboardModel::RoleColumn).data().toString(), QStringLiteral("Dev"));
     }
 
     void initialsUseFirstTwoWords()

@@ -82,7 +82,7 @@ PhaseBoardPage::PhaseBoardPage(PlanovaCore& core, CoreBridge& bridge, QWidget* p
     host->setObjectName("BoardColumnsHost");
     auto* cols = new QHBoxLayout(host);
     cols->setContentsMargins(0, 0, 0, 0);
-    cols->setSpacing(24);
+    cols->setSpacing(16);
     for (int i = 0; i < 4; ++i) {
         columns_[i] = new TaskColumnWidget(titles[i], tones[i]);
         cols->addWidget(columns_[i], 1);

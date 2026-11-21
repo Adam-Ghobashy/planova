@@ -140,7 +140,7 @@ QPushButton#homePinsMore {
     background: transparent;
     border: 2px solid transparent;   /* room for the focus ring, so focus does not resize the button */
     border-radius: 6px;
-    padding: 0px 4px;
+    padding: 3px 6px;
     font-size: 12px;
 }
 
@@ -163,7 +163,7 @@ QPushButton#homePinsLink {
     background: transparent;
     border: 2px solid transparent;   /* room for the focus ring, so focus does not resize the link */
     border-radius: 6px;
-    padding: 0;
+    padding: 3px 4px;                /* the ring sits 4 px from the text, and the target is at least 24 px high */
 }
 
 /* Sticky notes - integrated inside HomePage.cpp

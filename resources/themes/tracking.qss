@@ -123,6 +123,7 @@ QPushButton#TrackingToggle:checked:focus:hover {
    separator through ::item. Reference cell padding is 14px left and right. */
 /* Complexity chart colours (ComplexityBarChart, qproperty-*). Same values as above. */
 QWidget#ComplexityBarChart {
+    background: transparent;
     qproperty-fillColor: @Accent;
     qproperty-trackColor: @Track;
     qproperty-valueColor: @TextPrimary;
@@ -162,4 +163,9 @@ QTableView#LeaderboardTable QHeaderView::section {
 QTableView#LeaderboardTable QTableCornerButton::section {
     background: transparent;
     border: none;
+}
+
+/* Card body: the app-wide QWidget fill would show the page colour inside the white card. */
+QWidget#TrackingCardBody {
+    background: transparent;
 }

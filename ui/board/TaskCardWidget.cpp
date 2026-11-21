@@ -2,6 +2,7 @@
 #include <QAction>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QSizePolicy>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include "BoardUtil.h"
@@ -13,55 +14,71 @@ TaskCardWidget::TaskCardWidget(const TaskDto& task, const QString& assigneeName,
     : QFrame(parent), taskId_(task.id) {
     setObjectName("TaskCard");
 
-    // Focusable so the Menu key / Shift+F10 can open the context menu without a mouse.
+    // Only a card with an assignee has something to do from the keyboard (the Menu key opens "Decline task...").
+    // An unassigned card has no menu, so it is no Tab stop. Its advance button stays reachable.
     // With Qt::ActionsContextMenu Qt shows the menu for both the mouse and the keyboard.
-    setFocusPolicy(Qt::StrongFocus);
     if (task.assignee) {
+        setFocusPolicy(Qt::StrongFocus);
         setContextMenuPolicy(Qt::ActionsContextMenu);
         auto* decline = new QAction(tr("Decline task…"), this);
         connect(decline, &QAction::triggered, this, [this] { emit declineRequested(taskId_); });
         addAction(decline);
+    } else {
+        setFocusPolicy(Qt::NoFocus);
     }
 
-    auto* root = new QVBoxLayout(this);
-    root->setContentsMargins(20, 20, 20, 16);
-    root->setSpacing(14);
+    // What a screen reader says: the task and its status first, then who has it and the pins.
+    const QString who = task.assignee ? assigneeName : tr("Unassigned");
+    QString description = tr("Assignee: %1.").arg(who);
+    if (pinCount > 0)
+        description += QStringLiteral(" ") + (pinCount == 1 ? tr("1 pin") : tr("%1 pins").arg(pinCount)) + QStringLiteral(".");
+    setAccessibleName(QStringLiteral("%1, %2").arg(QString::fromStdString(task.title), board::statusLabel(task.status)));
+    setAccessibleDescription(description);
 
-    // Top row: skill chip, blocked badge, complexity dots
+    // The qss border is 1 px (2 px with focus) and the padding 1 px (0 with focus), so a focused card does not move
+    // its content. The layout margin is what remains of the design's 20 px.
+    auto* root = new QVBoxLayout(this);
+    root->setContentsMargins(17, 17, 17, 14);
+    root->setSpacing(12);
+
+    // Top row: skill chip, complexity dots
     auto* top = new QHBoxLayout;
     top->setSpacing(8);
 
     auto* chip = new QLabel(board::skillLabel(task.skill));
     chip->setObjectName("SkillChip");
     top->addWidget(chip, 0, Qt::AlignTop);
-
-    const bool blocked = !task.blockedBy.empty() && task.status != TaskStatus::Done;
-    if (blocked) {
-        auto* badge = new QFrame;
-        badge->setObjectName("BlockedBadge");
-        badge->setToolTip(tr("Waiting on %1 unfinished task(s)")
-                              .arg(static_cast<int>(task.blockedBy.size())));
-        auto* bl = new QVBoxLayout(badge);
-        bl->setContentsMargins(10, 4, 10, 4);
-        bl->setSpacing(0);
-
-        auto* icon = new QLabel(QString::fromUtf16(u"\u26A0\uFE0F"));
-        icon->setObjectName("BlockedIcon");
-        icon->setAlignment(Qt::AlignCenter);
-        auto* text = new QLabel(tr("Blocked"));
-        text->setObjectName("BlockedText");
-        text->setAlignment(Qt::AlignCenter);
-        bl->addWidget(icon);
-        bl->addWidget(text);
-        top->addWidget(badge, 0, Qt::AlignTop);
-    }
     top->addStretch(1);
     top->addWidget(new ComplexityDotsWidget(task.complexity), 0, Qt::AlignTop);
     root->addLayout(top);
 
+    // A blocked task says so in words, on its own row so the chip row never gets wider than the column.
+    const bool blocked = !task.blockedBy.empty() && task.status != TaskStatus::Done;
+    if (blocked) {
+        auto* badgeRow = new QHBoxLayout;
+        auto* badge = new QFrame;
+        badge->setObjectName("BlockedBadge");
+        badge->setToolTip(tr("Waiting on %1 unfinished task(s)")
+                              .arg(static_cast<int>(task.blockedBy.size())));
+        auto* bl = new QHBoxLayout(badge);
+        bl->setContentsMargins(10, 3, 10, 3);
+        bl->setSpacing(6);
+        auto* icon = new QLabel(QString::fromUtf16(u"⚠️"));
+        icon->setObjectName("BlockedIcon");
+        auto* text = new QLabel(tr("Blocked"));
+        text->setObjectName("BlockedText");
+        bl->addWidget(icon);
+        bl->addWidget(text);
+        badgeRow->addWidget(badge);
+        badgeRow->addStretch(1);
+        root->addLayout(badgeRow);
+    }
+
+    // The title wraps inside the card: Ignored makes the layout use the card width instead of the one-line width.
     auto* title = new QLabel(QString::fromStdString(task.title));
     title->setObjectName("TaskTitle");
     title->setWordWrap(true);
+    title->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
     root->addWidget(title);
 
     auto* line = new QFrame;
@@ -72,15 +89,15 @@ TaskCardWidget::TaskCardWidget(const TaskDto& task, const QString& assigneeName,
 
     // Bottom row: avatar, name, pins, hours, advance / done
     auto* bottom = new QHBoxLayout;
-    bottom->setSpacing(10);
+    bottom->setSpacing(8);
 
     auto* avatar = new QLabel(task.assignee ? initials : QStringLiteral("?"));
     avatar->setObjectName("CardAvatar");
-    avatar->setFixedSize(34, 34);
+    avatar->setFixedSize(30, 30);
     avatar->setAlignment(Qt::AlignCenter);
     bottom->addWidget(avatar);
 
-    auto* name = new QLabel(task.assignee ? assigneeName : tr("Unassigned"));
+    auto* name = new QLabel(who);
     name->setObjectName("CardMeta");
     bottom->addWidget(name);
 
@@ -89,8 +106,8 @@ TaskCardWidget::TaskCardWidget(const TaskDto& task, const QString& assigneeName,
         pinChip->setObjectName("PinChip");
         pinChip->setToolTip(tr("%1 pin(s) on this task").arg(pinCount));
         auto* pl = new QHBoxLayout(pinChip);
-        pl->setContentsMargins(8, 3, 10, 3);
-        pl->setSpacing(4);
+        pl->setContentsMargins(7, 2, 8, 2);
+        pl->setSpacing(3);
         auto* pinIcon = new QLabel(QString::fromUcs4(U"\U0001F4CC"));
         pinIcon->setObjectName("PinIcon");
         auto* pinNum = new QLabel(QString::number(pinCount));
@@ -109,15 +126,17 @@ TaskCardWidget::TaskCardWidget(const TaskDto& task, const QString& assigneeName,
     if (board::nextStatus(task.status, next)) {
         auto* advance = new QToolButton;
         advance->setObjectName("AdvanceButton");
-        advance->setText(QString::fromUtf16(u"\u2192"));
+        advance->setText(QString::fromUtf16(u"→"));
         advance->setCursor(Qt::PointingHandCursor);
         advance->setAutoRaise(true);
         advance->setToolTip(tr("Move to %1").arg(board::statusLabel(next)));
+        advance->setAccessibleName(tr("Move \"%1\" to %2").arg(QString::fromStdString(task.title), board::statusLabel(next)));
         connect(advance, &QToolButton::clicked, this, [this] { emit advanceRequested(taskId_); });
         bottom->addWidget(advance);
     } else {
-        auto* done = new QLabel(QString::fromUtf16(u"\u2713"));
+        auto* done = new QLabel(QString::fromUtf16(u"✓"));
         done->setObjectName("DoneMark");
+        done->setAccessibleName(tr("Done"));
         bottom->addWidget(done);
     }
     root->addLayout(bottom);

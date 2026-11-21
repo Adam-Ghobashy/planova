@@ -513,8 +513,7 @@ void HomePage::buildUi()
     chartsLayout->addWidget(contributionTitle);
     m_contributionChart = new BarChartWidget(chartsContent);
     m_contributionChart->setMinScale(20.0);
-    chartsLayout->addWidget(m_contributionChart);
-    chartsLayout->addStretch(1);
+    chartsLayout->addWidget(m_contributionChart, 1);   // spare height goes to the bars, not to an empty band
     auto* sprintBadge = new QLabel(QStringLiteral("Active Sprint"));
     sprintBadge->setObjectName(QStringLiteral("homeBadge"));
     QFrame* chartsPanel = createPanel(QStringLiteral("Task Status & Sprint Velocity"),
