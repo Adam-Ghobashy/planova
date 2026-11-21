@@ -8,10 +8,10 @@
 TaskColumnWidget::TaskColumnWidget(const QString& title, const QString& tone, QWidget* parent)
     : QFrame(parent) {
     setObjectName("TaskColumn");
-    setMinimumWidth(300);   // the design shows 4 columns; narrower windows scroll the board sideways
+    setMinimumWidth(260);   // four columns fit the 1440 px window; narrower windows scroll the board sideways
 
     auto* root = new QVBoxLayout(this);
-    root->setContentsMargins(16, 18, 16, 16);
+    root->setContentsMargins(12, 18, 12, 16);
     root->setSpacing(14);
 
     auto* header = new QHBoxLayout;

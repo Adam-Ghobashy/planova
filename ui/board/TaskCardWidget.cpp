@@ -2,11 +2,36 @@
 #include <QAction>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QResizeEvent>
 #include <QSizePolicy>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include "BoardUtil.h"
 #include "ComplexityDotsWidget.h"
+
+namespace {
+// A one-line label that shortens a long name with "..." instead of making the card wider than its column.
+class ElidedLabel : public QLabel {
+public:
+    explicit ElidedLabel(const QString& text) : QLabel(text), full_(text) {
+        setToolTip(text);
+        setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    }
+    QSize sizeHint() const override {
+        return QSize(qMin(fontMetrics().horizontalAdvance(full_), 80), QLabel::sizeHint().height());
+    }
+    QSize minimumSizeHint() const override { return QSize(24, QLabel::sizeHint().height()); }
+
+protected:
+    void resizeEvent(QResizeEvent* event) override {
+        QLabel::resizeEvent(event);
+        setText(fontMetrics().elidedText(full_, Qt::ElideRight, width()));
+    }
+
+private:
+    QString full_;
+};
+}
 
 TaskCardWidget::TaskCardWidget(const TaskDto& task, const QString& assigneeName,
                                const QString& initials, Token /*avatarColor*/,
@@ -38,7 +63,7 @@ TaskCardWidget::TaskCardWidget(const TaskDto& task, const QString& assigneeName,
     // The qss border is 1 px (2 px with focus) and the padding 1 px (0 with focus), so a focused card does not move
     // its content. The layout margin is what remains of the design's 20 px.
     auto* root = new QVBoxLayout(this);
-    root->setContentsMargins(17, 17, 17, 14);
+    root->setContentsMargins(14, 15, 14, 12);
     root->setSpacing(12);
 
     // Top row: skill chip, complexity dots
@@ -89,15 +114,15 @@ TaskCardWidget::TaskCardWidget(const TaskDto& task, const QString& assigneeName,
 
     // Bottom row: avatar, name, pins, hours, advance / done
     auto* bottom = new QHBoxLayout;
-    bottom->setSpacing(8);
+    bottom->setSpacing(6);
 
     auto* avatar = new QLabel(task.assignee ? initials : QStringLiteral("?"));
     avatar->setObjectName("CardAvatar");
-    avatar->setFixedSize(30, 30);
+    avatar->setFixedSize(28, 28);
     avatar->setAlignment(Qt::AlignCenter);
     bottom->addWidget(avatar);
 
-    auto* name = new QLabel(who);
+    auto* name = new ElidedLabel(who);
     name->setObjectName("CardMeta");
     bottom->addWidget(name);
 

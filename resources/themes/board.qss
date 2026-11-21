@@ -87,7 +87,7 @@ QFrame#TaskCard { background: @SurfaceAlt; border: 1px solid @Border; border-rad
 QFrame#TaskCard:focus { border: 2px solid @Accent; padding: 0; }   /* border +1 px, padding -1 px: nothing moves */
 QLabel#SkillChip {
     background: @AccentSoft; color: @Accent; border: 1px solid @Accent; border-radius: 11px;
-    padding: 3px 10px; font-size: 12px; font-weight: 700;
+    padding: 3px 8px; font-size: 11px; font-weight: 700;
 }
 QFrame#BlockedBadge { background: @Background; border: 1px solid @Border; border-radius: 10px; }
 QLabel#BlockedIcon  { font-size: 14px; background: transparent; }
@@ -95,10 +95,10 @@ QLabel#BlockedText  { font-size: 12px; font-weight: 700; color: @TextPrimary; ba
 QLabel#TaskTitle    { font-size: 17px; font-weight: 700; color: @TextPrimary; background: transparent; }
 QFrame#CardDivider  { background: @Border; border: none; }
 QLabel#CardAvatar {
-    background: @Surface; border: 1px solid @ControlBorder; border-radius: 15px;
+    background: @Surface; border: 1px solid @ControlBorder; border-radius: 14px;
     font-size: 12px; font-weight: 700; color: @TextPrimary;
 }
-QLabel#CardMeta  { font-size: 14px; color: @TextMuted; background: transparent; }
+QLabel#CardMeta  { font-size: 13px; color: @TextMuted; background: transparent; }
 QLabel#DoneMark  { font-size: 20px; font-weight: 700; color: @TextPrimary; background: transparent; }
 QToolButton#AdvanceButton {
     border: 2px solid transparent; background: transparent; color: @TextPrimary; font-size: 20px;

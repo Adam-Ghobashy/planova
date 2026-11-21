@@ -5,8 +5,8 @@
 
 namespace {
 constexpr int kDots = 5;
-constexpr int kDiameter = 10;
-constexpr int kGap = 5;
+constexpr int kDiameter = 8;
+constexpr int kGap = 4;
 }
 
 ComplexityDotsWidget::ComplexityDotsWidget(int level, QWidget* parent)

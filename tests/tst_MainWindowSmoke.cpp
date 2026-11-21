@@ -164,10 +164,17 @@ private slots:
                                         .arg(card->accessibleName()).arg(card->width()).arg(card->sizeHint().width())));
             }
             QVERIFY(checked >= 9);   // the demo board has nine tasks
+
+            // The card must also fit inside its column's scroll area, not just be wide enough for itself:
+            // a card whose content is wider than the column pushes the column's content past the edge (cut off, no scrollbar).
+            for (const QScrollArea* area : window.findChildren<QScrollArea*>("ColumnScroll"))
+                QVERIFY2(area->widget()->width() <= area->viewport()->width(),
+                         qPrintable(QString("column content is %1 px but the viewport is %2 px")
+                                        .arg(area->widget()->width()).arg(area->viewport()->width())));
         }
     }
 
-    // Columns never get narrower than 300 px. The board scrolls sideways only when 4 columns do not fit.
+    // Columns never get narrower than 260 px. The board scrolls sideways only when 4 columns do not fit.
     void boardColumnsKeepMinimumWidth()
     {
         QTemporaryDir dir;
@@ -184,19 +191,30 @@ private slots:
         const auto columns = window.findChildren<TaskColumnWidget*>();
         QCOMPARE(columns.size(), 4);
 
+        window.resize(1440, 900);   // the common desktop size: Done is fully visible, no sideways scroll
+        QApplication::processEvents();
+        QCOMPARE(scroll->horizontalScrollBar()->maximum(), 0);
+        QVERIFY(columns.last()->mapTo(scroll->viewport(), QPoint(columns.last()->width(), 0)).x()
+                <= scroll->viewport()->width());
+
         window.resize(2000, 900);   // wide: all four columns fit, nothing to scroll
         QApplication::processEvents();
         QCOMPARE(scroll->horizontalScrollBar()->maximum(), 0);
         for (const TaskColumnWidget* c : columns) {
-            QVERIFY(c->width() >= 300);
+            QVERIFY(c->width() >= 260);
             QVERIFY(c->mapTo(scroll->viewport(), QPoint(c->width(), 0)).x() <= scroll->viewport()->width());
         }
 
-        window.resize(1000, 900);   // narrow: the columns keep 300 px and the board scrolls
+        window.resize(1000, 900);   // narrow: the columns keep 260 px and the board scrolls
         QApplication::processEvents();
         QVERIFY(scroll->horizontalScrollBar()->maximum() > 0);
         for (const TaskColumnWidget* c : columns)
-            QVERIFY(c->width() >= 300);
+            QVERIFY(c->width() >= 260);
+        // At the minimum column width the cards still fit inside the column (nothing cut off).
+        for (const QScrollArea* area : window.findChildren<QScrollArea*>("ColumnScroll"))
+            QVERIFY2(area->widget()->width() <= area->viewport()->width(),
+                     qPrintable(QString("column content is %1 px but the viewport is %2 px")
+                                    .arg(area->widget()->width()).arg(area->viewport()->width())));
     }
 
     // A focused card keeps its size and the position of its content (the ring takes the place of padding).
