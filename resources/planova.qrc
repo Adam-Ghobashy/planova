@@ -6,6 +6,7 @@
     <file>themes/home.qss</file>
     <file>themes/modal.qss</file>
     <file>themes/pins.qss</file>
+    <file>themes/setup.qss</file>
     <file>themes/slicer.qss</file>
     <file>themes/team.qss</file>
     <file>themes/tracking.qss</file>

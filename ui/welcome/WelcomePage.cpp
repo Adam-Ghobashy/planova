@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QKeyEvent>
 #include <QLineEdit>
+#include <QDebug>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QStyle>
@@ -287,30 +288,35 @@ QWidget* WelcomePage::buildWorkspaceState()
 
 void WelcomePage::refresh()
 {
-    // Cards are replaced, not edited. The old ones are deleted later because this can run inside
-    // the click of one of their own buttons.
-    for (ProjectCardWidget* card : cards_) {
-        card->hide();
-        card->setParent(nullptr);
-        card->deleteLater();
+    try {
+        // Cards are replaced, not edited. The old ones are deleted later because this can run inside
+        // the click of one of their own buttons.
+        for (ProjectCardWidget* card : cards_) {
+            card->hide();
+            card->setParent(nullptr);
+            card->deleteLater();
+        }
+        cards_.clear();
+
+        const auto current = core_.currentProject();
+        for (const ProjectDto& project : core_.projects().list()) {
+            auto* card = new ProjectCardWidget(project, current && *current == project.id, gridHost_);
+            connect(card, &ProjectCardWidget::openRequested, this, &WelcomePage::openProject);
+            cards_.append(card);
+        }
+
+        const bool connected = core_.gitProjection().isConnected();
+        const QString repo = QString::fromStdString(core_.gitProjection().repoUrl());
+        gitRepo_->setText(connected && !repo.isEmpty() ? repo : tr("No repository connected"));
+        gitRepo_->setProperty("connected", connected && !repo.isEmpty());
+        gitRepo_->style()->unpolish(gitRepo_);
+        gitRepo_->style()->polish(gitRepo_);
+
+        applyFilter();
+    } catch (const std::exception& error) {
+        // refresh() runs as a slot, so no exception may leave it. The list shows again after the next change.
+        qWarning() << "WelcomePage::refresh failed:" << error.what();
     }
-    cards_.clear();
-
-    const auto current = core_.currentProject();
-    for (const ProjectDto& project : core_.projects().list()) {
-        auto* card = new ProjectCardWidget(project, current && *current == project.id, gridHost_);
-        connect(card, &ProjectCardWidget::openRequested, this, &WelcomePage::openProject);
-        cards_.append(card);
-    }
-
-    const bool connected = core_.gitProjection().isConnected();
-    const QString repo = QString::fromStdString(core_.gitProjection().repoUrl());
-    gitRepo_->setText(connected && !repo.isEmpty() ? repo : tr("No repository connected"));
-    gitRepo_->setProperty("connected", connected && !repo.isEmpty());
-    gitRepo_->style()->unpolish(gitRepo_);
-    gitRepo_->style()->polish(gitRepo_);
-
-    applyFilter();
 }
 
 void WelcomePage::applyFilter()

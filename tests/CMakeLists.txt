@@ -53,6 +53,7 @@ planova_add_ui_test(tst_BoardDecline)
 planova_add_ui_test(tst_TeamSkillsPage)
 planova_add_ui_test(tst_MainWindowSmoke)
 planova_add_ui_test(tst_WelcomePage)
+planova_add_ui_test(tst_SetupPage)
 # --- end S1 ---
 # --- S6 ---
 planova_add_test(tst_ProgressCalculator)
@@ -67,4 +68,5 @@ planova_add_test(tst_PinService)
 planova_add_test(tst_PinProjection)
 planova_add_test(tst_ConflictService)
 planova_add_test(tst_PlanovaCorePins)
+planova_add_test(tst_PlanovaCoreSetup)
 # --- end S5 ---

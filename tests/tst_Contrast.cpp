@@ -75,7 +75,13 @@ private slots:
                 addPair(Token::TextSecondary, surface);
             }
             addPair(Token::Accent, Token::Surface);
-            addPair(Token::Accent, Token::AccentSoft);        }
+            addPair(Token::Accent, Token::AccentSoft);
+            // Setup page: stepper, model cards, member cards, error text and summary.
+            addPair(Token::Accent, Token::Background);          // current step label
+            addPair(Token::PositiveText, Token::SuccessSoft);   // finished step check mark
+            addPair(Token::DangerText, Token::Surface);         // field error text
+            addPair(Token::DangerText, Token::Background);   // the other text pairs on Surface are covered above
+        }
     }
 
     void textPairsReachAA()

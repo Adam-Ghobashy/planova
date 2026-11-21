@@ -8,6 +8,8 @@
 #include <QApplication>
 #include <QFrame>
 #include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
 #include <QStackedWidget>
 #include <QTemporaryDir>
 #include <QTest>
@@ -56,6 +58,39 @@ private slots:
                 QVERIFY2(!pages->currentWidget()->grab().isNull(), qPrintable(QString("page %1").arg(i)));
             }
         }
+    }
+
+    // Welcome -> Setup page -> skip back, then a full run that opens Home.
+    void setupFlowFromWelcome()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        auto* pages = window.findChild<QStackedWidget*>();
+        QVERIFY(pages);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Welcome));
+
+        window.findChild<QPushButton*>("startNewProject")->click();
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Setup));
+        window.findChild<QLineEdit*>("projectNameEdit")->setText("Half typed");
+        window.findChild<QPushButton*>("skipButton")->click();
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Welcome));
+        QVERIFY(core.projects().list().empty());
+
+        // A second visit starts empty again.
+        window.findChild<QPushButton*>("startNewProject")->click();
+        QVERIFY(window.findChild<QLineEdit*>("projectNameEdit")->text().isEmpty());
+        window.findChild<QLineEdit*>("projectNameEdit")->setText("Portal");
+        for (int i = 0; i < 2; ++i)
+            window.findChild<QPushButton*>("nextButton")->click();
+        window.findChild<QPushButton*>("addMemberButton")->click();
+        window.findChild<QLineEdit*>("memberNameEdit_0")->setText("Ana");
+        for (int i = 0; i < 3; ++i)
+            window.findChild<QPushButton*>("nextButton")->click();
+        window.findChild<QPushButton*>("createButton")->click();
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Home));
+        QVERIFY(core.currentProject().has_value());
     }
 
     void pinsPageIsReal()

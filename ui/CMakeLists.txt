@@ -7,7 +7,9 @@ add_library(planova_ui STATIC
     welcome/HandwritingLabel.cpp
     welcome/ProjectCardWidget.cpp
     ../resources/planova.qrc
-    welcome/SetupWizard.cpp
+    welcome/SetupPage.cpp
+    welcome/SetupMemberRow.cpp
+    welcome/StepperWidget.cpp
 
 )
 target_include_directories(planova_ui PUBLIC .)

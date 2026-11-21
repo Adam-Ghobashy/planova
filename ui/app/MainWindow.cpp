@@ -7,9 +7,8 @@
 #include "slicer/ChaosSlicerPage.h"
 #include "team/TeamSkillsPage.h"
 #include "tracking/TrackingPage.h"
-#include "welcome/SetupWizard.h"
+#include "welcome/SetupPage.h"
 #include "welcome/WelcomePage.h"
-#include <QDialog>
 #include <QHBoxLayout>
 #include <QStatusBar>
 
@@ -58,6 +57,7 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
 void MainWindow::buildPages()
 {
     welcome_ = new WelcomePage(core_, bridge_, pages_);
+    setupPage_ = new SetupPage(core_, pages_);
     auto* slicerPage = new planova::slicer::ChaosSlicerPage(
         core_.slicer(), core_.taskQuery(), core_.memberQuery(), pages_);
     auto* pinsPage = new planova::s5::PinsPage(
@@ -74,7 +74,7 @@ void MainWindow::buildPages()
     // One line per page, in Page enum order.
     pages_->addWidget(welcome_);
     pages_->addWidget(new QWidget(pages_)); // Page::Hub placeholder: showPage(Hub) shows the Welcome widget in projects mode
-    pages_->addWidget(new QWidget(pages_)); // Page::Setup placeholder until the setup page exists
+    pages_->addWidget(setupPage_);
     pages_->addWidget(slicerPage);
     pages_->addWidget(pinsPage);
     pages_->addWidget(teamPage);
@@ -104,10 +104,16 @@ void MainWindow::buildPages()
     connect(homePage_, &planova::s6::HomePage::pinsRequested, this, [this] { showPage(Page::Pins); });
 
     connect(welcome_, &WelcomePage::startNewProject, this, [this] {
-        SetupWizard wizard(core_, this);
-        if (wizard.exec() == QDialog::Accepted) {
+        setupPage_->reset();   // every visit starts with an empty setup
+        showPage(Page::Setup);
+    });
+    // The new project is already open (setupProject opens it), so Home can show it.
+    connect(setupPage_, &SetupPage::projectCreated, this, [this] { showHomeForCurrentProject(); });
+    connect(setupPage_, &SetupPage::skipped, this, [this] {
+        if (core_.currentProject())
             showHomeForCurrentProject();
-        }
+        else
+            showPage(Page::Welcome);
     });
     // openProject publishes ProjectOpened on the bridge, which also refreshes the sidebar badges.
     connect(welcome_, &WelcomePage::projectOpened, this, [this] { showHomeForCurrentProject(); });

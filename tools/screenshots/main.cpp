@@ -2,6 +2,7 @@
 // Usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N]  [--clash] [--dialogs] [--splash] 
 // --empty skips the demo data, to check the empty-project look.
 // --dialogs saves one PNG per dialog and theme instead (each dialog opened over the Board page).
+// --setup-steps saves every step of the Setup page (filled with sample data) and its error and blocked states.
 // --welcome-states saves the Welcome page with no projects, with no search match and with focus on a card.
 // --splash saves the welcome splash, grabbed 1600 ms into its animation, once per theme.
 // --card-menu saves the Board with one task card focused and its context menu open, once per theme.
@@ -17,10 +18,15 @@
 #include "pins/LeavePinDialog.h"
 #include "planova/PlanovaCore.h"
 #include "theme/ThemeManager.h"
+#include "welcome/SetupPage.h"
 #include "welcome/WelcomePage.h"
 #include "widgets/ModalDialog.h"
 
 #include <QApplication>
+#include <QPushButton>
+#include <QPlainTextEdit>
+#include <QRegularExpression>
+#include <QSlider>
 #include <QDir>
 #include <QLabel>
 #include <QLineEdit>
@@ -49,6 +55,7 @@ struct Options {
     bool empty = false;
     bool clash = false;
     bool welcomeStates = false;
+    bool setupSteps = false;
 };
 
 bool parseArgs(const QStringList& args, Options& options)
@@ -65,6 +72,8 @@ bool parseArgs(const QStringList& args, Options& options)
             options.clash = true;
         else if (args[i] == "--empty")
             options.empty = true;
+        else if (args[i] == "--setup-steps")
+            options.setupSteps = true;
         else if (args[i] == "--welcome-states")
             options.welcomeStates = true;
         else if (args[i] == "--splash")
@@ -177,6 +186,75 @@ int main(int argc, char* argv[])
             open->setFocus(Qt::TabFocusReason);
             QApplication::processEvents();
             fullPage.grab().save(QString("%1/welcome-focus-%2.png").arg(options.outDir, theme));
+        }
+        return 0;
+    }
+
+    if (options.setupSteps) {
+        // Every step of the Setup page, filled with sample data, plus its empty, error and blocked states.
+        QTemporaryDir setupWorkspace;
+        PlanovaCore setupCore(std::filesystem::path(setupWorkspace.path().toStdString()));
+        SetupPage page(setupCore);
+        page.resize(1100, 1000);
+        page.show();
+        auto click = [&](const char* name) { page.findChild<QPushButton*>(name)->click(); QApplication::processEvents(); };
+        auto grabTo = [&](const QString& name, const QString& theme) {
+            QApplication::processEvents();
+            const QString path = QString("%1/setup-%2-%3.png").arg(options.outDir, name, theme);
+            if (!page.grab().save(path))
+                std::fprintf(stderr, "could not save %s\n", qPrintable(path));
+        };
+        auto addMember = [&](const QString& name, bool lead, int backendRating) {
+            click("addMemberButton");
+            const auto edits = page.findChildren<QLineEdit*>(QRegularExpression("^memberNameEdit_"));
+            QLineEdit* edit = edits.last();
+            edit->setText(name);
+            const QString id = edit->objectName().section('_', 1);
+            page.findChild<QPushButton*>("memberLead_" + id)->setChecked(lead);
+            page.findChild<QSlider*>(QString("skillSlider_%1_0").arg(id))->setValue(backendRating);
+            return edit;
+        };
+        for (const QString& theme : themes) {
+            ThemeManager::instance().apply(theme == "dark" ? ThemeMode::Dark : ThemeMode::Light);
+            page.reset();
+            // 1: empty (hint, Next disabled), then the name box left empty (error), then filled in
+            grabTo("1-foundations-empty", theme);
+            auto* nameEdit = page.findChild<QLineEdit*>("projectNameEdit");
+            QMetaObject::invokeMethod(nameEdit, "editingFinished");
+            grabTo("1-foundations-error", theme);
+            nameEdit->setText("Library Portal");
+            page.findChild<QLineEdit*>("teamNameEdit")->setText("ECU Team");
+            page.findChild<QPlainTextEdit*>("ideaEdit")->setPlainText("A portal where students can search and loan books.");
+            grabTo("1-foundations", theme);
+            click("nextButton");
+            // 2: Scrum chosen, keyboard focus on the chosen card
+            page.findChild<QPushButton*>("modelCard_Scrum")->click();
+            page.findChild<QPushButton*>("modelCard_Scrum")->setFocus(Qt::TabFocusReason);
+            grabTo("2-model", theme);
+            click("nextButton");
+            // 3: no members yet, then two members and a third without a name (error)
+            grabTo("3-team-empty", theme);
+            addMember("Ana Hassan", true, 5);
+            addMember("Ben Carter", false, 2);
+            auto* unnamed = addMember("", false, 3);
+            QMetaObject::invokeMethod(unnamed, "editingFinished");
+            grabTo("3-team", theme);
+            page.findChild<QPushButton*>(QString("memberRemove_%1").arg(unnamed->objectName().section('_', 1)))->click();
+            click("nextButton");
+            grabTo("4-slicer", theme);
+            click("nextButton");
+            page.findChild<QLineEdit*>("repoUrlEdit")->setText("https://github.com/ecu-team/library-portal.git");
+            grabTo("5-git", theme);
+            click("nextButton");
+            grabTo("6-review", theme);
+            // 6 again with no members: Create is disabled and the page says why
+            for (int i = 0; i < 3; ++i)
+                click("backButton");
+            for (QPushButton* remove : page.findChildren<QPushButton*>(QRegularExpression("^memberRemove_")))
+                remove->click();
+            for (int i = 0; i < 3; ++i)
+                click("nextButton");
+            grabTo("6-review-blocked", theme);
         }
         return 0;
     }

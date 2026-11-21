@@ -1,0 +1,190 @@
+/* Setup page (ui/welcome/SetupPage, SetupMemberRow). Follows the wizard styling of css/views.css in the Figma
+   prototype: stepper, step card, selectable model cards, member cards. Colours are token placeholders.
+   Every rule is scoped by QWidget#SetupPage.
+
+   Focus: every interactive control shows a visible ring.
+   - buttons and model cards: the border becomes a 3 px double line in TextPrimary and the padding shrinks by the
+     same amount, so the layout does not move. The focus rules come LAST and name the kind, so they are as specific
+     as the hover rules above them and win by order (a plain :focus rule would lose to [kind]:hover).
+   - text fields and combo boxes: 2 px Accent border.
+   - sliders: the handle turns into a ring (Surface fill, thick TextPrimary border), different from the normal handle
+     in both themes (Accent and TextPrimary are the same colour in Dark). */
+
+QWidget#SetupPage { background-color: @Background; }
+
+QWidget#SetupPage QScrollArea#setupScroll,
+QWidget#SetupPage QWidget#setupViewport,
+QWidget#SetupPage QWidget#setupContent,
+QWidget#SetupPage QWidget#setupColumn,
+QWidget#SetupPage QStackedWidget#steps,
+QWidget#SetupPage QStackedWidget#steps > QWidget {
+    background: transparent;
+    border: none;
+}
+
+QWidget#SetupPage QLabel, QWidget#SetupPage QSlider { background: transparent; }
+
+/* ---------- header ---------- */
+QWidget#SetupPage QLabel#setupTitle {
+    font-family: "Space Grotesk", "Segoe UI"; font-size: 22px; font-weight: 800; color: @TextPrimary;
+}
+QWidget#SetupPage QLabel#setupSubtitle { font-size: 13px; color: @TextSecondary; }
+QWidget#SetupPage QLabel#stepBadge {
+    background-color: @AccentSoft; color: @Accent; border-radius: 12px; padding: 5px 12px;
+    font-size: 12px; font-weight: 700;
+}
+
+QWidget#SetupPage QWidget#setupFooter { background-color: @Background; border-top: 1px solid @BorderSubtle; }
+
+/* ---------- step card ---------- */
+QWidget#SetupPage QFrame#stepCard {
+    background-color: @Surface; border: 1px solid @BorderDefault; border-radius: 16px;
+}
+QWidget#SetupPage QLabel#stepTitle {
+    font-family: "Space Grotesk", "Segoe UI"; font-size: 20px; font-weight: 800; color: @TextPrimary;
+}
+QWidget#SetupPage QLabel#stepDescription { font-size: 13px; color: @TextSecondary; }
+
+/* ---------- fields ---------- */
+QWidget#SetupPage QLabel#fieldLabel { font-size: 12px; font-weight: 600; color: @TextPrimary; }
+QWidget#SetupPage QLabel#fieldHint, QWidget#SetupPage QLabel#nameHint { font-size: 12px; color: @TextSecondary; }
+QWidget#SetupPage QLabel#fieldHint[error="true"], QWidget#SetupPage QLabel#nameHint[error="true"] {
+    color: @DangerText; font-weight: 600;
+}
+
+QWidget#SetupPage QLineEdit, QWidget#SetupPage QPlainTextEdit {
+    background-color: @Background; color: @TextPrimary; border: 1px solid @BorderStrong; border-radius: 10px;
+    padding: 9px 12px; font-size: 13px; min-height: 20px;
+    selection-background-color: @Accent; selection-color: @AccentText;
+}
+QWidget#SetupPage QLineEdit:hover, QWidget#SetupPage QPlainTextEdit:hover {
+    background-color: @Surface; border-color: @TextTertiary;
+}
+QWidget#SetupPage QLineEdit[error="true"] { border: 1px solid @DangerBorder; }
+QWidget#SetupPage QLineEdit:focus, QWidget#SetupPage QPlainTextEdit:focus {
+    background-color: @Surface; border: 2px solid @Accent; padding: 8px 11px;
+}
+
+
+/* ---------- role combo box (StyledComboBox paints the chevron from the two qproperty colours) ---------- */
+QWidget#SetupPage QComboBox {
+    background-color: @Background; color: @TextPrimary; border: 1px solid @BorderStrong; border-radius: 10px;
+    padding: 9px 30px 9px 12px; font-size: 13px; min-height: 20px; combobox-popup: 0;
+    qproperty-arrowColor: @TextSecondary; qproperty-arrowActiveColor: @Accent;
+}
+QWidget#SetupPage QComboBox:hover { background-color: @Surface; border-color: @TextTertiary; }
+QWidget#SetupPage QComboBox:focus, QWidget#SetupPage QComboBox:on {
+    background-color: @Surface; border: 2px solid @Accent; padding: 8px 29px 8px 11px;
+}
+QWidget#SetupPage QComboBox::drop-down {
+    border: none; background: transparent; width: 30px; subcontrol-origin: padding; subcontrol-position: center right;
+}
+QWidget#SetupPage QComboBox::down-arrow { image: none; }
+QWidget#SetupPage QComboBox QComboBoxPrivateContainer { background-color: @Surface; border: 1px solid @BorderStrong; border-radius: 0; }
+QWidget#SetupPage QComboBox QAbstractItemView {
+    background-color: @Surface; color: @TextPrimary; border: none; outline: 0; margin: 4px;
+    selection-background-color: @AccentSoft; selection-color: @Accent;
+}
+QWidget#SetupPage QComboBox QAbstractItemView::item { min-height: 28px; padding: 2px 10px; border-radius: 6px; }
+QWidget#SetupPage QComboBox QAbstractItemView::item:selected { background-color: @AccentSoft; color: @Accent; }
+
+/* ---------- buttons ---------- */
+QWidget#SetupPage QPushButton[kind="primary"],
+QWidget#SetupPage QPushButton[kind="secondary"],
+QWidget#SetupPage QPushButton[kind="ghost"] {
+    border: 1px solid transparent; border-radius: 10px; padding: 7px 14px; min-height: 20px;
+    font-size: 13px; font-weight: 600;
+}
+
+QWidget#SetupPage QPushButton[kind="primary"] { background-color: @Accent; color: @AccentText; border-color: @Accent; }
+QWidget#SetupPage QPushButton[kind="primary"]:hover { background-color: @AccentHover; border-color: @AccentHover; }
+QWidget#SetupPage QPushButton[kind="primary"]:pressed { background-color: @AccentPressed; border-color: @AccentPressed; }
+
+QWidget#SetupPage QPushButton[kind="secondary"] {
+    background-color: @SurfaceRaised; color: @TextPrimary; border-color: @BorderDefault;
+}
+QWidget#SetupPage QPushButton[kind="secondary"]:hover { background-color: @SurfaceHover; border-color: @BorderStrong; }
+QWidget#SetupPage QPushButton[kind="secondary"]:pressed { background-color: @Track; }
+
+QWidget#SetupPage QPushButton[kind="ghost"] { background-color: transparent; color: @TextSecondary; padding: 4px 10px; }
+QWidget#SetupPage QPushButton[kind="ghost"]:hover { background-color: @SurfaceHover; color: @TextPrimary; }
+QWidget#SetupPage QPushButton[kind="ghost"]:pressed { background-color: @Track; color: @TextPrimary; }
+
+QWidget#SetupPage QPushButton[kind="primary"]:disabled,
+QWidget#SetupPage QPushButton[kind="secondary"]:disabled {
+    background-color: @SurfaceAlt; color: @TextMuted; border-color: @BorderSubtle;
+}
+
+/* ---------- model cards ---------- */
+QWidget#SetupPage QPushButton[kind="modelCard"] {
+    background-color: @Surface; border: 2px solid @ControlBorder; border-radius: 14px; padding: 1px; text-align: left;
+}
+QWidget#SetupPage QPushButton[kind="modelCard"]:hover { border-color: @BorderStrong; background-color: @SurfaceRaised; }
+QWidget#SetupPage QPushButton[kind="modelCard"]:checked { border-color: @Accent; background-color: @AccentSoft; }
+QWidget#SetupPage QPushButton[kind="modelCard"]:focus {
+    border: 3px double @TextPrimary; padding: 0; background-clip: padding;
+}
+QWidget#SetupPage QLabel#modelCardTitle { font-size: 14px; font-weight: 700; color: @TextPrimary; }
+QWidget#SetupPage QLabel#modelCardText { font-size: 12px; color: @TextSecondary; }
+QWidget#SetupPage QLabel#modelCardMark { font-size: 11px; font-weight: 700; color: @Accent; }
+
+/* ---------- team lead toggle: a chip that shows a check mark and a filled background when on ---------- */
+QWidget#SetupPage QPushButton[kind="chip"] {
+    background-color: @Background; color: @TextPrimary; border: 1px solid @ControlBorder; border-radius: 10px;
+    padding: 4px 12px; min-height: 20px; font-size: 13px; font-weight: 600;
+}
+QWidget#SetupPage QPushButton[kind="chip"]:hover { background-color: @SurfaceHover; border-color: @TextTertiary; }
+QWidget#SetupPage QPushButton[kind="chip"]:checked { background-color: @AccentSoft; border-color: @Accent; }
+
+/* focus rings last, see the note at the top */
+QWidget#SetupPage QPushButton[kind="primary"]:focus,
+QWidget#SetupPage QPushButton[kind="secondary"]:focus {
+    border: 3px double @TextPrimary; padding: 5px 12px; background-clip: padding;
+}
+QWidget#SetupPage QPushButton[kind="chip"]:focus { border: 3px double @TextPrimary; padding: 2px 10px; background-clip: padding; }
+QWidget#SetupPage QPushButton[kind="ghost"]:focus {
+    border: 3px double @TextPrimary; padding: 2px 8px; background-clip: padding;
+}
+
+/* ---------- team step ---------- */
+QWidget#SetupPage QLabel#noMembers { font-size: 13px; color: @TextSecondary; padding: 20px 0; }
+QWidget#SetupPage QFrame#memberRow {
+    background-color: @SurfaceRaised; border: 1px solid @BorderSubtle; border-radius: 12px;
+}
+QWidget#SetupPage QLabel#memberTitle { font-size: 13px; font-weight: 700; color: @TextPrimary; }
+QWidget#SetupPage QLabel#skillLabel { font-size: 12px; color: @TextSecondary; min-width: 92px; }
+QWidget#SetupPage QLabel#skillValue { font-size: 12px; font-weight: 600; color: @TextPrimary; }
+
+QWidget#SetupPage QSlider::groove:horizontal { height: 6px; background: @Track; border-radius: 3px; }
+QWidget#SetupPage QSlider::sub-page:horizontal { background: @Accent; border-radius: 3px; }
+QWidget#SetupPage QSlider::handle:horizontal {
+    background: @Accent; border: 2px solid @Surface; width: 16px; height: 16px; margin: -5px 0; border-radius: 8px;
+}
+QWidget#SetupPage QSlider::handle:horizontal:hover { background: @AccentHover; }
+QWidget#SetupPage QSlider::handle:horizontal:focus {
+    background: @Surface; border: 3px solid @TextPrimary; width: 14px; height: 14px; margin: -7px 0; border-radius: 10px;
+}
+
+/* ---------- slicer policy step: the same panel as the Chaos Slicer page ---------- */
+QWidget#SetupPage QWidget#WeightSlidersPanel {
+    background-color: @SurfaceRaised; border: 1px solid @BorderSubtle; border-radius: 12px;
+}
+QWidget#SetupPage QWidget#WeightSlidersPanel QLabel { background: transparent; }
+QWidget#SetupPage QLabel#cardTitle { color: @TextPrimary; font-size: 14px; font-weight: 600; }
+QWidget#SetupPage QLabel#sliderNameLabel { color: @TextPrimary; font-size: 13px; font-weight: 500; }
+QWidget#SetupPage QLabel#sliderValueLabel { color: @TextPrimary; font-size: 13px; font-weight: 600; min-width: 36px; }
+QWidget#SetupPage QWidget#WeightSlidersPanel QLabel#sumLabel {
+    background-color: @AccentSoft; color: @Accent; border-radius: 10px; padding: 3px 10px;
+    font-size: 12px; font-weight: 600;
+}
+
+/* ---------- review ---------- */
+QWidget#SetupPage QLabel#summaryName, QWidget#SetupPage QLabel#summaryTeam, QWidget#SetupPage QLabel#summaryModel,
+QWidget#SetupPage QLabel#summaryMembers, QWidget#SetupPage QLabel#summaryWeights, QWidget#SetupPage QLabel#summaryGit {
+    font-size: 13px; color: @TextPrimary;
+}
+QWidget#SetupPage QLabel#createProblem {
+    background-color: @DangerSoft; color: @DangerText; border-radius: 10px; padding: 10px 14px;
+    font-size: 13px; font-weight: 600;
+}
+

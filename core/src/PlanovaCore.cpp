@@ -6,7 +6,10 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QString>
 #include <algorithm>
+#include <iterator>
+#include <stdexcept>
 #include <utility>
 
 int64_t SystemClock::nowMs() const
@@ -16,6 +19,45 @@ int64_t SystemClock::nowMs() const
     last_ = std::max(QDateTime::currentMSecsSinceEpoch(), last_ + 1);
     return last_;
 }
+
+namespace {
+
+bool isBlank(const std::string& text)
+{
+    return QString::fromStdString(text).trimmed().isEmpty();
+}
+
+std::string trimmed(const std::string& text)
+{
+    return QString::fromStdString(text).trimmed().toStdString();
+}
+
+// Throws std::invalid_argument for the first problem found. Runs before anything is written.
+void validateSetup(const ProjectSetup& setup)
+{
+    if (isBlank(setup.name))
+        throw std::invalid_argument("Project name cannot be empty");
+
+    static const char* const kModels[] = {"Agile", "Scrum", "Waterfall", "Spiral"};
+    if (std::find(std::begin(kModels), std::end(kModels), setup.seModel) == std::end(kModels))
+        throw std::invalid_argument("Unknown process model: " + setup.seModel);
+
+    if (setup.members.empty())
+        throw std::invalid_argument("Add at least one team member");
+    for (const SetupMember& member : setup.members) {
+        if (isBlank(member.name))
+            throw std::invalid_argument("Every team member needs a name");
+        for (const auto& entry : member.ratings) {
+            if (entry.second < 1 || entry.second > 5)
+                throw std::invalid_argument("Skill ratings must be between 1 and 5");
+        }
+    }
+
+    if (!setup.weights.valid())
+        throw std::invalid_argument("Slicer weights must be zero or more and add up to 100");
+}
+
+} // namespace
 
 PlanovaCore::PlanovaCore(std::filesystem::path workspaceDir)
     : workspaceDir_(std::move(workspaceDir)),
@@ -62,6 +104,29 @@ Id PlanovaCore::createProject(const std::string& name, const std::string& team,
 {
     const Id id = projects_.create(name, team, seModel, idea);
     std::filesystem::create_directories(projectEventsDir(id));
+    return id;
+}
+
+Id PlanovaCore::setupProject(const ProjectSetup& setup)
+{
+    validateSetup(setup);
+
+    const Id id = createProject(trimmed(setup.name), trimmed(setup.team), setup.seModel, trimmed(setup.idea));
+    // Open first, so members, weights and Git events are saved inside the new project.
+    openProject(id);
+
+    for (const SetupMember& member : setup.members) {
+        const Id memberId = members_.add(trimmed(member.name), trimmed(member.role), member.isLead);
+        for (const auto& entry : member.ratings)
+            members_.rate(memberId, entry.first, entry.second);
+    }
+    slicer_.saveWeights(setup.weights);
+
+    const std::string repoUrl = trimmed(setup.repoUrl);
+    if (!repoUrl.empty()) {
+        const std::string branch = trimmed(setup.branch);
+        git_.connect(repoUrl, branch.empty() ? "main" : branch);
+    }
     return id;
 }
 

@@ -5,6 +5,7 @@
 #include "welcome/WelcomePage.h"
 
 #include <QApplication>
+#include <QImage>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -209,6 +210,45 @@ private slots:
         QSignalSpy spy(f.page.get(), &WelcomePage::manageGitRequested);
         f.button("manageGit")->click();
         QCOMPARE(spy.count(), 1);
+    }
+
+
+    void buttonsKeepTheirFocusRing_data()
+    {
+        QTest::addColumn<bool>("dark");
+        QTest::newRow("light") << false;
+        QTest::newRow("dark") << true;
+    }
+
+    // Keyboard focus is a double border in TextPrimary. The [kind] rules must not recolour it, also while hovered.
+    void buttonsKeepTheirFocusRing()
+    {
+        QFETCH(bool, dark);
+        ThemeManager::instance().apply(dark ? ThemeMode::Dark : ThemeMode::Light);
+        Fixture f;
+        f.page->activateWindow();
+        QVERIFY(QTest::qWaitForWindowExposed(f.page.get()));
+
+        const QColor ring = ThemeManager::instance().color(Token::TextPrimary);
+        auto expectRing = [&](const char* name) {
+            QPushButton* button = f.button(name);
+            QVERIFY2(button && button->isVisible(), name);
+            button->setFocus(Qt::TabFocusReason);
+            if (!button->hasFocus())
+                QSKIP("window not active in this environment, focus state cannot be rendered");
+            const QImage image = button->grab().toImage();
+            bool found = false;
+            for (int x = 0; x < 4 && !found; ++x)
+                found = image.pixelColor(x, image.height() / 2) == ring;
+            QVERIFY2(found, qPrintable(QString("no focus ring colour on %1").arg(name)));
+        };
+
+        expectRing("startNewProject");   // primary, large
+        expectRing("continueProjects");  // secondary, large
+        f.page->setMode(WelcomePage::Mode::Projects);
+        expectRing("createProject");     // primary
+        expectRing("backToWelcome");     // ghost
+        expectRing("manageGit");         // ghost
     }
 
     void rendersInBothThemes()

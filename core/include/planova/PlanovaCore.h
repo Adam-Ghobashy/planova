@@ -9,6 +9,7 @@
 #include "planova/pins/PinProjection.h"
 #include "planova/pins/PinService.h"
 #include "planova/project/ProjectService.h"
+#include "planova/project/ProjectSetup.h"
 #include "planova/store/EventLog.h"
 #include "planova/store/FileEventStore.h"
 #include "planova/slicer/SlicerService.h"
@@ -36,6 +37,9 @@ public:
     // Creates the project record and its (empty) event folder.
     Id createProject(const std::string& name, const std::string& team,
                      const std::string& seModel, const std::string& idea);
+    // Checks the whole setup first (std::invalid_argument, nothing written), then creates and opens the project,
+    // adds and rates the members, saves the slicer weights and connects Git when a repository URL is given.
+    Id setupProject(const ProjectSetup& setup);
     bool hasProjectData(const Id& projectId) const;
     void openProject(const Id& projectId);
     std::optional<Id> currentProject() const;

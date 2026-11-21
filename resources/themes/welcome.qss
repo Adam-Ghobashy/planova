@@ -35,8 +35,8 @@ QWidget#WelcomePage QPushButton {
 QWidget#WelcomePage QPushButton[size="large"] {
     border-radius: 12px; padding: 13px 28px; font-size: 15px; font-weight: 700;
 }
+/* Buttons without a kind (the Open button on a project card) use this ring. The kinds repeat it below. */
 QWidget#WelcomePage QPushButton:focus { border: 3px double @TextPrimary; padding: 5px 12px; background-clip: padding; }
-QWidget#WelcomePage QPushButton[size="large"]:focus { padding: 11px 26px; }
 
 QWidget#WelcomePage QPushButton[kind="primary"] { background-color: @Accent; color: @AccentText; border-color: @Accent; }
 QWidget#WelcomePage QPushButton[kind="primary"]:hover { background-color: @AccentHover; border-color: @AccentHover; }
@@ -49,11 +49,18 @@ QWidget#WelcomePage QPushButton[kind="secondary"]:hover { background-color: @Sur
 QWidget#WelcomePage QPushButton[kind="secondary"]:pressed { background-color: @Track; }
 
 QWidget#WelcomePage QPushButton[kind="ghost"] { background-color: transparent; color: @TextSecondary; padding: 4px 10px; }
-QWidget#WelcomePage QPushButton[kind="ghost"]:focus { padding: 2px 8px; }
 QWidget#WelcomePage QPushButton[kind="ghost"]:hover { background-color: @SurfaceHover; color: @TextPrimary; }
 QWidget#WelcomePage QPushButton[kind="ghost"]:pressed { background-color: @Track; color: @TextPrimary; }
 
 QWidget#WelcomePage QPushButton:disabled { background-color: @SurfaceAlt; color: @TextMuted; border-color: @BorderSubtle; }
+
+/* Focus rules come last and name the kind. A plain :focus rule has the same specificity as [kind] and
+   [kind]:hover, so those would recolour the ring. Here the ring wins by order, also while hovered. */
+QWidget#WelcomePage QPushButton[kind="primary"]:focus,
+QWidget#WelcomePage QPushButton[kind="secondary"]:focus { border: 3px double @TextPrimary; padding: 5px 12px; background-clip: padding; }
+QWidget#WelcomePage QPushButton[kind="ghost"]:focus { border: 3px double @TextPrimary; padding: 2px 8px; background-clip: padding; }
+QWidget#WelcomePage QPushButton[kind="primary"][size="large"]:focus,
+QWidget#WelcomePage QPushButton[kind="secondary"][size="large"]:focus { padding: 11px 26px; }
 
 /* ---------- workspaces view ---------- */
 QWidget#WelcomePage QLabel#welcomeTitle {
