@@ -2,8 +2,12 @@
 #include "planova/common/Clock.h"
 #include "planova/common/Queries.h"
 #include "planova/common/Types.h"
+#include "planova/conflict/ConflictProjection.h"
+#include "planova/conflict/ConflictService.h"
 #include "planova/git/GitProjection.h"
 #include "planova/git/GitService.h"
+#include "planova/pins/PinProjection.h"
+#include "planova/pins/PinService.h"
 #include "planova/project/ProjectService.h"
 #include "planova/store/EventLog.h"
 #include "planova/store/FileEventStore.h"
@@ -50,14 +54,14 @@ public:
     planova::s6::StatsService& stats();
     planova::s6::HomeService& home();
 
-private:
-    // until the S5 backend provides IPinQuery
-    struct NoPinQuery : IPinQuery {
-        int openCount() const override { return 0; }
-        std::vector<PinDto> latest(int) const override { return {}; }
-        int pinCountForTask(const Id&) const override { return 0; }
-    };
+    planova::PinService& pins();
+    planova::IPinBoardQuery& pinBoard();
+    IPinQuery& pinQuery();
+    planova::ConflictService& conflicts();
+    IConflictQuery& conflictQuery();
+    const planova::ConflictProjection& conflictProjection() const;
 
+private:
     std::filesystem::path projectEventsDir(const Id& projectId) const;
 
     // Members are initialised in this order: the workspace log must exist
@@ -78,7 +82,10 @@ private:
     TaskService tasks_;
     planova::slicer::WeightedScoringStrategy strategy_;
     planova::slicer::SlicerService slicer_;
-    NoPinQuery noPins_;
+    planova::PinProjection pinProjection_;
+    planova::PinService pins_;
+    planova::ConflictProjection conflictProjection_;
+    planova::ConflictService conflicts_;
     planova::s6::StatsService stats_;
     planova::s6::HomeService home_;
 };

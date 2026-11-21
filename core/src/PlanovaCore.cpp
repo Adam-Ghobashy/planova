@@ -33,13 +33,18 @@ PlanovaCore::PlanovaCore(std::filesystem::path workspaceDir)
     tasks_(log_, taskProjection_, clock_),
     strategy_(),
     slicer_(taskProjection_, memberProjection_, strategy_, log_, clock_),
-    noPins_(),
+    pinProjection_(),
+    pins_(log_, pinProjection_, clock_),
+    conflictProjection_(),
+    conflicts_(log_, taskProjection_, conflictProjection_, clock_),
     stats_(taskProjection_, memberProjection_),
-    home_(taskProjection_, memberProjection_, noPins_)
+    home_(taskProjection_, memberProjection_, pinProjection_)
 {
     log_.add(memberProjection_);
     log_.add(gitProjection_);
     log_.add(taskProjection_);
+    log_.add(pinProjection_);
+    log_.add(conflictProjection_);
     // Forward workspace events (e.g. ProjectCreated) so bus() has one source.
     workspaceLog_.bus().subscribe([this](const std::string& type) { log_.bus().publish(type); });
 
@@ -153,4 +158,34 @@ planova::s6::StatsService& PlanovaCore::stats()
 planova::s6::HomeService& PlanovaCore::home()
 {
     return home_;
+}
+
+planova::PinService& PlanovaCore::pins()
+{
+    return pins_;
+}
+
+planova::IPinBoardQuery& PlanovaCore::pinBoard()
+{
+    return pinProjection_;
+}
+
+IPinQuery& PlanovaCore::pinQuery()
+{
+    return pinProjection_;
+}
+
+planova::ConflictService& PlanovaCore::conflicts()
+{
+    return conflicts_;
+}
+
+IConflictQuery& PlanovaCore::conflictQuery()
+{
+    return conflictProjection_;
+}
+
+const planova::ConflictProjection& PlanovaCore::conflictProjection() const
+{
+    return conflictProjection_;
 }
