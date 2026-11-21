@@ -68,7 +68,8 @@ int main(int argc, char* argv[])
         fade->setStartValue(0.0);
         fade->setEndValue(1.0);
         // The start popup opens once the window is fully visible.
-        QObject::connect(fade, &QPropertyAnimation::finished, &window, &MainWindow::showStartDialog);
+        // Queued: exec() inside the animation tick would freeze every animation, including the dialog's own fade-in.
+        QObject::connect(fade, &QPropertyAnimation::finished, &window, &MainWindow::showStartDialog, Qt::QueuedConnection);
         fade->start(QAbstractAnimation::DeleteWhenStopped);
         splash->hide();
         splash->deleteLater();
