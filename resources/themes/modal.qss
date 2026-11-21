@@ -93,3 +93,4 @@ QDialog#ModalDialog QCheckBox::indicator {
 }
 QDialog#ModalDialog QCheckBox::indicator:checked { background: @Accent; border-color: @Accent; }
 QDialog#ModalDialog QCheckBox::indicator:focus { border: 2px solid @TextPrimary; }
+QDialog#ModalDialog QCheckBox::indicator:checked:focus { background: @Surface; border: 5px solid @TextPrimary; }

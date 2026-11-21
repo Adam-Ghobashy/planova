@@ -209,14 +209,24 @@ QWidget#ChaosSlicerPage QLabel#emptyLabel {
     color: @TextSecondary;
 }
 
-/* Keyboard focus: the handle gets a thick TextPrimary ring, buttons a ring of the same colour. */
+/* Keyboard focus. In Dark the Accent fill and TextPrimary are the same near-white, so a plain ring on an
+   Accent-filled control disappears. The handle turns into a Surface disc inside a thick ring (as on the setup
+   page); a focused Accent button swaps its fill for Surface and gets a TextPrimary ring, so ring and fill differ
+   in both themes (Qt's "background-clip" does not stop the fill showing through a double border). */
 QWidget#ChaosSlicerPage QSlider::handle:horizontal:focus {
-    border: 2px solid @TextPrimary;
+    background: @Surface;
+    border: 3px solid @TextPrimary;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0;
+    border-radius: 10px;
 }
 
 QWidget#ChaosSlicerPage QPushButton#primaryButton:focus,
 QWidget#ChaosSlicerPage QPushButton#applyButton:focus,
 QWidget#ChaosSlicerPage QPushButton#sliceButton:focus {
+    background-color: @Surface;
+    color: @TextPrimary;
     border: 2px solid @TextPrimary;
     padding: 6px 16px;
 }
@@ -254,4 +264,11 @@ QWidget#ChaosSlicerPage QCheckBox::indicator:checked {
 
 QWidget#ChaosSlicerPage QCheckBox::indicator:focus {
     border: 2px solid @TextPrimary;
+}
+
+/* Checked and focused: a heavy 5 px ring round a small Surface hole (the unchecked box has a thin 2 px ring), so the
+   ring never merges with the Accent fill. */
+QWidget#ChaosSlicerPage QCheckBox::indicator:checked:focus {
+    background: @Surface;
+    border: 5px solid @TextPrimary;
 }

@@ -7,6 +7,8 @@
 #include "tests/fakes/FakeEventStore.h"
 #include "tests/fakes/FakeMemberQuery.h"
 #include "tests/fakes/FakeTaskQuery.h"
+#include "theme/ThemeManager.h"
+#include <QCoreApplication>
 #include <QLabel>
 #include <QPushButton>
 #include <QSignalSpy>
@@ -46,6 +48,7 @@ public:
 class tst_ChaosSlicerPage : public QObject {
     Q_OBJECT
 private slots:
+    void initTestCase() { Q_INIT_RESOURCE(planova); }  // the focus tests need the real qss
     void applyEmitsChangedCountAndStatus() {
         Board b;
         b.addAlice();
@@ -274,6 +277,88 @@ private slots:
 
         emit page.findChild<PizzaWidget*>()->memberSelected("");
         QVERIFY(!table->model()->index(0, 0).data(AssignmentTableModel::HighlightedRole).toBool());
+    }
+
+    // Dark Accent equals dark TextPrimary, so a plain ring on an Accent fill is invisible there. A focused button
+    // must draw the TextPrimary ring and a fill that differs from it, in both themes.
+    void focusRingVisibleOnButtons_data() {
+        QTest::addColumn<bool>("dark");
+        QTest::addColumn<QString>("button");
+        for (bool dark : {false, true}) {
+            for (const char* name : {"applyButton", "sliceButton", "recalculateButton"}) {
+                const QByteArray row = QByteArray(dark ? "dark " : "light ") + name;
+                QTest::newRow(row.constData()) << dark << QString::fromLatin1(name);
+            }
+        }
+    }
+    void focusRingVisibleOnButtons() {
+        QFETCH(bool, dark);
+        QFETCH(QString, button);
+        Board b;
+        b.addAlice();
+        b.addTask("t1");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        page.resize(1000, 900);
+        page.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&page));
+        auto* target = page.findChild<QPushButton*>(button);
+        QVERIFY(target);
+
+        ThemeManager::instance().apply(dark ? ThemeMode::Dark : ThemeMode::Light);
+        QCoreApplication::processEvents();
+        target->setFocus(Qt::TabFocusReason);
+        QCoreApplication::processEvents();
+        const bool focused = target->hasFocus();
+        const QImage image = target->grab().toImage();
+        const QColor ring = ThemeManager::instance().color(Token::TextPrimary);
+        ThemeManager::instance().apply(ThemeMode::Light);
+        if (!focused) QSKIP("window not active in this environment, focus state cannot be rendered");
+
+        const int y = image.height() / 2;
+        const QRgb ringPx = image.pixel(1, y);      // x = 0 is the antialiased rounded edge
+        const QRgb fillPx = image.pixel(8, y);      // inside the padding, left of the text
+        QCOMPARE(QColor(ringPx).rgb(), ring.rgb());
+        QVERIFY2(ringPx != fillPx, "focus ring cannot be told from the button fill");
+    }
+    void focusRingVisibleOnSliderHandle_data() {
+        QTest::addColumn<bool>("dark");
+        QTest::newRow("light") << false;
+        QTest::newRow("dark") << true;
+    }
+    void focusRingVisibleOnSliderHandle() {
+        QFETCH(bool, dark);
+        Board b;
+        b.addAlice();
+        b.addTask("t1");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        page.resize(1000, 900);
+        page.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&page));
+        auto* slider = page.findChild<QSlider*>();
+        QVERIFY(slider);
+
+        ThemeManager::instance().apply(dark ? ThemeMode::Dark : ThemeMode::Light);
+        QCoreApplication::processEvents();
+        page.findChild<QPushButton*>("applyButton")->setFocus(Qt::TabFocusReason);
+        QCoreApplication::processEvents();
+        const QImage plain = slider->grab().toImage();
+        slider->setFocus(Qt::TabFocusReason);
+        QCoreApplication::processEvents();
+        const bool focused = slider->hasFocus();
+        const QImage ringed = slider->grab().toImage();
+        const QColor surface = ThemeManager::instance().color(Token::Surface);
+        ThemeManager::instance().apply(ThemeMode::Light);
+        if (!focused) QSKIP("window not active in this environment, focus state cannot be rendered");
+
+        // The handle is where the two pictures differ.
+        QRect changed;
+        for (int y = 0; y < plain.height(); ++y)
+            for (int x = 0; x < plain.width(); ++x)
+                if (plain.pixel(x, y) != ringed.pixel(x, y)) changed |= QRect(x, y, 1, 1);
+        QVERIFY2(!changed.isNull(), "focus does not change the slider at all");
+        // The centre of the handle must not keep the Accent fill: it turns into a Surface disc inside the ring.
+        QCOMPARE(ringed.pixelColor(changed.center()).rgb(), surface.rgb());
+        QVERIFY(plain.pixel(changed.center()) != ringed.pixel(changed.center()));
     }
 };
 

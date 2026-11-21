@@ -344,11 +344,16 @@ QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:checked:hover {
 
 QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:focus,
 QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:focus {
+    /* Surface fill and a TextPrimary ring: visible on the Accent fill of the checked switch in both themes */
+    background-color: @Surface;
+    color: @TextPrimary;
     border: 2px solid @TextPrimary;
     padding: 5px 15px; /* the border grows by 1 px, so the button keeps its size */
 }
 
 QWidget#TeamSkillsPage QPushButton#resolveConflict:focus {
+    background-color: @Surface;
+    color: @TextPrimary;
     border: 2px solid @TextPrimary;
     padding: 2px 11px;
 }
@@ -414,6 +419,19 @@ QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:focus {
     border: 2px solid @TextPrimary;
 }
 
+/* Checked and focused: a heavy 5 px ring round a small Surface hole (the unchecked box has a thin 2 px ring), so the
+   ring never merges with the Accent fill (Dark Accent equals TextPrimary). */
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:checked:focus {
+    background: @Surface;
+    border: 5px solid @TextPrimary;
+}
+
+/* Surface disc inside a thick ring, the same recipe as the setup page. */
 QWidget#TeamSkillsPage QSlider::handle:horizontal:focus {
-    border: 2px solid @TextPrimary;
+    background: @Surface;
+    border: 3px solid @TextPrimary;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0;
+    border-radius: 10px;
 }
