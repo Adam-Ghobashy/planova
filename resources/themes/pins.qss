@@ -16,12 +16,25 @@ QPushButton#LeavePinButton:hover,
 QPushButton#PinPrimaryButton:hover,
 QPushButton#PinCommentSend:hover { background-color: @AccentHover; }
 QPushButton#PinPrimaryButton:disabled { background-color: @Track; color: @TextMuted; }
-/* Keyboard focus: a 2px ring inside the button, in the text colour of the fill, so it shows in both themes. */
-QPushButton#LeavePinButton:focus,
-QPushButton#PinPrimaryButton:focus,
-QPushButton#PinCommentSend:focus { border: 2px solid @AccentText; padding: 6px 14px; }
-QPushButton#PinCommentSend:focus { padding: 3px 10px; }
 QPushButton#PinCommentSend { padding: 5px 12px; }
+/* Keyboard focus: the fill is swapped for Surface and a 2 px TextPrimary ring replaces the missing border, so the ring
+   differs from the fill in both themes (Dark Accent equals TextPrimary; an AccentText ring merged with the page).
+   The border grows from 0 to 2 px, so the padding shrinks by 2 px and the button keeps its size. Combined states are
+   listed so hover and pressed do not bring the Accent fill back. */
+QPushButton#LeavePinButton:focus,
+QPushButton#LeavePinButton:focus:hover,
+QPushButton#LeavePinButton:focus:pressed,
+QPushButton#PinPrimaryButton:focus,
+QPushButton#PinPrimaryButton:focus:hover,
+QPushButton#PinPrimaryButton:focus:pressed,
+QPushButton#PinCommentSend:focus,
+QPushButton#PinCommentSend:focus:hover,
+QPushButton#PinCommentSend:focus:pressed {
+    background-color: @Surface; color: @TextPrimary; border: 2px solid @TextPrimary; padding: 6px 14px;
+}
+QPushButton#PinCommentSend:focus,
+QPushButton#PinCommentSend:focus:hover,
+QPushButton#PinCommentSend:focus:pressed { padding: 3px 10px; }
 
 /* ---------- filter chips ---------- */
 QPushButton#PinFilterChip {
@@ -30,9 +43,11 @@ QPushButton#PinFilterChip {
 }
 QPushButton#PinFilterChip[dot="true"] { padding-left: 28px; }
 QPushButton#PinFilterChip:hover { border-color: @Accent; color: @TextPrimary; }
-QPushButton#PinFilterChip:focus { border: 2px solid @Accent; padding: 5px 13px; }
-QPushButton#PinFilterChip[dot="true"]:focus { padding-left: 27px; }
 QPushButton#PinFilterChip:checked { background-color: @AccentSoft; color: @Accent; border-color: @Accent; }
+/* Focus comes last, so it also wins over :checked. TextPrimary keeps the ring different from the Accent border of a
+   checked chip in Light; the border grows by 1 px and the padding shrinks by 1 px. */
+QPushButton#PinFilterChip:focus { border: 2px solid @TextPrimary; padding: 5px 13px; }
+QPushButton#PinFilterChip[dot="true"]:focus { padding-left: 27px; }
 
 QLabel#ChipDot { border-radius: 4px; background-color: @TextMuted; }
 QLabel#ChipDot[member="1"] { background-color: @Member1; }
@@ -105,6 +120,7 @@ QLineEdit#PinCommentInput {
     background-color: @SurfaceAlt; color: @TextPrimary; border: 1px solid @Border;
     border-radius: 8px; padding: 5px 8px;
 }
+QLineEdit#PinCommentInput:focus { border: 2px solid @Accent; padding: 4px 7px; }
 
 /* ---------- sidebar badge (open pins, from IPinQuery::openCount) ---------- */
 QLabel#NavBadge {
@@ -120,7 +136,9 @@ QComboBox#PinCombo {
     combobox-popup: 0;
     qproperty-arrowColor: @TextMuted; qproperty-arrowActiveColor: @Accent;
 }
-QComboBox#PinCombo:hover, QComboBox#PinCombo:focus, QComboBox#PinCombo:on { border: 1px solid @Accent; }
+QComboBox#PinCombo:hover { border: 1px solid @Accent; }
+/* Focus (and the open list) is a 2 px ring, so it differs from the 1 px hover border; padding shrinks by 1 px. */
+QComboBox#PinCombo:focus, QComboBox#PinCombo:on { border: 2px solid @Accent; padding: 5px 29px 5px 9px; }
 QComboBox#PinCombo:disabled { background-color: @SurfaceAlt; color: @TextMuted; border: 1px solid @Border; }
 QComboBox#PinCombo::drop-down {
     border: none; background: transparent; width: 30px;

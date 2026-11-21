@@ -54,6 +54,7 @@ planova_add_ui_test(tst_TeamSkillsPage)
 planova_add_ui_test(tst_MainWindowSmoke)
 planova_add_ui_test(tst_WelcomePage)
 planova_add_ui_test(tst_SetupPage)
+planova_add_ui_test(tst_FocusRings)
 # --- end S1 ---
 # --- S6 ---
 planova_add_test(tst_ProgressCalculator)

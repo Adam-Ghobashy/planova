@@ -42,6 +42,7 @@ PinColumnWidget::PinColumnWidget(PinCategory category, const QString& title, QWi
     scroll_ = new QScrollArea(this);
     scroll_->setObjectName("PinColumnScroll");
     scroll_->setWidgetResizable(true);
+    scroll_->setFocusPolicy(Qt::NoFocus);   // the controls inside take focus and the area follows them; the area itself would be a Tab stop with no ring
     scroll_->setFrameShape(QFrame::NoFrame);
     scroll_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     auto* body = new QWidget;

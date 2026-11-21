@@ -35,6 +35,7 @@ TaskColumnWidget::TaskColumnWidget(const QString& title, const QString& tone, QW
     auto* scroll = new QScrollArea;
     scroll->setObjectName("ColumnScroll");
     scroll->setWidgetResizable(true);
+    scroll->setFocusPolicy(Qt::NoFocus);   // the controls inside take focus and the area follows them; the area itself would be a Tab stop with no ring
     scroll->setFrameShape(QFrame::NoFrame);
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scroll->viewport()->setObjectName("ColumnViewport");

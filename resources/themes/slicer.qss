@@ -181,6 +181,12 @@ QWidget#ChaosSlicerPage QComboBox#overrideCombo:hover {
     border-color: @Accent;
 }
 
+/* Focus is a 2 px ring, so it differs from the 1 px hover border; the padding shrinks by 1 px. */
+QWidget#ChaosSlicerPage QComboBox#overrideCombo:focus {
+    border: 2px solid @Accent;
+    padding: 3px 9px;
+}
+
 QWidget#ChaosSlicerPage QComboBox#overrideCombo::drop-down {
     border: none;
     width: 18px;

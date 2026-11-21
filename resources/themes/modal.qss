@@ -31,14 +31,13 @@ QToolButton#modalClose:hover { background: @SurfaceHover; color: @TextPrimary; }
 QToolButton#modalClose:pressed { background: @Track; color: @TextPrimary; }
 
 /* ---------- buttons ----------
-   1 px border normally. On keyboard focus the border becomes a 3 px double line (two thin lines with a gap) in
-   TextPrimary and the fill shrinks inside it, so the ring stays visible on the Accent and Danger fills in both themes. */
+   1 px border normally. On keyboard focus the border becomes a 2 px TextPrimary ring and the padding shrinks by 1 px,
+   so the button keeps its size. Primary and Danger swap their fill for Surface: Dark Accent equals TextPrimary, and
+   the hovered Danger fill is a light pink, so a ring on those fills would vanish. The focus rules sit after the
+   hover and pressed rules and repeat the combined states, so the ring survives hover and pressed. */
 QDialog#ModalDialog QPushButton {
     border-radius: 10px; padding: 7px 15px; min-height: 20px; font-size: 13px; font-weight: 600;
     border: 1px solid transparent;
-}
-QDialog#ModalDialog QPushButton:focus {
-    border: 3px double @TextPrimary; padding: 5px 13px; background-clip: padding;
 }
 
 QDialog#ModalDialog QPushButton#modalPrimaryButton { background: @Accent; color: @AccentText; border-color: @Accent; }
@@ -56,6 +55,26 @@ QDialog#ModalDialog QPushButton#modalDangerButton {
 }
 QDialog#ModalDialog QPushButton#modalDangerButton:hover { background: @DangerText; color: @TextInverse; border-color: @DangerText; }
 QDialog#ModalDialog QPushButton#modalDangerButton:pressed { background: @DangerText; color: @TextInverse; border-color: @DangerText; }
+
+QDialog#ModalDialog QPushButton#modalPrimaryButton:focus,
+QDialog#ModalDialog QPushButton#modalPrimaryButton:focus:hover,
+QDialog#ModalDialog QPushButton#modalPrimaryButton:focus:pressed,
+QDialog#ModalDialog QPushButton#modalDangerButton:focus,
+QDialog#ModalDialog QPushButton#modalDangerButton:focus:hover,
+QDialog#ModalDialog QPushButton#modalDangerButton:focus:pressed {
+    background: @Surface; border: 2px solid @TextPrimary; padding: 6px 14px;
+}
+QDialog#ModalDialog QPushButton#modalPrimaryButton:focus,
+QDialog#ModalDialog QPushButton#modalPrimaryButton:focus:hover,
+QDialog#ModalDialog QPushButton#modalPrimaryButton:focus:pressed { color: @TextPrimary; }
+QDialog#ModalDialog QPushButton#modalDangerButton:focus,
+QDialog#ModalDialog QPushButton#modalDangerButton:focus:hover,
+QDialog#ModalDialog QPushButton#modalDangerButton:focus:pressed { color: @DangerText; }
+QDialog#ModalDialog QPushButton#modalSecondaryButton:focus,
+QDialog#ModalDialog QPushButton#modalSecondaryButton:focus:hover,
+QDialog#ModalDialog QPushButton#modalSecondaryButton:focus:pressed {
+    border: 2px solid @TextPrimary; padding: 6px 14px;
+}
 
 
 /* ---------- form fields ---------- */

@@ -100,6 +100,7 @@ NewTaskDialog::NewTaskDialog(const std::vector<TaskDto>& existing,
     auto* depsBox = new QScrollArea;
     depsBox->setObjectName("modalDeps");
     depsBox->setWidgetResizable(true);
+    depsBox->setFocusPolicy(Qt::NoFocus);   // the controls inside take focus and the area follows them; the area itself would be a Tab stop with no ring
     depsBox->setMaximumHeight(130);
     depsBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     depsBox->viewport()->setObjectName("modalViewport");

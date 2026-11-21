@@ -35,6 +35,7 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     auto* scrollArea = new QScrollArea(this);
     scrollArea->setObjectName("slicerScrollArea");
     scrollArea->setWidgetResizable(true);
+    scrollArea->setFocusPolicy(Qt::NoFocus);   // the controls inside take focus and the area follows them; the area itself would be a Tab stop with no ring
     scrollArea->setFrameShape(QFrame::NoFrame);
 
     auto* contentWidget = new QWidget(scrollArea);

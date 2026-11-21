@@ -3,9 +3,12 @@
    Every rule is scoped by QWidget#SetupPage.
 
    Focus: every interactive control shows a visible ring.
-   - buttons and model cards: the border becomes a 3 px double line in TextPrimary and the padding shrinks by the
-     same amount, so the layout does not move. The focus rules come LAST and name the kind, so they are as specific
-     as the hover rules above them and win by order (a plain :focus rule would lose to [kind]:hover).
+   - buttons and chips: the border becomes a 2 px solid TextPrimary ring and the padding shrinks by 1 px, so the layout
+     does not move. Accent-filled buttons also swap their fill for Surface (Dark Accent and TextPrimary are the same
+     near-white, so a ring on the Accent fill would vanish). The focus rules come LAST and name the kind, so they are
+     as specific as the hover rules above them and win by order (a plain :focus rule would lose to [kind]:hover).
+   - model cards: a 3 px solid TextPrimary ring (the selected card has a 2 px Accent border, so the ring is thicker and
+     in the text colour; the "Selected" mark names the choice, not the colour).
    - text fields and combo boxes: 2 px Accent border.
    - sliders: the handle turns into a ring (Surface fill, thick TextPrimary border), different from the normal handle
      in both themes (Accent and TextPrimary are the same colour in Dark). */
@@ -121,9 +124,7 @@ QWidget#SetupPage QPushButton[kind="modelCard"] {
 }
 QWidget#SetupPage QPushButton[kind="modelCard"]:hover { border-color: @BorderStrong; background-color: @SurfaceRaised; }
 QWidget#SetupPage QPushButton[kind="modelCard"]:checked { border-color: @Accent; background-color: @AccentSoft; }
-QWidget#SetupPage QPushButton[kind="modelCard"]:focus {
-    border: 3px double @TextPrimary; padding: 0; background-clip: padding;
-}
+QWidget#SetupPage QPushButton[kind="modelCard"]:focus { border: 3px solid @TextPrimary; padding: 0; }
 QWidget#SetupPage QLabel#modelCardTitle { font-size: 14px; font-weight: 700; color: @TextPrimary; }
 QWidget#SetupPage QLabel#modelCardText { font-size: 12px; color: @TextSecondary; }
 QWidget#SetupPage QLabel#modelCardMark { font-size: 11px; font-weight: 700; color: @Accent; }
@@ -137,14 +138,14 @@ QWidget#SetupPage QPushButton[kind="chip"]:hover { background-color: @SurfaceHov
 QWidget#SetupPage QPushButton[kind="chip"]:checked { background-color: @AccentSoft; border-color: @Accent; }
 
 /* focus rings last, see the note at the top */
-QWidget#SetupPage QPushButton[kind="primary"]:focus,
-QWidget#SetupPage QPushButton[kind="secondary"]:focus {
-    border: 3px double @TextPrimary; padding: 5px 12px; background-clip: padding;
+QWidget#SetupPage QPushButton[kind="primary"]:focus {
+    background-color: @Surface; color: @TextPrimary; border: 2px solid @TextPrimary; padding: 6px 13px;
 }
-QWidget#SetupPage QPushButton[kind="chip"]:focus { border: 3px double @TextPrimary; padding: 2px 10px; background-clip: padding; }
-QWidget#SetupPage QPushButton[kind="ghost"]:focus {
-    border: 3px double @TextPrimary; padding: 2px 8px; background-clip: padding;
-}
+QWidget#SetupPage QPushButton[kind="primary"]:focus:hover { background-color: @SurfaceHover; border: 2px solid @TextPrimary; }
+QWidget#SetupPage QPushButton[kind="primary"]:focus:pressed { background-color: @Track; border: 2px solid @TextPrimary; }
+QWidget#SetupPage QPushButton[kind="secondary"]:focus { border: 2px solid @TextPrimary; padding: 6px 13px; }
+QWidget#SetupPage QPushButton[kind="chip"]:focus { border: 2px solid @TextPrimary; padding: 3px 11px; }
+QWidget#SetupPage QPushButton[kind="ghost"]:focus { border: 2px solid @TextPrimary; padding: 3px 9px; }
 
 /* ---------- team step ---------- */
 QWidget#SetupPage QLabel#noMembers { font-size: 13px; color: @TextSecondary; padding: 20px 0; }

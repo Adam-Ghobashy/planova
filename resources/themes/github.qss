@@ -74,6 +74,25 @@ QWidget#GitHubIntegrationPage QPushButton#secondaryButton:pressed {
     background-color: @Track;
 }
 
+/* Keyboard focus. Dark Accent equals TextPrimary, so the primary button swaps its Accent fill for Surface and gets a
+   TextPrimary ring; the secondary button only gets the ring. The border grows, the padding shrinks, size stays. The
+   combined states are listed so hover and pressed do not bring the Accent fill back. */
+QWidget#GitHubIntegrationPage QPushButton#primaryButton:focus,
+QWidget#GitHubIntegrationPage QPushButton#primaryButton:focus:hover,
+QWidget#GitHubIntegrationPage QPushButton#primaryButton:focus:pressed {
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 2px solid @TextPrimary;
+    padding: 6px 16px;
+}
+
+QWidget#GitHubIntegrationPage QPushButton#secondaryButton:focus,
+QWidget#GitHubIntegrationPage QPushButton#secondaryButton:focus:hover,
+QWidget#GitHubIntegrationPage QPushButton#secondaryButton:focus:pressed {
+    border: 2px solid @TextPrimary;
+    padding: 7px 15px;
+}
+
 QWidget#GitHubIntegrationPage QLabel#statusLabel {
     background-color: @SuccessSoft;
     color: @TextPrimary;
@@ -93,7 +112,8 @@ QWidget#GitHubIntegrationPage QLineEdit#lightInput {
 }
 
 QWidget#GitHubIntegrationPage QLineEdit#lightInput:focus {
-    border: 1px solid @Accent;
+    border: 2px solid @Accent;
+    padding: 6px 11px;
     background-color: @Surface;
 }
 

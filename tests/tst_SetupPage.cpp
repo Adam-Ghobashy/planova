@@ -1,3 +1,5 @@
+#include "FocusRingSupport.h"
+
 #include "planova/PlanovaCore.h"
 #include "slicer/WeightSlidersPanel.h"
 #include "theme/ThemeManager.h"
@@ -292,7 +294,8 @@ private slots:
         QTest::newRow("dark") << true;
     }
 
-    // The focus ring is a double border in TextPrimary. A later [kind] rule must not recolour it.
+    // The focus ring is a 2 px TextPrimary border that must differ from the button fill (Dark Accent equals TextPrimary,
+    // so an Accent-filled button swaps its fill). A later [kind] rule must not recolour it.
     void primaryButtonsKeepTheirFocusRing()
     {
         QFETCH(bool, dark);
@@ -302,17 +305,12 @@ private slots:
         f.page.activateWindow();
         QVERIFY(QTest::qWaitForWindowExposed(&f.page));
 
-        const QColor ring = ThemeManager::instance().color(Token::TextPrimary);
         auto expectRing = [&](QPushButton* button) {
             QVERIFY2(button && button->isEnabled(), "button missing or disabled");
-            button->setFocus(Qt::TabFocusReason);
-            if (!button->hasFocus())
+            const focusring::Result r = focusring::check(button, focusring::Shape::Box, true);
+            if (!r.ok && r.why == "could not take focus")
                 QSKIP("window not active in this environment, focus state cannot be rendered");
-            const QImage image = button->grab().toImage();
-            bool found = false;
-            for (int x = 0; x < 4 && !found; ++x)
-                found = image.pixelColor(x, image.height() / 2) == ring;
-            QVERIFY2(found, qPrintable(QString("no focus ring colour on %1").arg(button->objectName())));
+            QVERIFY2(r.ok, qPrintable(QString("%1: %2").arg(button->objectName(), r.why)));
         };
 
         expectRing(f.button("nextButton"));      // primary

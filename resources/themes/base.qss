@@ -114,10 +114,12 @@ QPushButton#navItem:focus {
     border: 2px solid @Accent;
 }
 
-/* Accent equals the active fill in Light, so the ring on the active item uses the active text colour
-   (white in Light, near-white in Dark), which contrasts with the fill in both themes. */
+/* Accent equals the active fill in Light, and a white ring (NavActiveText) would merge with the light sidebar, so the
+   ring on the active item is TextPrimary: it stands out from the sidebar in both themes (15:1 and 17:1) and from the
+   active fill in Dark (13:1). In Light it is 2.5:1 against the violet fill, but the ring touches the sidebar on its
+   outer edge, so the whole outline reads clearly. */
 QPushButton#navItem[active="true"]:focus {
-    border: 2px solid @NavActiveText;
+    border: 2px solid @TextPrimary;
 }
 
 QPushButton#navItem QLabel#navBadge {
@@ -158,6 +160,7 @@ QPushButton#themeToggle:pressed {
 
 QPushButton#themeToggle:focus {
     border: 2px solid @Accent;
+    padding: 5px 11px;   /* the border grows by 1 px, so the text stays where it was */
 }
 
 QFrame#SidebarGitCard {
@@ -210,6 +213,11 @@ QPushButton#SidebarSyncButton {
 QPushButton#SidebarSyncButton:hover {
     background-color: @AccentSoft;
     border-color: @Accent;
+}
+
+/* The 2 px ring replaces the 1 px border (the button has a fixed size and no padding, so nothing moves). */
+QPushButton#SidebarSyncButton:focus {
+    border: 2px solid @TextPrimary;
 }
 
 

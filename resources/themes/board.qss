@@ -10,7 +10,9 @@ QLineEdit#BoardSearch, QComboBox#BoardMemberFilter {
     background: @Surface; border: 1px solid @Border; border-radius: 20px;
     padding: 9px 18px; min-height: 22px; font-size: 15px; color: @TextPrimary;
 }
-QLineEdit#BoardSearch:focus, QComboBox#BoardMemberFilter:focus { border: 1px solid @Accent; }
+/* Focus is a 2 px Accent ring (the border grows by 1 px, the padding shrinks by 1 px, so nothing moves). */
+QLineEdit#BoardSearch:focus { border: 2px solid @Accent; padding: 8px 17px; }
+QComboBox#BoardMemberFilter:focus { border: 2px solid @Accent; padding: 8px 39px 8px 17px; }
 
 /* ---------- buttons ---------- */
 QPushButton#BoardPrimary {
@@ -18,11 +20,23 @@ QPushButton#BoardPrimary {
     padding: 11px 22px; font-size: 15px; font-weight: 700;
 }
 QPushButton#BoardPrimary:hover { background: @AccentHover; }
+QPushButton#BoardPrimary:pressed { background: @AccentPressed; }
 QPushButton#BoardSecondary {
     background: @SurfaceAlt; color: @TextPrimary; border: 1px solid @ControlBorder; border-radius: 14px;
     padding: 11px 22px; font-size: 15px; font-weight: 700;
 }
 QPushButton#BoardSecondary:hover { background: @SurfaceHover; }
+
+/* Keyboard focus. Dark Accent equals TextPrimary, so the primary button swaps its Accent fill for Surface and gets a
+   TextPrimary ring; the secondary button only gets the ring. The border grows, the padding shrinks, size stays. The
+   combined hover and pressed states are listed so they do not bring the Accent fill back. */
+QPushButton#BoardPrimary:focus,
+QPushButton#BoardPrimary:focus:hover,
+QPushButton#BoardPrimary:focus:pressed {
+    background: @Surface; color: @TextPrimary; border: 2px solid @TextPrimary; padding: 9px 20px;
+}
+QPushButton#BoardSecondary:focus,
+QPushButton#BoardSecondary:focus:hover { border: 2px solid @TextPrimary; padding: 10px 21px; }
 
 /* ---------- combo popup + arrow (StyledComboBox paints the chevron from these two colours) ---------- */
 QComboBox#BoardMemberFilter { padding-right: 40px; combobox-popup: 0; qproperty-arrowColor: @TextMuted; qproperty-arrowActiveColor: @Accent; }
@@ -87,10 +101,11 @@ QLabel#CardAvatar {
 QLabel#CardMeta  { font-size: 14px; color: @TextMuted; background: transparent; }
 QLabel#DoneMark  { font-size: 20px; font-weight: 700; color: @TextPrimary; background: transparent; }
 QToolButton#AdvanceButton {
-    border: none; background: transparent; color: @TextPrimary; font-size: 20px;
-    padding: 0 6px; border-radius: 10px;
+    border: 2px solid transparent; background: transparent; color: @TextPrimary; font-size: 20px;
+    padding: 0 4px; border-radius: 10px;   /* the 2 px border is the room for the focus ring */
 }
 QToolButton#AdvanceButton:hover { background: @Border; }
+QToolButton#AdvanceButton:focus { border-color: @Accent; }
 
 /* pin badge on cards */
 QFrame#PinChip  { background: @ReviewSoft; border: 1px solid @ReviewBorder; border-radius: 10px; }

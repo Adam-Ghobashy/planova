@@ -76,6 +76,7 @@ WelcomePage::WelcomePage(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     scroll->setObjectName("welcomeScroll");
     scroll->viewport()->setObjectName("welcomeViewport");
     scroll->setWidgetResizable(true);
+    scroll->setFocusPolicy(Qt::NoFocus);   // the controls inside take focus and the area follows them; the area itself would be a Tab stop with no ring
     scroll->setFrameShape(QFrame::NoFrame);
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scroll->setWidget(content);

@@ -131,7 +131,8 @@ QWidget#TeamSkillsPage QLineEdit#lightInput {
 }
 
 QWidget#TeamSkillsPage QLineEdit#lightInput:focus {
-    border: 1px solid @Accent;
+    border: 2px solid @Accent;
+    padding: 6px 11px;
     background-color: @Surface;
 }
 
@@ -153,8 +154,15 @@ QWidget#TeamSkillsPage QComboBox#roleCombo {
     min-width: 160px;
 }
 
-QWidget#TeamSkillsPage QComboBox#roleCombo:hover, QWidget#TeamSkillsPage QComboBox#roleCombo:focus {
+QWidget#TeamSkillsPage QComboBox#roleCombo:hover {
     border: 1px solid @Accent;
+    background-color: @Surface;
+}
+
+/* Focus is a 2 px ring, so it differs from the 1 px hover border; the padding shrinks by 1 px. */
+QWidget#TeamSkillsPage QComboBox#roleCombo:focus {
+    border: 2px solid @Accent;
+    padding: 5px 11px;
     background-color: @Surface;
 }
 
@@ -310,6 +318,57 @@ QWidget#TeamSkillsPage QPushButton#ratingButton[active="true"] {
 QWidget#TeamSkillsPage QPushButton#ratingButton[active="true"]:hover {
     background-color: @AccentHover;
     color: @AccentText;
+}
+
+/* ---------- keyboard focus on the buttons ----------
+   Dark Accent equals TextPrimary, so the Accent-filled buttons (primary, save, active rating step) swap their fill for
+   Surface and get a 2 px TextPrimary ring; the other buttons keep their fill and only get the ring. The border grows
+   and the padding shrinks by the same amount, so the size stays. The focus rules come after the hover rules and list
+   the combined states, so hover and pressed do not bring the Accent fill (and an invisible ring) back. */
+QWidget#TeamSkillsPage QPushButton#primaryButton:focus,
+QWidget#TeamSkillsPage QPushButton#primaryButton:focus:hover,
+QWidget#TeamSkillsPage QPushButton#primaryButton:focus:pressed {
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 2px solid @TextPrimary;
+    padding: 6px 16px;
+}
+
+QWidget#TeamSkillsPage QPushButton#saveRoleButton:focus,
+QWidget#TeamSkillsPage QPushButton#saveRoleButton:focus:hover {
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 2px solid @TextPrimary;
+    padding: 0px 8px;
+}
+
+QWidget#TeamSkillsPage QPushButton#ratingButton[active="true"]:focus,
+QWidget#TeamSkillsPage QPushButton#ratingButton[active="true"]:focus:hover {
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 2px solid @TextPrimary;
+}
+
+QWidget#TeamSkillsPage QPushButton#ratingButton:focus,
+QWidget#TeamSkillsPage QPushButton#ratingButton:focus:hover {
+    border: 2px solid @TextPrimary;
+}
+
+QWidget#TeamSkillsPage QPushButton#secondaryButton:focus,
+QWidget#TeamSkillsPage QPushButton#secondaryButton:focus:hover,
+QWidget#TeamSkillsPage QPushButton#secondaryButton:focus:pressed {
+    border: 2px solid @TextPrimary;
+    padding: 7px 15px;
+}
+
+QWidget#TeamSkillsPage QPushButton#editRoleButton:focus,
+QWidget#TeamSkillsPage QPushButton#editRoleButton:focus:hover,
+QWidget#TeamSkillsPage QPushButton#removeMemberButton:focus,
+QWidget#TeamSkillsPage QPushButton#removeMemberButton:focus:hover,
+QWidget#TeamSkillsPage QPushButton#cancelRoleButton:focus,
+QWidget#TeamSkillsPage QPushButton#cancelRoleButton:focus:hover {
+    border: 2px solid @TextPrimary;
+    padding: 1px 7px;
 }
 
 /* ---------- settings switches ---------- */

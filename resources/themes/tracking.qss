@@ -86,6 +86,20 @@ QPushButton#TrackingToggle:checked {
     color: @AccentText;
 }
 
+/* Keyboard focus: a 2 px TextPrimary ring (the border grows by 1 px and the padding shrinks by 1 px). The checked
+   toggle has the Accent fill, which equals TextPrimary in Dark, so it swaps the fill for Surface while focused. */
+QPushButton#TrackingToggle:focus,
+QPushButton#TrackingToggle:focus:hover {
+    border: 2px solid @TextPrimary;
+    padding: 4px 9px;
+}
+
+QPushButton#TrackingToggle:checked:focus,
+QPushButton#TrackingToggle:checked:focus:hover {
+    background: @Surface;
+    color: @TextPrimary;
+}
+
 /* Palette handed to the delegates through qproperty-* (LeaderboardTable). */
 #LeaderboardTable {
     qproperty-textPrimaryColor: @TextPrimary;
