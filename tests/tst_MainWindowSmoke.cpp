@@ -51,12 +51,13 @@ private slots:
     void init() { ThemeManager::instance().apply(ThemeMode::Light); }
     void cleanupTestCase() { ThemeManager::instance().apply(ThemeMode::Light); }
 
-    // The start popup: "Continue an old project" opens the Projects tab, "Not now" changes nothing.
-    void startDialogRoutesToProjectsTab()
+    // The start popup: pick a project opens its Home, Start new project opens Setup, "Not now" changes nothing.
+    void startDialogRoutesChoices()
     {
         QTemporaryDir dir;
         QVERIFY(dir.isValid());
         PlanovaCore core(dir.path().toStdString());
+        core.createProject("Alpha", "Team A", "Agile", "");
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
         window.show();
@@ -72,13 +73,15 @@ private slots:
                 QApplication::activeModalWidget()->close();
             });
         };
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Hub));   // no project open: the hub is behind the popup
         clickInDialog("Not now");
         window.showStartDialog();
-        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Welcome));
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Hub));
 
-        clickInDialog("Continue an old project");
+        clickInDialog(QString("Alpha  ·  Team A"));
         window.showStartDialog();
-        QVERIFY(window.findChild<WelcomePage*>()->mode() == WelcomePage::Mode::Projects);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Home));
+        QVERIFY(core.currentProject().has_value());
 
         clickInDialog("Start new project");
         window.showStartDialog();
@@ -107,8 +110,8 @@ private slots:
         }
     }
 
-    // Welcome -> Setup page -> skip back, then a full run that opens Home.
-    void setupFlowFromWelcome()
+    // Projects Hub -> Setup page -> skip back, then a full run that opens Home.
+    void setupFlowFromHub()
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
@@ -116,17 +119,17 @@ private slots:
         MainWindow window(core, bridge);
         auto* pages = window.findChild<QStackedWidget*>();
         QVERIFY(pages);
-        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Welcome));
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Hub));
 
-        window.findChild<QPushButton*>("startNewProject")->click();
+        window.findChild<QPushButton*>("createProject")->click();
         QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Setup));
         window.findChild<QLineEdit*>("projectNameEdit")->setText("Half typed");
         window.findChild<QPushButton*>("skipButton")->click();
-        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Welcome));
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Hub));
         QVERIFY(core.projects().list().empty());
 
         // A second visit starts empty again.
-        window.findChild<QPushButton*>("startNewProject")->click();
+        window.findChild<QPushButton*>("createProject")->click();
         QVERIFY(window.findChild<QLineEdit*>("projectNameEdit")->text().isEmpty());
         window.findChild<QLineEdit*>("projectNameEdit")->setText("Portal");
         for (int i = 0; i < 2; ++i)

@@ -138,7 +138,7 @@ private slots:
         QTest::newRow("dark") << true;
     }
 
-    // Walks every page of the main window (demo data), the Welcome projects view and every Setup step.
+    // Walks every page of the main window (demo data), the Projects Hub and every Setup step.
     void everyPageControlShowsARing()
     {
         QFETCH(bool, dark);
@@ -162,18 +162,11 @@ private slots:
         int checked = 0;
 
         for (int i = 0; i < pages->count(); ++i) {
-            if (i == static_cast<int>(Page::Hub) || i == static_cast<int>(Page::Setup))
-                continue; // Hub is a placeholder, Setup is walked step by step below
+            if (i == static_cast<int>(Page::Setup))
+                continue; // Setup is walked step by step below
             pages->setCurrentIndex(i);
             QApplication::processEvents();
-            if (i == static_cast<int>(Page::Welcome)) {
-                QTest::qWait(2600); // the intro buttons fade in; an unfinished fade renders them transparent
-                sweep(&window, "Welcome intro", failures, checked);
-                window.findChild<WelcomePage*>()->setMode(WelcomePage::Mode::Projects);
-                QApplication::processEvents();
-                sweep(&window, "Welcome projects", failures, checked);
-                continue;
-            }
+            QTest::qWait(300);   // let the page lay out and paint before its controls are checked
             sweep(&window, QString("page %1").arg(i), failures, checked);
         }
 
@@ -237,15 +230,10 @@ private slots:
             QApplication::processEvents();
         };
 
-        // Welcome
-        goTo(Page::Welcome);
-        QTest::qWait(2600); // the intro buttons fade in; an unfinished fade renders them transparent
-        for (const char* name : {"startNewProject", "continueProjects"})
-            sweepNamed(&window, name, "Welcome", true, failures, checked);
-        window.findChild<WelcomePage*>()->setMode(WelcomePage::Mode::Projects);
-        QApplication::processEvents();
-        for (const char* name : {"createProject", "backToWelcome", "manageGit", "openProject"})
-            sweepNamed(&window, name, "Welcome projects", true, failures, checked);
+        // Projects Hub
+        goTo(Page::Hub);
+        for (const char* name : {"createProject", "manageGit", "openProject"})
+            sweepNamed(&window, name, "Projects Hub", true, failures, checked);
 
         // Setup
         auto* setup = window.findChild<SetupPage*>();

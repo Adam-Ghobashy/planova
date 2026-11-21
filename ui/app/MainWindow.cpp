@@ -10,8 +10,10 @@
 #include "welcome/SetupPage.h"
 #include "welcome/StartDialog.h"
 #include "welcome/WelcomePage.h"
+#include "widgets/ModalDialog.h"
 #include <QHBoxLayout>
 #include <QStatusBar>
+#include <exception>
 
 MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     : QMainWindow(parent), core_(core), bridge_(bridge), sidebar_(new Sidebar(core, this)), pages_(new QStackedWidget(this))
@@ -31,9 +33,11 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     central->setFocus();
 
     buildPages();
-    showPage(Page::Welcome);
+    // A project that was auto-opened at start-up shows its Home; otherwise the Projects Hub is behind the start popup.
     if (core_.currentProject())
-        showHomeForCurrentProject(); // a project was auto-opened at start-up
+        showHomeForCurrentProject();
+    else
+        showPage(Page::Hub);
 
     auto updateTelemetry = [this](const QString& lastEvent = QString()) {
         const size_t memberCount = core_.memberProjection().all().size();
@@ -73,8 +77,7 @@ void MainWindow::buildPages()
     homePage_ = new planova::s6::HomePage(core_.home(), core_.memberQuery(), pages_);
 
     // One line per page, in Page enum order.
-    pages_->addWidget(welcome_);
-    pages_->addWidget(new QWidget(pages_)); // Page::Hub placeholder: showPage(Hub) shows the Welcome widget in projects mode
+    pages_->addWidget(welcome_);   // Page::Hub
     pages_->addWidget(setupPage_);
     pages_->addWidget(slicerPage);
     pages_->addWidget(pinsPage);
@@ -114,26 +117,16 @@ void MainWindow::buildPages()
         if (core_.currentProject())
             showHomeForCurrentProject();
         else
-            showPage(Page::Welcome);
+            showPage(Page::Hub);
     });
     // openProject publishes ProjectOpened on the bridge, which also refreshes the sidebar badges.
     connect(welcome_, &WelcomePage::projectOpened, this, [this] { showHomeForCurrentProject(); });
     connect(welcome_, &WelcomePage::manageGitRequested, this, [this] { showPage(Page::GitHub); });
-    // The Continue and Back buttons switch the mode inside the page; keep the sidebar in step.
-    connect(welcome_, &WelcomePage::modeChanged, this, [this](WelcomePage::Mode mode) {
-        sidebar_->setActivePage(mode == WelcomePage::Mode::Projects ? Page::Hub : Page::Welcome);
-    });
 }
 
 void MainWindow::showPage(Page page)
 {
-    // Welcome and Hub are one widget in two modes; the stack holds a spacer at the Hub index.
-    if (page == Page::Hub || page == Page::Welcome) {
-        welcome_->setMode(page == Page::Hub ? WelcomePage::Mode::Projects : WelcomePage::Mode::Intro);
-        pages_->setCurrentIndex(static_cast<int>(Page::Welcome));
-    } else {
-        pages_->setCurrentIndex(static_cast<int>(page));
-    }
+    pages_->setCurrentIndex(static_cast<int>(page));
     sidebar_->setActivePage(page);
 }
 
@@ -153,15 +146,21 @@ void MainWindow::showHomeForCurrentProject()
 
 void MainWindow::showStartDialog()
 {
-    StartDialog dialog(this);
+    StartDialog dialog(core_, this);
     dialog.exec();
     switch (dialog.choice()) {
     case StartDialog::Choice::NewProject:
         setupPage_->reset();   // every visit starts with an empty setup
         showPage(Page::Setup);
         break;
-    case StartDialog::Choice::ContinueProject:
-        showPage(Page::Hub);   // the Projects tab: one card per project
+    case StartDialog::Choice::OpenProject:
+        try {
+            core_.openProject(dialog.projectId().toStdString());   // publishes ProjectOpened on the bridge
+        } catch (const std::exception& error) {
+            ModalDialog::info(this, tr("Could not open project"), QString::fromUtf8(error.what()));
+            break;
+        }
+        showHomeForCurrentProject();
         break;
     case StartDialog::Choice::None:
         break;                 // dismissed: stay on the page behind the popup

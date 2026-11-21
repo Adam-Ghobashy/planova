@@ -34,7 +34,7 @@ Start `build/ui/planova.exe` (the Qt DLLs are copied next to it, so a double-cli
 
 | Flag | Effect |
 |------|--------|
-| (none) | Opens the most recent project. A new workspace starts on the Welcome page. |
+| (none) | Opens the most recent project. The start popup always opens first: start a new project or pick an existing one. |
 | `--demo` | Fills an empty project with a sample team, tasks and pins. Use it to look around. |
 | `--help` | Lists the flags. |
 
@@ -97,7 +97,7 @@ build/tools/screenshots/planova_screenshots.exe <outDir> [options]
 | `--card-menu` | Board with a focused task card and its menu open. |
 | `--clash` | Make the first member the lead and add a decline clash, so the Lead chip and clash badge show. |
 | `--setup-steps` | Every step of the Setup page, plus its error and blocked states. |
-| `--welcome-states` | Welcome page with no projects, with no search match, and with focus on a card. |
+| `--welcome-states` | Projects Hub with no projects, with no search match, and with focus on a card. |
 | `--splash` | The splash, grabbed 1600 ms into its animation. |
 | `--connect` | Connect a sample repository and run one sync, so the GitHub page has data. |
 | `--empty` | Skip the sample data, to check empty states. |

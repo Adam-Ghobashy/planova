@@ -64,7 +64,7 @@ to another slice only through the query interfaces in `core/include/planova/comm
 
 | Slice | Owns (core) | Owns (UI) | Notes |
 |-------|-------------|-----------|-------|
-| S1 Foundation | `common/`, `store/` (event log, file store), `project/`, `PlanovaCore` | `ui/app` (main window, sidebar, splash, CoreBridge), `ui/theme`, `ui/welcome` (Welcome page, setup page), shared `ui/widgets` (ModalDialog) | Wrote the Phase 0 contract and owns the merge queue. |
+| S1 Foundation | `common/`, `store/` (event log, file store), `project/`, `PlanovaCore` | `ui/app` (main window, sidebar, splash, CoreBridge), `ui/theme`, `ui/welcome` (start popup, Projects Hub, setup page), shared `ui/widgets` (ModalDialog) | Wrote the Phase 0 contract and owns the merge queue. |
 | S2 Team and GitHub | `team/` (members, skills, velocity), `git/` (simulated provider) | `ui/team`, `ui/git` | Velocity comes from `TaskMoved` events, with no dependency on S3 headers. |
 | S3 Tasks and board | `task/` (status machine, dependency graph, critical path) | `ui/board` | Four-column Phase Board and the New Task dialog. A card menu can decline a task (calls S5). |
 | S4 Chaos Slicer | `slicer/` (weighted scoring, pizza portions, saved weights) | `ui/slicer` | The scoring strategy is swappable through `IAssignmentStrategy`. |

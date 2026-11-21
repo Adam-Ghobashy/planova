@@ -56,45 +56,23 @@ private slots:
     void init() { ThemeManager::instance().apply(ThemeMode::Light); }
     void cleanupTestCase() { ThemeManager::instance().apply(ThemeMode::Light); }
 
-    void startsInIntroMode()
+    void showsOneCardPerProject()
     {
         Fixture f;
-        QCOMPARE(f.page->mode(), WelcomePage::Mode::Intro);
-        QVERIFY(f.button("startNewProject")->isVisible());
-        QVERIFY(f.button("continueProjects")->isVisible());
-        QVERIFY(f.visibleCards().isEmpty());
+        QCOMPARE(f.visibleCards().size(), 2);
     }
 
     void startNewProjectEmitsSignal()
     {
         Fixture f;
         QSignalSpy spy(f.page.get(), &WelcomePage::startNewProject);
-        f.button("startNewProject")->click();
+        f.button("createProject")->click();
         QCOMPARE(spy.count(), 1);
-    }
-
-    void continueShowsProjects()
-    {
-        Fixture f;
-        f.button("continueProjects")->click();
-        QCOMPARE(f.page->mode(), WelcomePage::Mode::Projects);
-        QCOMPARE(f.visibleCards().size(), 2);
-        QVERIFY(!f.button("continueProjects")->isVisible());
-    }
-
-    void backReturnsToIntro()
-    {
-        Fixture f;
-        f.page->setMode(WelcomePage::Mode::Projects);
-        f.button("backToWelcome")->click();
-        QCOMPARE(f.page->mode(), WelcomePage::Mode::Intro);
-        QVERIFY(f.button("continueProjects")->isVisible());
     }
 
     void searchFilters()
     {
         Fixture f;
-        f.page->setMode(WelcomePage::Mode::Projects);
         auto* search = f.page->findChild<QLineEdit*>("projectSearch");
         QVERIFY(search);
         QCOMPARE(f.visibleCards().size(), 2);
@@ -106,7 +84,6 @@ private slots:
     void searchMatchesTeamCaseInsensitive()
     {
         Fixture f;
-        f.page->setMode(WelcomePage::Mode::Projects);
         auto* search = f.page->findChild<QLineEdit*>("projectSearch");
         QTest::keyClicks(search, "BETA TEAM");
         QCOMPARE(f.visibleCards().size(), 1);
@@ -116,7 +93,6 @@ private slots:
     void escapeClearsSearch()
     {
         Fixture f;
-        f.page->setMode(WelcomePage::Mode::Projects);
         auto* search = f.page->findChild<QLineEdit*>("projectSearch");
         search->setFocus();
         QTest::keyClicks(search, "alp");
@@ -129,7 +105,6 @@ private slots:
     void noMatchShowsMessageAndClear()
     {
         Fixture f;
-        f.page->setMode(WelcomePage::Mode::Projects);
         auto* search = f.page->findChild<QLineEdit*>("projectSearch");
         QTest::keyClicks(search, "zzz");
         QVERIFY(f.visibleCards().isEmpty());
@@ -147,7 +122,6 @@ private slots:
     void emptyWorkspaceShowsMessageAndStartButton()
     {
         Fixture f(QStringList{});
-        f.page->setMode(WelcomePage::Mode::Projects);
         QVERIFY(f.visibleCards().isEmpty());
         QVERIFY(f.page->findChild<QLabel*>("workspaceState")->isVisible());
         QVERIFY(!f.page->findChild<QLabel*>("workspaceState")->text().isEmpty());
@@ -161,7 +135,6 @@ private slots:
     void openEmitsAndOpensCore()
     {
         Fixture f;
-        f.page->setMode(WelcomePage::Mode::Projects);
         QSignalSpy opened(f.page.get(), &WelcomePage::projectOpened);
 
         ProjectCardWidget* beta = nullptr;
@@ -191,7 +164,6 @@ private slots:
     void cardsHaveAccessibleNames()
     {
         Fixture f;
-        f.page->setMode(WelcomePage::Mode::Projects);
         QStringList names;
         for (auto* card : f.visibleCards())
             names << card->accessibleName();
@@ -201,7 +173,6 @@ private slots:
     void newProjectAppearsThroughBridge()
     {
         Fixture f;
-        f.page->setMode(WelcomePage::Mode::Projects);
         f.core.createProject("Gamma", "G", "Waterfall", "");
         QCOMPARE(f.page->findChildren<ProjectCardWidget*>().size(), 3);
     }
@@ -209,7 +180,6 @@ private slots:
     void bannerShowsNoRepository()
     {
         Fixture f;
-        f.page->setMode(WelcomePage::Mode::Projects);
         QCOMPARE(f.page->findChild<QLabel*>("gitBannerRepo")->text(), QString("No repository connected"));
         QSignalSpy spy(f.page.get(), &WelcomePage::manageGitRequested);
         f.button("manageGit")->click();
@@ -234,7 +204,6 @@ private slots:
         Fixture f;
         f.page->activateWindow();
         QVERIFY(QTest::qWaitForWindowExposed(f.page.get()));
-        QTest::qWait(2600);   // the intro buttons fade in; an unfinished fade renders them transparent
 
         auto expectRing = [&](const char* name) {
             QPushButton* button = f.button(name);
@@ -245,11 +214,7 @@ private slots:
             QVERIFY2(r.ok, qPrintable(QString("%1: %2").arg(name, r.why)));
         };
 
-        expectRing("startNewProject");   // primary, large
-        expectRing("continueProjects");  // secondary, large
-        f.page->setMode(WelcomePage::Mode::Projects);
         expectRing("createProject");     // primary
-        expectRing("backToWelcome");     // ghost
         expectRing("manageGit");         // ghost
         expectRing("openProject");       // Accent fill, no kind
     }
@@ -259,11 +224,8 @@ private slots:
         Fixture f;
         for (ThemeMode mode : {ThemeMode::Light, ThemeMode::Dark}) {
             ThemeManager::instance().apply(mode);
-            for (auto m : {WelcomePage::Mode::Intro, WelcomePage::Mode::Projects}) {
-                f.page->setMode(m);
-                QApplication::processEvents();
-                QVERIFY(!f.page->grab().isNull());
-            }
+            QApplication::processEvents();
+            QVERIFY(!f.page->grab().isNull());
         }
     }
 };

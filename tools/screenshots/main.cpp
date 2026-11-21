@@ -187,7 +187,6 @@ int main(int argc, char* argv[])
         WelcomePage fullPage(core, bridge);
         for (WelcomePage* page : {&emptyPage, &fullPage}) {
             page->resize(1100, 700);
-            page->setMode(WelcomePage::Mode::Projects);
             page->show();
         }
         for (const QString& theme : themes) {
@@ -311,7 +310,7 @@ int main(int argc, char* argv[])
         const auto members = core.memberProjection().all();
         using Factory = std::function<ModalDialog*()>;
         const QList<QPair<QString, Factory>> dialogs = {
-            {"start", [&] { return new StartDialog(&window); }},
+            {"start", [&] { return new StartDialog(core, &window); }},
             {"new-task", [&] { return new NewTaskDialog(tasks, members, &window); }},
             {"leave-pin", [&] { return new planova::s5::LeavePinDialog(tasks, members, members.empty() ? planova::Id{} : members.front().id, &window); }},
             {"decline", [&] { return new planova::s5::DeclineDialog(tasks.empty() ? planova::Id{} : tasks.front().id, members.empty() ? planova::Id{} : members.front().id, "Implement Strategy Pattern", "Alice", conflicts, &window); }},
@@ -422,21 +421,10 @@ int main(int argc, char* argv[])
         const ThemeMode mode = job.first == "dark" ? ThemeMode::Dark : ThemeMode::Light;
         if (ThemeManager::instance().mode() != mode)
             ThemeManager::instance().apply(mode);
-        // Welcome and Hub are one widget (see MainWindow::showPage): index 1 shows it in projects mode.
-        auto* welcomePage = window.findChild<WelcomePage*>();
-        const bool welcomeShot = job.second <= static_cast<int>(Page::Hub);
-        if (welcomeShot) {
-            welcomePage->setMode(job.second == static_cast<int>(Page::Hub) ? WelcomePage::Mode::Projects
-                                                                              : WelcomePage::Mode::Intro);
-            pages->setCurrentIndex(static_cast<int>(Page::Welcome));
-        } else {
-            pages->setCurrentIndex(job.second);
-        }
+        pages->setCurrentIndex(job.second);
         // The stack is switched directly, so tell the sidebar which item to highlight.
         window.findChild<Sidebar*>()->setActivePage(static_cast<Page>(job.second));
-        // The intro writes "Welcome!" on for about 1.9 s; wait for it to finish before grabbing.
-        const int waitMs = job.second == static_cast<int>(Page::Welcome) ? 2300 : 250;
-        QTimer::singleShot(waitMs, [&, job]() {
+        QTimer::singleShot(250, [&, job]() {
             const QString path = QString("%1/page%2-%3.png").arg(options.outDir).arg(job.second).arg(job.first);
             if (!window.grab().save(path))
                 std::fprintf(stderr, "could not save %s\n", qPrintable(path));

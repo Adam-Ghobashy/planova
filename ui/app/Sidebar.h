@@ -14,7 +14,7 @@ class Sidebar : public QWidget {
 public:
     explicit Sidebar(PlanovaCore& core, QWidget* parent = nullptr);
 
-    // Marks the item of this page as active. A page without an item (Welcome, Setup) leaves none active.
+    // Marks the item of this page as active. A page without an item (Setup) leaves none active.
     void setActivePage(Page page);
 
 public slots:
@@ -49,7 +49,7 @@ private:
 
     PlanovaCore& core_;
     QList<Item> items_;
-    Page activePage_ = Page::Welcome;
+    Page activePage_ = Page::Hub;
     QLabel* gitDot_ = nullptr;
     QLabel* gitTitle_ = nullptr;
     QLabel* gitSubtitle_ = nullptr;

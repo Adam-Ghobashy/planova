@@ -1,16 +1,28 @@
 #include "StartDialog.h"
 
+#include <QDebug>
 #include <QLabel>
 #include <QPixmap>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <exception>
 
 namespace {
 constexpr int kLogoSize = 72;
 constexpr int kChoiceHeight = 44;
+
+QPushButton* makeChoice(const QString& text, const char* objectName, QWidget* dialog)
+{
+    auto* button = new QPushButton(text);
+    button->setObjectName(objectName);   // modalPrimaryButton / modalSecondaryButton: styled in modal.qss
+    button->setMinimumHeight(kChoiceHeight);
+    button->setCursor(Qt::PointingHandCursor);
+    button->setParent(dialog);
+    return button;
+}
 }
 
-StartDialog::StartDialog(QWidget* parent) : ModalDialog(tr("Welcome to Planova"), parent)
+StartDialog::StartDialog(PlanovaCore& core, QWidget* parent) : ModalDialog(tr("Welcome to Planova"), parent)
 {
     auto* logo = new QLabel;
     logo->setObjectName("startDialogLogo");
@@ -25,30 +37,48 @@ StartDialog::StartDialog(QWidget* parent) : ModalDialog(tr("Welcome to Planova")
     subtitle->setAlignment(Qt::AlignCenter);
     subtitle->setWordWrap(true);
 
-    // The two choices are the main content, so they sit in the body. They reuse the modal button styles.
-    auto* startNew = new QPushButton(tr("Start new project"));
-    startNew->setObjectName("modalPrimaryButton");
+    auto* startNew = makeChoice(tr("Start new project"), "modalPrimaryButton", this);
     startNew->setDefault(true);
-    auto* continueOld = new QPushButton(tr("Continue an old project"));
-    continueOld->setObjectName("modalSecondaryButton");
-    for (QPushButton* button : {startNew, continueOld}) {
-        button->setMinimumHeight(kChoiceHeight);
-        button->setCursor(Qt::PointingHandCursor);
-    }
     connect(startNew, &QPushButton::clicked, this, [this] { choose(Choice::NewProject); });
-    connect(continueOld, &QPushButton::clicked, this, [this] { choose(Choice::ContinueProject); });
 
     auto* body = contentLayout();
     body->addWidget(logo);
     body->addWidget(subtitle);
     body->addWidget(startNew);
-    body->addWidget(continueOld);
+
+    auto* heading = new QLabel(tr("Or continue a project"));
+    heading->setObjectName("modalFieldLabel");
+    body->addWidget(heading);
+
+    // Newest project first. The dialog is built inside a start-up slot, so a failed read must not escape.
+    std::vector<ProjectDto> projects;
+    try {
+        projects = core.projects().list();
+    } catch (const std::exception& error) {
+        qWarning() << "StartDialog: could not read the projects:" << error.what();
+    }
+    if (projects.empty()) {
+        auto* none = new QLabel(tr("No projects yet. Start a new one above."));
+        none->setObjectName("modalSubtitle");
+        none->setWordWrap(true);
+        body->addWidget(none);
+    }
+    for (auto it = projects.rbegin(); it != projects.rend(); ++it) {
+        const QString name = QString::fromStdString(it->name);
+        const QString team = QString::fromStdString(it->team);
+        auto* button = makeChoice(team.isEmpty() ? name : name + QString::fromUtf16(u"  ·  ") + team, "modalSecondaryButton", this);
+        button->setAccessibleName(tr("Open project %1").arg(name));
+        const QString id = QString::fromStdString(it->id);
+        connect(button, &QPushButton::clicked, this, [this, id] { choose(Choice::OpenProject, id); });
+        body->addWidget(button);
+    }
 
     addButton(tr("Not now"), Role::Secondary);
 }
 
-void StartDialog::choose(Choice choice)
+void StartDialog::choose(Choice choice, const QString& projectId)
 {
     choice_ = choice;
+    projectId_ = projectId;
     accept();
 }

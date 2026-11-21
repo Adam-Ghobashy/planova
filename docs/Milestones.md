@@ -27,7 +27,7 @@ deadline). The last column says what was delivered.
 
 - Dark theme and the theme toggle (spec 4.1 to 4.3).
 - Bundled design fonts (Inter, Space Grotesk, JetBrains Mono) with fallbacks.
-- Welcome splash and a Welcome page with two modes (intro and workspaces).
+- Welcome splash, a start popup (new project or pick an existing one) and the Projects Hub page.
 - Setup as a page (not a wizard window) with a slicer policy step.
 - S5 backend and the live Pins page, real pin counts and sidebar badges.
 - `ModalDialog` base class so every dialog and message uses the same style.

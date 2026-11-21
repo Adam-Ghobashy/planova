@@ -125,8 +125,8 @@ private slots:
             QCOMPARE(button->property("active").toBool(), isTeam);
         }
 
-        // A page without a sidebar item (Welcome) leaves no item active.
-        sidebar.setActivePage(Page::Welcome);
+        // A page without a sidebar item (Setup) leaves no item active.
+        sidebar.setActivePage(Page::Setup);
         for (auto* button : sidebar.findChildren<QPushButton*>("navItem"))
             QVERIFY(!button->property("active").toBool());
     }

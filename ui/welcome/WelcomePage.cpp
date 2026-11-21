@@ -1,12 +1,9 @@
 #include "welcome/WelcomePage.h"
-#include "app/SplashTimeline.h"
 #include "theme/ThemeManager.h"
-#include "welcome/HandwritingLabel.h"
 #include "welcome/ProjectCardWidget.h"
 #include "widgets/ModalDialog.h"
 
 #include <QFrame>
-#include <QGraphicsOpacityEffect>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -20,9 +17,7 @@
 
 namespace {
 constexpr int kColumns = 3;
-constexpr int kIntroMaxWidth = 640;
 constexpr int kProjectsMaxWidth = 860;
-constexpr int kButtonsDelayMs = 100;   // the buttons fade in just after the subtitle, as in the prototype
 
 QPushButton* makeButton(const QString& text, const char* objectName, const char* kind, QWidget* parent)
 {
@@ -45,12 +40,6 @@ QWidget* centered(QFrame* card, int maxWidth, QWidget* parent)
     layout->addStretch(1);
     return row;
 }
-
-void setOpacity(QGraphicsOpacityEffect* effect, double opacity)
-{
-    effect->setOpacity(opacity);
-    effect->setEnabled(opacity < 1.0);   // a finished fade stops rendering through the effect
-}
 }
 
 WelcomePage::WelcomePage(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
@@ -59,7 +48,6 @@ WelcomePage::WelcomePage(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     setObjectName("WelcomePage");
     setAttribute(Qt::WA_StyledBackground, true);
 
-    introCard_ = buildIntro();
     projectsCard_ = buildProjects();
 
     // The projects list can be longer than the window, so the content scrolls.
@@ -68,7 +56,6 @@ WelcomePage::WelcomePage(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     auto* contentLayout = new QVBoxLayout(content);
     contentLayout->setContentsMargins(24, 24, 24, 24);
     contentLayout->addStretch(1);
-    contentLayout->addWidget(introCard_);
     contentLayout->addWidget(projectsCard_);
     contentLayout->addStretch(1);
 
@@ -88,74 +75,6 @@ WelcomePage::WelcomePage(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     connect(&bridge, &CoreBridge::changed, this, &WelcomePage::refresh);
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, &WelcomePage::updateGitIcon);
     refresh();
-    setMode(Mode::Intro);
-}
-
-void WelcomePage::setMode(Mode mode)
-{
-    const bool changed = mode != mode_;
-    mode_ = mode;
-    // Both cards sit in the same column and only one is shown. (A QStackedWidget would be as tall as the
-    // taller card, which would stretch the short intro card.)
-    introCard_->setVisible(mode == Mode::Intro);
-    projectsCard_->setVisible(mode == Mode::Projects);
-    if (changed)
-        emit modeChanged(mode);
-}
-
-QWidget* WelcomePage::buildIntro()
-{
-    auto* card = new QFrame;
-    card->setObjectName("welcomeCard");
-    auto* layout = new QVBoxLayout(card);
-    layout->setContentsMargins(44, 48, 44, 44);
-    layout->setSpacing(0);
-
-    auto* hero = new HandwritingLabel(card);
-    layout->addWidget(hero);
-    layout->addSpacing(14);
-
-    subtitle_ = new QLabel(tr("Plan the work · Match the team · Measure actual progress"), card);
-    subtitle_->setObjectName("welcomeSubtitle");
-    subtitle_->setAlignment(Qt::AlignCenter);
-    subtitle_->setWordWrap(true);
-    layout->addWidget(subtitle_);
-    layout->addSpacing(36);
-
-    auto* start = makeButton(tr("Start New Project"), "startNewProject", "primary", card);
-    auto* cont = makeButton(tr("Continue Your Projects →"), "continueProjects", "secondary", card);
-    start->setProperty("size", "large");
-    cont->setProperty("size", "large");
-    connect(start, &QPushButton::clicked, this, &WelcomePage::startNewProject);
-    connect(cont, &QPushButton::clicked, this, [this] { setMode(Mode::Projects); });
-
-    introButtons_ = new QWidget(card);
-    introButtons_->setObjectName("welcomeButtons");
-    auto* buttons = new QHBoxLayout(introButtons_);
-    buttons->setContentsMargins(0, 0, 0, 0);
-    buttons->setSpacing(16);
-    buttons->addStretch(1);
-    buttons->addWidget(start);
-    buttons->addWidget(cont);
-    buttons->addStretch(1);
-    layout->addWidget(introButtons_);
-
-    // The text and buttons fade in after the word is written. The buttons work from the first moment.
-    subtitleFade_ = new QGraphicsOpacityEffect(subtitle_);
-    subtitle_->setGraphicsEffect(subtitleFade_);
-    buttonsFade_ = new QGraphicsOpacityEffect(introButtons_);
-    introButtons_->setGraphicsEffect(buttonsFade_);
-    setOpacity(subtitleFade_, 0.0);
-    setOpacity(buttonsFade_, 0.0);
-    connect(hero, &HandwritingLabel::frameChanged, this, &WelcomePage::fadeIn);
-
-    return centered(card, kIntroMaxWidth, this);
-}
-
-void WelcomePage::fadeIn(int elapsedMs)
-{
-    setOpacity(subtitleFade_, SplashTimeline::at(elapsedMs).subtitleOpacity);
-    setOpacity(buttonsFade_, SplashTimeline::at(elapsedMs - kButtonsDelayMs).subtitleOpacity);
 }
 
 QWidget* WelcomePage::buildProjects()
@@ -166,22 +85,15 @@ QWidget* WelcomePage::buildProjects()
     layout->setContentsMargins(32, 28, 32, 28);
     layout->setSpacing(16);
 
-    // header: back link and title on the left, Start New Project on the right
-    auto* back = makeButton(tr("← Back to Welcome"), "backToWelcome", "ghost", card);
-    connect(back, &QPushButton::clicked, this, [this] { setMode(Mode::Intro); });
-    auto* title = new QLabel(tr("Welcome back · Pick up where you left off"), card);
+    // header: title on the left, Start New Project on the right
+    auto* title = new QLabel(tr("Pick up where you left off"), card);
     title->setObjectName("welcomeTitle");
     title->setWordWrap(true);
-    auto* titleColumn = new QVBoxLayout;
-    titleColumn->setSpacing(6);
-    titleColumn->addWidget(back, 0, Qt::AlignLeft);
-    titleColumn->addWidget(title);
-
     auto* create = makeButton(tr("Start New Project"), "createProject", "primary", card);
     connect(create, &QPushButton::clicked, this, &WelcomePage::startNewProject);
     auto* header = new QHBoxLayout;
     header->setSpacing(16);
-    header->addLayout(titleColumn, 1);
+    header->addWidget(title, 1);
     header->addWidget(create, 0, Qt::AlignTop);
     layout->addLayout(header);
 
@@ -222,8 +134,7 @@ QWidget* WelcomePage::buildProjects()
     layout->addWidget(buildWorkspaceState());
     layout->addStretch(1);
 
-    // Tab order: back, search, Start New Project, Manage Git, then the cards (created later, so they follow).
-    setTabOrder(back, search_);
+    // Tab order: search, Start New Project, Manage Git, then the cards (created later, so they follow).
     setTabOrder(search_, create);
     setTabOrder(create, card->findChild<QPushButton*>("manageGit"));
 

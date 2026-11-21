@@ -1,4 +1,4 @@
-/* Welcome page: intro card and workspaces view (ui/welcome). Follows css/welcome.css of the Figma prototype.
+/* Projects Hub page (ui/welcome). Follows css/welcome.css of the Figma prototype.
    Colours are token placeholders. Every rule is scoped by QWidget#WelcomePage.
    Buttons: property kind is primary, secondary or ghost. On keyboard focus the border becomes a 2 px TextPrimary
    ring; an Accent-filled button also swaps its fill for Surface so the ring differs from the fill in both themes. */
@@ -8,7 +8,6 @@ QWidget#WelcomePage { background-color: @Background; }
 QWidget#WelcomePage QScrollArea#welcomeScroll,
 QWidget#WelcomePage QWidget#welcomeViewport,
 QWidget#WelcomePage QWidget#welcomeContent,
-QWidget#WelcomePage QWidget#welcomeButtons,
 QWidget#WelcomePage QWidget#welcomeGrid,
 QWidget#WelcomePage QWidget#workspaceStatePanel {
     background: transparent;
@@ -23,16 +22,11 @@ QWidget#WelcomePage QFrame#welcomeCard {
 
 QWidget#WelcomePage QFrame#welcomeCard QLabel { background: transparent; border: none; }
 
-/* ---------- intro ---------- */
-QWidget#WelcomePage QLabel#welcomeSubtitle { font-size: 15px; color: @TextSecondary; padding: 0 4px; }
 
 /* ---------- buttons ---------- */
 QWidget#WelcomePage QPushButton {
     border: 1px solid transparent; border-radius: 10px; padding: 7px 14px; min-height: 20px;
     font-size: 13px; font-weight: 600;
-}
-QWidget#WelcomePage QPushButton[size="large"] {
-    border-radius: 12px; padding: 13px 28px; font-size: 15px; font-weight: 700;
 }
 
 QWidget#WelcomePage QPushButton[kind="primary"] { background-color: @Accent; color: @AccentText; border-color: @Accent; }
@@ -69,8 +63,6 @@ QWidget#WelcomePage QPushButton[kind="primary"]:focus:pressed,
 QWidget#WelcomePage QPushButton#openProject:focus:pressed { background-color: @Track; border: 2px solid @TextPrimary; }
 QWidget#WelcomePage QPushButton[kind="secondary"]:focus { border: 2px solid @TextPrimary; padding: 6px 13px; }
 QWidget#WelcomePage QPushButton[kind="ghost"]:focus { border: 2px solid @TextPrimary; padding: 3px 9px; }
-QWidget#WelcomePage QPushButton[kind="primary"][size="large"]:focus,
-QWidget#WelcomePage QPushButton[kind="secondary"][size="large"]:focus { padding: 12px 27px; }
 
 /* ---------- workspaces view ---------- */
 QWidget#WelcomePage QLabel#welcomeTitle {
