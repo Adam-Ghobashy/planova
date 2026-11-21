@@ -17,6 +17,7 @@ public:
 
 signals:
     void advanceRequested(const Id& taskId);
+    void declineRequested(const Id& taskId);
 
 private:
     QLabel* count_ = nullptr;

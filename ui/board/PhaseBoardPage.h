@@ -16,6 +16,13 @@ class PhaseBoardPage : public QWidget {
 public:
     PhaseBoardPage(PlanovaCore& core, CoreBridge& bridge, QWidget* parent = nullptr);
 
+public slots:
+    // Opens the decline dialog for the task's current assignee. Does nothing for an unassigned task.
+    void declineTask(const Id& taskId);
+
+signals:
+    void slicerRequested();   // the user chose "Open Slicer" after declining
+
 private:
     void refresh();                                   // rebuild cards + apply search/member filter
     void rebuildMemberFilter(const std::vector<MemberDto>& members);

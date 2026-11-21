@@ -94,6 +94,7 @@ void MainWindow::buildPages()
     connect(&bridge_, &CoreBridge::changed, homePage_, showOpenPinCount);
     showOpenPinCount();
 
+    connect(boardPage, &PhaseBoardPage::slicerRequested, this, [this] { showPage(Page::Slicer); });
     connect(slicerPage, &planova::slicer::ChaosSlicerPage::assignmentsApplied, this,
             [this](int) { showPage(Page::Board); });
 

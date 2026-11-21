@@ -1,4 +1,5 @@
 #include "TaskCardWidget.h"
+#include <QAction>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QToolButton>
@@ -11,6 +12,16 @@ TaskCardWidget::TaskCardWidget(const TaskDto& task, const QString& assigneeName,
                                int pinCount, QWidget* parent)
     : QFrame(parent), taskId_(task.id) {
     setObjectName("TaskCard");
+
+    // Focusable so the Menu key / Shift+F10 can open the context menu without a mouse.
+    // With Qt::ActionsContextMenu Qt shows the menu for both the mouse and the keyboard.
+    setFocusPolicy(Qt::StrongFocus);
+    if (task.assignee) {
+        setContextMenuPolicy(Qt::ActionsContextMenu);
+        auto* decline = new QAction(tr("Decline task…"), this);
+        connect(decline, &QAction::triggered, this, [this] { emit declineRequested(taskId_); });
+        addAction(decline);
+    }
 
     auto* root = new QVBoxLayout(this);
     root->setContentsMargins(20, 20, 20, 16);

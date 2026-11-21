@@ -3,6 +3,7 @@
 // --empty skips the demo data, to check the empty-project look.
 // --dialogs saves one PNG per dialog and theme instead (each dialog opened over the Board page).
 // --splash saves the welcome splash, grabbed 1600 ms into its animation, once per theme.
+// --card-menu saves the Board with one task card focused and its context menu open, once per theme.
 #include "app/CoreBridge.h"
 #include "app/DemoData.h"
 #include "app/MainWindow.h"
@@ -10,6 +11,7 @@
 #include "app/Sidebar.h"
 #include "app/SplashWindow.h"
 #include "board/NewTaskDialog.h"
+#include "board/TaskCardWidget.h"
 #include "pins/DeclineDialog.h"
 #include "pins/LeavePinDialog.h"
 #include "planova/PlanovaCore.h"
@@ -19,6 +21,7 @@
 #include <QApplication>
 #include <QDir>
 #include <QLabel>
+#include <QMenu>
 #include <QPainter>
 #include <QPixmap>
 #include <QPushButton>
@@ -39,6 +42,7 @@ struct Options {
     int page = -1; // -1 means every page
     bool dialogs = false;
     bool splash = false;
+    bool cardMenu = false;
     bool empty = false;
 };
 
@@ -56,6 +60,8 @@ bool parseArgs(const QStringList& args, Options& options)
             options.empty = true;
         else if (args[i] == "--splash")
             options.splash = true;
+        else if (args[i] == "--card-menu")
+            options.cardMenu = true;
         else if (args[i] == "--dialogs")
             options.dialogs = true;
         else
@@ -198,6 +204,51 @@ int main(int argc, char* argv[])
             });
         };
         QTimer::singleShot(250, dialogStep);
+        return app.exec();
+    }
+
+    if (options.cardMenu) {
+        pages->setCurrentIndex(static_cast<int>(Page::Board));
+        window.findChild<Sidebar*>()->setActivePage(Page::Board);
+        int next = 0;
+        std::function<void()> menuStep = [&]() {
+            if (next >= themes.size()) {
+                app.quit();
+                return;
+            }
+            const QString theme = themes[next++];
+            ThemeManager::instance().apply(theme == "dark" ? ThemeMode::Dark : ThemeMode::Light);
+            TaskCardWidget* card = nullptr;
+            for (TaskCardWidget* c : window.findChildren<TaskCardWidget*>()) {
+                if (!c->actions().isEmpty()) {
+                    card = c;
+                    break;
+                }
+            }
+            if (!card) {
+                std::fprintf(stderr, "no assigned task card on the board\n");
+                app.quit();
+                return;
+            }
+            card->setFocus(Qt::TabFocusReason);
+            auto* menu = new QMenu(&window);
+            menu->addActions(card->actions());
+            menu->popup(card->mapToGlobal(QPoint(card->width() / 2, card->height() / 2)));
+            QTimer::singleShot(600, [&, menu, theme]() {
+                // The menu is its own window: grab the board, then paint the menu over it.
+                QPixmap picture = window.grab();
+                QPainter painter(&picture);
+                painter.drawPixmap(window.mapFromGlobal(menu->pos()), menu->grab());
+                painter.end();
+                const QString path = QString("%1/board-card-menu-%2.png").arg(options.outDir, theme);
+                if (!picture.save(path))
+                    std::fprintf(stderr, "could not save %s\n", qPrintable(path));
+                menu->close();
+                menu->deleteLater();
+                QTimer::singleShot(100, menuStep);
+            });
+        };
+        QTimer::singleShot(250, menuStep);
         return app.exec();
     }
 

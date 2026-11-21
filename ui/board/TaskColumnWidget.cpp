@@ -66,6 +66,7 @@ void TaskColumnWidget::clear() {
 void TaskColumnWidget::addCard(TaskCardWidget* card) {
     cards_->insertWidget(cards_->count() - 1, card);
     connect(card, &TaskCardWidget::advanceRequested, this, &TaskColumnWidget::advanceRequested);
+    connect(card, &TaskCardWidget::declineRequested, this, &TaskColumnWidget::declineRequested);
 }
 
 void TaskColumnWidget::setCount(int n) {

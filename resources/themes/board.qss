@@ -69,6 +69,8 @@ QScrollArea#ColumnScroll QScrollBar::sub-line:vertical { height: 0; }
 
 /* ---------- cards ---------- */
 QFrame#TaskCard { background: @SurfaceAlt; border: 1px solid @Border; border-radius: 20px; }
+/* keyboard focus: the card opens its context menu with the Menu key */
+QFrame#TaskCard:focus { border: 2px solid @Accent; }
 QLabel#SkillChip {
     background: @AccentSoft; color: @Accent; border: 1px solid @Accent; border-radius: 12px;
     padding: 5px 14px; font-size: 13px; font-weight: 700;

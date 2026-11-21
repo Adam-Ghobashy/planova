@@ -13,6 +13,7 @@ public:
 
 signals:
     void advanceRequested(const Id& taskId);
+    void declineRequested(const Id& taskId);
 
 private:
     Id taskId_;

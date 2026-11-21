@@ -18,6 +18,7 @@
 #include "TaskColumnWidget.h"
 #include "app/CoreBridge.h"
 #include "planova/PlanovaCore.h"
+#include "pins/DeclineDialog.h"
 
 PhaseBoardPage::PhaseBoardPage(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     : QWidget(parent), core_(core) {
@@ -86,6 +87,11 @@ PhaseBoardPage::PhaseBoardPage(PlanovaCore& core, CoreBridge& bridge, QWidget* p
         columns_[i] = new TaskColumnWidget(titles[i], tones[i]);
         cols->addWidget(columns_[i], 1);
         connect(columns_[i], &TaskColumnWidget::advanceRequested, this, &PhaseBoardPage::onAdvance);
+        // Queued: the dialog runs its own event loop and the board rebuilds its cards while it is open,
+        // so the card that sent the signal must finish its slot first.
+        connect(columns_[i], &TaskColumnWidget::declineRequested, this, [this](const Id& taskId) {
+            QMetaObject::invokeMethod(this, [this, taskId] { declineTask(taskId); }, Qt::QueuedConnection);
+        });
     }
 
     auto* scroll = new QScrollArea;
@@ -202,5 +208,25 @@ void PhaseBoardPage::onNewTask() {
             core_.tasks().assign(id, *member, "board");
     } catch (const std::exception& e) {
         ModalDialog::info(this, tr("Cannot create task"), QString::fromUtf8(e.what()));
+    }
+}
+
+void PhaseBoardPage::declineTask(const Id& taskId) {
+    try {
+        const auto task = core_.taskQuery().byId(taskId);
+        if (!task || !task->assignee) return;
+
+        QString memberName = QString::fromStdString(*task->assignee);
+        for (const MemberDto& m : core_.memberProjection().all()) {
+            if (m.id == *task->assignee) memberName = QString::fromStdString(m.name);
+        }
+
+        planova::s5::DeclineDialog dlg(taskId, *task->assignee, QString::fromStdString(task->title),
+                                       memberName, core_.conflicts(), this);
+        connect(&dlg, &planova::s5::DeclineDialog::openSlicerRequested, this,
+                &PhaseBoardPage::slicerRequested);
+        dlg.exec();                                   // appends events; bridge triggers refresh()
+    } catch (const std::exception& e) {
+        ModalDialog::info(this, tr("Cannot decline task"), QString::fromUtf8(e.what()));
     }
 }
