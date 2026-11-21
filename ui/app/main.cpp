@@ -7,6 +7,7 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QIcon>
 #include <QPropertyAnimation>
 #include <QStandardPaths>
 
@@ -21,6 +22,7 @@ int main(int argc, char* argv[])
     QCoreApplication::setOrganizationName("Planova");
     QCoreApplication::setApplicationName("Planova");
     Q_INIT_RESOURCE(planova);
+    QApplication::setWindowIcon(QIcon(":/icons/logo.png"));
 
     QCommandLineParser parser;
     parser.setApplicationDescription("Planova - team task planner");
@@ -65,6 +67,8 @@ int main(int argc, char* argv[])
         fade->setDuration(kWindowFadeMs);
         fade->setStartValue(0.0);
         fade->setEndValue(1.0);
+        // The start popup opens once the window is fully visible.
+        QObject::connect(fade, &QPropertyAnimation::finished, &window, &MainWindow::showStartDialog);
         fade->start(QAbstractAnimation::DeleteWhenStopped);
         splash->hide();
         splash->deleteLater();

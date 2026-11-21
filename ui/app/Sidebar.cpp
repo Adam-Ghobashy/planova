@@ -3,6 +3,7 @@
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPixmap>
 #include <QPushButton>
 #include <QStyle>
 #include <QVBoxLayout>
@@ -66,8 +67,10 @@ void Sidebar::buildBrand(QVBoxLayout* layout)
     auto* logo = new QLabel(this);
     logo->setObjectName("brandLogo");
     logo->setFixedSize(kLogoSize, kLogoSize);
-    // The logo has its own colours; the tint is not used.
-    logo->setPixmap(ThemeManager::instance().icon("logo", Token::Accent).pixmap(kLogoSize, kLogoSize));
+    // The logo is a picture with its own colours. Drawn at twice the size so it stays sharp on sharp screens.
+    QPixmap pixmap = QPixmap(":/icons/logo.png").scaled(kLogoSize * 2, kLogoSize * 2, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    pixmap.setDevicePixelRatio(2.0);
+    logo->setPixmap(pixmap);
     row->addWidget(logo);
 
     auto* name = new QLabel("Planova", this);

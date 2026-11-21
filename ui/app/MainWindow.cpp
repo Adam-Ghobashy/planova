@@ -8,6 +8,7 @@
 #include "team/TeamSkillsPage.h"
 #include "tracking/TrackingPage.h"
 #include "welcome/SetupPage.h"
+#include "welcome/StartDialog.h"
 #include "welcome/WelcomePage.h"
 #include <QHBoxLayout>
 #include <QStatusBar>
@@ -148,4 +149,21 @@ void MainWindow::showHomeForCurrentProject()
         }
     }
     showPage(Page::Home);
+}
+
+void MainWindow::showStartDialog()
+{
+    StartDialog dialog(this);
+    dialog.exec();
+    switch (dialog.choice()) {
+    case StartDialog::Choice::NewProject:
+        setupPage_->reset();   // every visit starts with an empty setup
+        showPage(Page::Setup);
+        break;
+    case StartDialog::Choice::ContinueProject:
+        showPage(Page::Hub);   // the Projects tab: one card per project
+        break;
+    case StartDialog::Choice::None:
+        break;                 // dismissed: stay on the page behind the popup
+    }
 }

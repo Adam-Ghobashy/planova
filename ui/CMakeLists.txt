@@ -10,6 +10,7 @@ add_library(planova_ui STATIC
     welcome/SetupPage.cpp
     welcome/SetupMemberRow.cpp
     welcome/StepperWidget.cpp
+    welcome/StartDialog.cpp
 
 )
 target_include_directories(planova_ui PUBLIC .)
@@ -84,6 +85,14 @@ target_sources(planova_ui PRIVATE
 
 add_executable(planova WIN32 app/main.cpp)
 target_link_libraries(planova PRIVATE planova_ui)
+
+# The icon of planova.exe (Explorer, taskbar, Alt+Tab). The .rc is generated so it can hold the absolute path.
+if(WIN32)
+    set(PLANOVA_RC ${CMAKE_CURRENT_BINARY_DIR}/planova.rc)
+    file(WRITE ${PLANOVA_RC} "IDI_ICON1 ICON \"${CMAKE_SOURCE_DIR}/resources/icons/planova.ico\"
+")
+    target_sources(planova PRIVATE ${PLANOVA_RC})
+endif()
 
 # Copy the Qt DLLs next to planova.exe so it opens with a double-click, outside Qt Creator.
 if(WIN32)

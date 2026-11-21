@@ -18,6 +18,9 @@ class MainWindow : public QMainWindow {
 public:
     MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent = nullptr);
 
+    // The popup shown at start-up: start a new project or continue an old one.
+    void showStartDialog();
+
 private:
     void buildPages();
     void showPage(Page page);

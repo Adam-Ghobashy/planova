@@ -21,6 +21,7 @@
 #include "planova/PlanovaCore.h"
 #include "theme/ThemeManager.h"
 #include "welcome/SetupPage.h"
+#include "welcome/StartDialog.h"
 #include "welcome/WelcomePage.h"
 #include "widgets/ModalDialog.h"
 
@@ -310,6 +311,7 @@ int main(int argc, char* argv[])
         const auto members = core.memberProjection().all();
         using Factory = std::function<ModalDialog*()>;
         const QList<QPair<QString, Factory>> dialogs = {
+            {"start", [&] { return new StartDialog(&window); }},
             {"new-task", [&] { return new NewTaskDialog(tasks, members, &window); }},
             {"leave-pin", [&] { return new planova::s5::LeavePinDialog(tasks, members, members.empty() ? planova::Id{} : members.front().id, &window); }},
             {"decline", [&] { return new planova::s5::DeclineDialog(tasks.empty() ? planova::Id{} : tasks.front().id, members.empty() ? planova::Id{} : members.front().id, "Implement Strategy Pattern", "Alice", conflicts, &window); }},

@@ -9,6 +9,7 @@
 #include "git/GitHubIntegrationPage.h"
 #include "home/HomePage.h"
 #include "pins/PinsPage.h"
+#include "welcome/WelcomePage.h"
 #include "planova/PlanovaCore.h"
 #include "theme/ThemeManager.h"
 #include <QApplication>
@@ -23,6 +24,7 @@
 #include <QTableWidget>
 #include <QTemporaryDir>
 #include <QTest>
+#include <QTimer>
 
 namespace {
 NewTask sampleTask(const char* title)
@@ -48,6 +50,40 @@ private slots:
     }
     void init() { ThemeManager::instance().apply(ThemeMode::Light); }
     void cleanupTestCase() { ThemeManager::instance().apply(ThemeMode::Light); }
+
+    // The start popup: "Continue an old project" opens the Projects tab, "Not now" changes nothing.
+    void startDialogRoutesToProjectsTab()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        PlanovaCore core(dir.path().toStdString());
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        window.show();
+        auto* pages = window.findChild<QStackedWidget*>();
+        QVERIFY(pages);
+
+        // exec() blocks, so the click comes from a timer that runs inside the dialog event loop.
+        auto clickInDialog = [](const QString& text) {
+            QTimer::singleShot(100, [text] {
+                const auto buttons = QApplication::activeModalWidget()->findChildren<QPushButton*>();
+                for (auto* b : buttons)
+                    if (b->text() == text) { b->click(); return; }
+                QApplication::activeModalWidget()->close();
+            });
+        };
+        clickInDialog("Not now");
+        window.showStartDialog();
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Welcome));
+
+        clickInDialog("Continue an old project");
+        window.showStartDialog();
+        QVERIFY(window.findChild<WelcomePage*>()->mode() == WelcomePage::Mode::Projects);
+
+        clickInDialog("Start new project");
+        window.showStartDialog();
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Setup));
+    }
 
     // A new project with no data must render every page without crashing, in both themes.
     void emptyProjectAllPagesBothThemes()
