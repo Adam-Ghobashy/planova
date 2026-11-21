@@ -1,10 +1,16 @@
 #include "app/CoreBridge.h"
 #include "app/MainWindow.h"
+#include "app/SplashWindow.h"
 #include "planova/PlanovaCore.h"
 #include "theme/ThemeManager.h"
 
 #include <QApplication>
+#include <QPropertyAnimation>
 #include <QStandardPaths>
+
+namespace {
+constexpr int kWindowFadeMs = 200;
+}
 
 int main(int argc, char* argv[])
 {
@@ -29,7 +35,23 @@ int main(int argc, char* argv[])
 
     CoreBridge bridge(core);
     MainWindow window(core, bridge);
-    window.show();
+
+    // The main window stays hidden while the splash plays, then fades in over it.
+    auto* splash = new SplashWindow;
+    QObject::connect(splash, &SplashWindow::finished, &window, [&window, splash]() {
+        window.setWindowOpacity(0.0);
+        window.show();
+        window.raise();
+        window.activateWindow();
+        auto* fade = new QPropertyAnimation(&window, "windowOpacity", &window);
+        fade->setDuration(kWindowFadeMs);
+        fade->setStartValue(0.0);
+        fade->setEndValue(1.0);
+        fade->start(QAbstractAnimation::DeleteWhenStopped);
+        splash->hide();
+        splash->deleteLater();
+    });
+    splash->start();
 
     return app.exec();
 }

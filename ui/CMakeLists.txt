@@ -70,6 +70,14 @@ target_sources(planova_ui PRIVATE
 )
 # --- end S6 ---
 
+# --- Splash ---
+target_sources(planova_ui PRIVATE
+    app/SplashTimeline.cpp
+    app/SplashWindow.cpp
+    widgets/HandwritingPainter.cpp
+)
+# --- end Splash ---
+
 add_executable(planova WIN32 app/main.cpp)
 target_link_libraries(planova PRIVATE planova_ui)
 

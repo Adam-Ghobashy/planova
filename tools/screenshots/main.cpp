@@ -1,9 +1,11 @@
 // Dev tool: saves one PNG per page and theme so the UI can be compared with the Figma prototype.
-// Usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N] [--dialogs]
+// Usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N] [--dialogs] [--splash]
 // --dialogs saves one PNG per dialog and theme instead (each dialog opened over the Board page).
+// --splash saves the welcome splash, grabbed 1600 ms into its animation, once per theme.
 #include "app/CoreBridge.h"
 #include "app/DemoData.h"
 #include "app/MainWindow.h"
+#include "app/SplashWindow.h"
 #include "board/NewTaskDialog.h"
 #include "pins/DeclineDialog.h"
 #include "pins/LeavePinDialog.h"
@@ -33,6 +35,7 @@ struct Options {
     QString theme = "light";
     int page = -1; // -1 means every page
     bool dialogs = false;
+    bool splash = false;
 };
 
 bool parseArgs(const QStringList& args, Options& options)
@@ -45,6 +48,8 @@ bool parseArgs(const QStringList& args, Options& options)
             options.theme = args[++i];
         else if (args[i] == "--page" && i + 1 < args.size())
             options.page = args[++i].toInt();
+        else if (args[i] == "--splash")
+            options.splash = true;
         else if (args[i] == "--dialogs")
             options.dialogs = true;
         else
@@ -82,7 +87,7 @@ int main(int argc, char* argv[])
 
     Options options;
     if (!parseArgs(app.arguments(), options)) {
-        std::fprintf(stderr, "usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N] [--dialogs]\n");
+        std::fprintf(stderr, "usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N] [--dialogs] [--splash]\n");
         return 2;
     }
     QDir().mkpath(options.outDir);
@@ -108,6 +113,32 @@ int main(int argc, char* argv[])
     auto* pages = window.findChild<QStackedWidget*>();
     if (!pages)
         return 1;
+
+    if (options.splash) {
+        // The splash runs in real time; each theme gets a fresh one, grabbed mid-animation (subtitle fading in).
+        constexpr int kGrabAtMs = 1600;
+        int next = 0;
+        std::function<void()> splashStep = [&]() {
+            if (next >= themes.size()) {
+                app.quit();
+                return;
+            }
+            const QString theme = themes[next++];
+            ThemeManager::instance().apply(theme == "dark" ? ThemeMode::Dark : ThemeMode::Light);
+            auto* splash = new SplashWindow;
+            splash->start();
+            QTimer::singleShot(kGrabAtMs, [&, splash, theme]() {
+                const QString path = QString("%1/splash-%2.png").arg(options.outDir, theme);
+                if (!splash->grab().save(path))
+                    std::fprintf(stderr, "could not save %s\n", qPrintable(path));
+                splash->hide();
+                splash->deleteLater();
+                QTimer::singleShot(100, splashStep);
+            });
+        };
+        QTimer::singleShot(250, splashStep);
+        return app.exec();
+    }
 
     if (options.dialogs) {
         // Dialogs sit on top of the Board page (index 5), as they do in the app.
