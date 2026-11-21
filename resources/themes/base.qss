@@ -114,6 +114,12 @@ QPushButton#navItem:focus {
     border: 2px solid @Accent;
 }
 
+/* Accent equals the active fill in Light, so the ring on the active item uses the active text colour
+   (white in Light, near-white in Dark), which contrasts with the fill in both themes. */
+QPushButton#navItem[active="true"]:focus {
+    border: 2px solid @NavActiveText;
+}
+
 QPushButton#navItem QLabel#navBadge {
     background-color: @NavBadgeBg;
     color: @NavBadgeText;

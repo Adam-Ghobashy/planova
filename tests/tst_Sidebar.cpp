@@ -129,6 +129,30 @@ private slots:
             QVERIFY(!button->property("active").toBool());
     }
 
+    void focusRingVisibleOnActiveItem()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        Sidebar sidebar(core);
+        sidebar.setActivePage(Page::Team);
+        sidebar.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&sidebar));
+        QPushButton* team = itemWithLabel(sidebar, "Team & Skills");
+        QVERIFY(team);
+
+        for (ThemeMode mode : {ThemeMode::Light, ThemeMode::Dark}) {
+            ThemeManager::instance().apply(mode);
+            team->setFocus(Qt::TabFocusReason);
+            if (!team->hasFocus())
+                QSKIP("window not active in this environment, focus state cannot be rendered");
+            const QImage image = team->grab().toImage();
+            const int y = image.height() / 2;
+            // x = 0 is the antialiased edge; x = 1 is the ring, x = 5 the fill between ring and icon.
+            QVERIFY2(image.pixelColor(1, y) != image.pixelColor(5, y),
+                     "focus ring has the same colour as the active fill");
+        }
+    }
+
     void themeButtonToggles()
     {
         QTemporaryDir dir;
