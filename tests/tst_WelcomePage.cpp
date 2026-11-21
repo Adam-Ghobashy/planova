@@ -1,3 +1,4 @@
+#include "TestAppSetup.h"
 #include "FocusRingSupport.h"
 
 #include "app/CoreBridge.h"
@@ -27,7 +28,7 @@ struct Fixture {
     explicit Fixture(const QStringList& names = {"Alpha", "Beta"})
     {
         for (const QString& name : names)
-            ids.push_back(core.createProject(name.toStdString(), (name + " Team").toStdString(), "Agile/Scrum", ""));
+            ids.push_back(core.createProject(name.toStdString(), (name + " Team").toStdString(), "Agile", ""));
         page = std::make_unique<WelcomePage>(core, bridge);
         page->resize(1000, 700);
         page->show();
@@ -50,7 +51,8 @@ struct Fixture {
 class tst_WelcomePage : public QObject {
     Q_OBJECT
 private slots:
-    void initTestCase() { Q_INIT_RESOURCE(planova); }
+    void initTestCase() { Q_INIT_RESOURCE(planova);
+        installAppFonts(); }
     void init() { ThemeManager::instance().apply(ThemeMode::Light); }
     void cleanupTestCase() { ThemeManager::instance().apply(ThemeMode::Light); }
 
@@ -193,7 +195,7 @@ private slots:
         QStringList names;
         for (auto* card : f.visibleCards())
             names << card->accessibleName();
-        QVERIFY(names.contains("Alpha, Alpha Team, Agile/Scrum"));
+        QVERIFY(names.contains("Alpha, Alpha Team, Agile"));
     }
 
     void newProjectAppearsThroughBridge()

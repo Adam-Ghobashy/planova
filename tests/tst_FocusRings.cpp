@@ -5,6 +5,7 @@
 // Not covered: hover and pressed together with focus. QTest::mouseMove does not make underMouse() true in this
 // test environment, so those combined states are covered by qss order and specificity instead (focus rules come
 // after the hover and pressed rules, or list the combined states).
+#include "TestAppSetup.h"
 #include "FocusRingSupport.h"
 
 #include "app/CoreBridge.h"
@@ -123,6 +124,7 @@ private slots:
     void initTestCase()
     {
         Q_INIT_RESOURCE(planova);
+        installAppFonts();
         QCoreApplication::setOrganizationName("PlanovaTest");
     }
     void init() { ThemeManager::instance().apply(ThemeMode::Light); }

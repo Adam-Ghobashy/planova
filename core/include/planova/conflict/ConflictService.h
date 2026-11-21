@@ -16,6 +16,7 @@ public:
                     IClock& clock);
 
     // Appends ConflictRaised, TaskUnassigned and a FeedbackBlocker PinCreated. Returns the conflict id.
+    // The three appends are not transactional: an I/O error between two of them leaves the earlier ones in the log.
     Id decline(const Id& taskId, const Id& memberId, const std::string& reason) override;
     void resolve(const Id& conflictId, const Id& by);
 

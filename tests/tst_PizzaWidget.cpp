@@ -1,3 +1,4 @@
+#include "TestAppSetup.h"
 #include "slicer/PizzaText.h"
 #include "slicer/PizzaWidget.h"
 #include <QSignalSpy>
@@ -32,6 +33,7 @@ QPointF pointAt(const PizzaWidget& w, double angleDeg, double radiusFraction) {
 class tst_PizzaWidget : public QObject {
     Q_OBJECT
 private slots:
+    void initTestCase() { installAppFonts(); }
     void sliceAtFindsSliceByAngle() {
         PizzaWidget w;
         w.resize(400, 500);

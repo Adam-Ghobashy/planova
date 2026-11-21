@@ -97,6 +97,12 @@ private slots:
             addPair(Token::StickyBlueText, Token::PinArchitecture);
             for (Token tint : {Token::PinHandoff, Token::PinBlocker, Token::PinTesting, Token::PinArchitecture})
                 addPair(Token::TextMuted, tint);
+            // Track (pressed buttons, the Pins column count chip), SurfaceHover (hovered buttons, nav items) and the
+            // status bar. TextMuted is not used on any of them (its pairs would fail in Light), apart from a disabled button.
+            for (Token surface : {Token::Track, Token::StatusBar}) {   // TextPrimary and TextSecondary on SurfaceHover are above
+                addPair(Token::TextPrimary, surface);
+                addPair(Token::TextSecondary, surface);
+            }
             // GitHub: the notice bar (TextSecondary on SurfaceAlt) and disabled buttons (TextMuted on SurfaceAlt)
             // are already covered by the general Text-on-Surface pairs above.
         }

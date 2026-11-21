@@ -23,7 +23,7 @@ private slots:
 namespace {
 Id makeProject(PlanovaCore& core, const std::string& name)
 {
-    return core.projects().create(name, "team-" + name, "Agile/Scrum", "idea");
+    return core.projects().create(name, "team-" + name, "Agile", "idea");
 }
 
 bool contains(const std::vector<std::string>& list, const std::string& value)
@@ -153,7 +153,7 @@ void tst_PlanovaCoreProjects::newProjectStartsEmptyEvenWithLegacyRoot()
     PlanovaCore core(dir.path().toStdString());
 
     core.members().add("Old", "Backend Developer", false);
-    const Id id = core.createProject("A", "team", "Agile/Scrum", "idea");
+    const Id id = core.createProject("A", "team", "Agile", "idea");
 
     core.openProject(id);
     QVERIFY(core.memberQuery().all().empty());
@@ -167,7 +167,7 @@ void tst_PlanovaCoreProjects::hasProjectDataReflectsFolder()
 
     // Not created yet, so no folder for any id.
     QVERIFY(!core.hasProjectData("p1"));
-    const Id id = core.createProject("A", "team", "Agile/Scrum", "idea");
+    const Id id = core.createProject("A", "team", "Agile", "idea");
     QVERIFY(core.hasProjectData(id));
 }
 

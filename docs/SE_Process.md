@@ -14,7 +14,7 @@ form:
 | Sprint | One week, three in total (see `docs/Milestones.md`). Each sprint ends with a checkpoint that must be green. |
 | Sprint goal | Week 1: contract and backend. Week 2: every screen live. Week 3: integration, polish, docs, demo. |
 | Increment | `ctest` passes and the app runs. A slice is not done until its tests pass. |
-| Review | Every merge to the shared branch gets reviews from teammates. S1 owns the merge queue. |
+| Review | Every task is reviewed before the next one starts (code review plus a UI self-audit); a final review covers the whole branch. S1 owns the merge queue. |
 | Definition of done | Per slice, listed in the plan. Examples: tests first for logic, no hex colours outside `Tokens.h`, `core/` links Qt6::Core only. |
 
 Practices that support this:
@@ -105,8 +105,18 @@ For this final stage (full completion) we followed a fixed loop:
    in both themes compared with the prototype in `GUI Reference (Figma)/`.
 4. **Review** after every task, and a self-audit for UI tasks (component semantics, states and feedback, accessibility,
    token discipline).
-5. **Final verification**: clean build, all tests, all grep checks, and a last screenshot review of every page, dialog
-   and the splash.
+5. **Final verification**: clean build, all tests, all grep checks, and a last screenshot pass over every page, dialog
+   and the splash. Some visual notes are still open, see "Known limitations".
 
 Prototype labels, first-person titles and database wording from the mock were removed from the UI. The mock data was
 treated as a test fixture, not as truth.
+
+## Known limitations
+
+The final screenshot pass left these visual notes open. None of them blocks use of the app.
+
+- Home, dark theme: the Done colour of the donut chart looks close to the To do colour.
+- Home, dark theme: some tile icons are dim.
+- Tracking: a member with 0 points still shows a filled stub bar.
+- Dead space on Pins, Tracking, GitHub, Home and some Setup steps (the layout does not fill wide windows).
+- The status bar uses the system font, not Inter.

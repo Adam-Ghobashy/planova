@@ -40,7 +40,7 @@ PhaseBoardPage::PhaseBoardPage(PlanovaCore& core, CoreBridge& bridge, QWidget* p
     meta->setSpacing(6);
     auto* modelLabel = new QLabel(tr("SE Model:"));
     modelLabel->setObjectName("ModelLabel");
-    modelValue_ = new QLabel(tr("Agile/Scrum"));
+    modelValue_ = new QLabel(tr("Agile"));
     modelValue_->setObjectName("ModelValue");
     taskCount_ = new QLabel;
     taskCount_->setObjectName("TaskCountLabel");

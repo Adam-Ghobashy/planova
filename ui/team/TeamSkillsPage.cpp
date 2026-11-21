@@ -1,4 +1,5 @@
 #include "team/TeamSkillsPage.h"
+#include "planova/common/EventTypes.h"
 #include <QApplication>
 #include <QFont>
 #include <QGridLayout>
@@ -246,7 +247,10 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     scrollArea->setWidget(contentWidget);
     rootLayout->addWidget(scrollArea);
 
-    connect(&bridge_, &CoreBridge::changed, this, [this](const QString&) {
+    connect(&bridge_, &CoreBridge::changed, this, [this](const QString& eventType) {
+        // A waiting value belongs to the project that was open when it was typed. refresh() would save it into
+        // the newly opened project, so it is dropped first.
+        if (eventType == QString::fromUtf8(ProjectOpened)) discardUnderstanding();
         if (!updating_) refresh();
     });
 
@@ -827,7 +831,18 @@ void TeamSkillsPage::refresh() {
         QString::number(sumVelocity / count, 'f', 2));
 }
 
+TeamSkillsPage::~TeamSkillsPage() {
+    flushUnderstanding();   // catches its own exceptions; the children are still alive here
+}
+
+void TeamSkillsPage::hideEvent(QHideEvent* event) {
+    flushUnderstanding();
+    QWidget::hideEvent(event);
+}
+
 void TeamSkillsPage::queueUnderstanding(const Id& memberId, const string& role, int value) {
+    // The single waiting slot belongs to one member: save it before another member takes the slot.
+    if (pending_.valid && pending_.memberId != memberId) flushUnderstanding();
     pending_ = {memberId, role, value, true};
     understandingTimer_->start();   // every step restarts the wait, so holding an arrow key saves once at the end
 }
@@ -848,6 +863,11 @@ bool TeamSkillsPage::flushUnderstanding() {
     }
     updating_ = false;
     return true;
+}
+
+void TeamSkillsPage::discardUnderstanding() {
+    understandingTimer_->stop();
+    pending_.valid = false;
 }
 
 void TeamSkillsPage::commitUnderstanding() {

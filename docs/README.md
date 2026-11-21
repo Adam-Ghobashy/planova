@@ -24,8 +24,9 @@ cmake --build build && (cd build && ctest --output-on-failure)
 ```
 
 Tests use Qt Test and run through `ctest` (48 tests). The UI tests open real windows, so run them on a desktop session.
-With `QT_QPA_PLATFORM=offscreen` one smoke test (`tst_MainWindowSmoke`, `githubShowsSimulatedNotice`) fails because the
-notice label is not reported as visible there; it passes on a normal desktop.
+They load the bundled fonts and set Inter 10 pt as the app font (`tests/TestAppSetup.h`), because layout checks such as
+card widths and click targets depend on font metrics. With that in place the whole suite also passes with
+`QT_QPA_PLATFORM=offscreen`; a few hover and focus checks skip themselves there when the platform cannot simulate them.
 
 ## Run
 

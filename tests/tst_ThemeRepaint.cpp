@@ -1,3 +1,4 @@
+#include "TestAppSetup.h"
 #include "planova/slicer/WeightedScoringStrategy.h"
 #include "slicer/ChaosSlicerPage.h"
 #include "board/ComplexityDotsWidget.h"
@@ -54,6 +55,7 @@ class tst_ThemeRepaint : public QObject {
 private slots:
     void initTestCase() {
         Q_INIT_RESOURCE(planova);
+        installAppFonts();
         QCoreApplication::setOrganizationName("PlanovaTest");
     }
     void cleanupTestCase() { ThemeManager::instance().apply(ThemeMode::Light); }

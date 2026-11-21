@@ -30,7 +30,12 @@ public:
                    CoreBridge& bridge,
                    QWidget* parent = nullptr);
 
+    ~TeamSkillsPage() override;
+
     void refresh();
+
+protected:
+    void hideEvent(QHideEvent* event) override;   // a waiting slider value is saved when the page is left
 
 private slots:
     void onAddMember();
@@ -51,6 +56,7 @@ private:
     // Understanding slider: a keyboard or wheel change waits for a pause before it is saved, a mouse release saves now.
     void queueUnderstanding(const Id& memberId, const std::string& role, int value);
     bool flushUnderstanding();   // saves the waiting value, if any; false when the service rejected it
+    void discardUnderstanding();  // drops the waiting value without saving it (the project it belongs to is gone)
     void commitUnderstanding();  // flush, rebuild, confirm
 
     MemberService& service_;

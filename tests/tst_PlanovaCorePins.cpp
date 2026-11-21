@@ -21,7 +21,7 @@ void tst_PlanovaCorePins::pinSurvivesReopen()
 
     {
         PlanovaCore core(ws);
-        project = core.createProject("A", "team", "Agile/Scrum", "idea");
+        project = core.createProject("A", "team", "Agile", "idea");
         core.openProject(project);
         const Id member = core.members().add("Ana", "Backend Developer", false);
         core.pins().create(PinCategory::HandoffNote, "Hello", {"api"}, member, std::nullopt);
@@ -39,7 +39,7 @@ void tst_PlanovaCorePins::declineThroughCore()
     QTemporaryDir dir;
     QVERIFY(dir.isValid());
     PlanovaCore core(dir.path().toStdString());
-    core.openProject(core.createProject("A", "team", "Agile/Scrum", "idea"));
+    core.openProject(core.createProject("A", "team", "Agile", "idea"));
 
     const Id member = core.members().add("Ana", "Backend Developer", false);
     NewTask t;
@@ -63,8 +63,8 @@ void tst_PlanovaCorePins::projectsAreIsolated()
     QTemporaryDir dir;
     QVERIFY(dir.isValid());
     PlanovaCore core(dir.path().toStdString());
-    const Id a = core.createProject("A", "team-a", "Agile/Scrum", "idea");
-    const Id b = core.createProject("B", "team-b", "Agile/Scrum", "idea");
+    const Id a = core.createProject("A", "team-a", "Agile", "idea");
+    const Id b = core.createProject("B", "team-b", "Agile", "idea");
 
     core.openProject(a);
     const Id member = core.members().add("Ana", "Backend Developer", false);

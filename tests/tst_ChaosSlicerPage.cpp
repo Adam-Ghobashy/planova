@@ -1,3 +1,4 @@
+#include "TestAppSetup.h"
 #include "planova/slicer/WeightedScoringStrategy.h"
 #include "slicer/AssignmentTableModel.h"
 #include "slicer/ChaosSlicerPage.h"
@@ -48,7 +49,7 @@ public:
 class tst_ChaosSlicerPage : public QObject {
     Q_OBJECT
 private slots:
-    void initTestCase() { Q_INIT_RESOURCE(planova); }  // the focus tests need the real qss
+    void initTestCase() { Q_INIT_RESOURCE(planova); installAppFonts(); }  // the focus tests need the real qss
     void applyEmitsChangedCountAndStatus() {
         Board b;
         b.addAlice();

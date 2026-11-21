@@ -1,3 +1,4 @@
+#include "TestAppSetup.h"
 #include "app/CoreBridge.h"
 #include "planova/PlanovaCore.h"
 #include "team/TeamSkillsPage.h"
@@ -10,6 +11,8 @@
 #include <QSlider>
 #include <QTemporaryDir>
 #include <QTest>
+
+#include <filesystem>
 
 namespace {
 NewTask sampleTask(const char* title)
@@ -29,7 +32,7 @@ struct Fixture {
     PlanovaCore core{dir.path().toStdString()};
     CoreBridge bridge{core};
 
-    Fixture() { core.openProject(core.createProject("A", "team", "Agile/Scrum", "idea")); }
+    Fixture() { core.openProject(core.createProject("A", "team", "Agile", "idea")); }
 
     planova::team::TeamSkillsPage* makePage()
     {
@@ -42,7 +45,7 @@ struct Fixture {
 class tst_TeamSkillsPage : public QObject {
     Q_OBJECT
 private slots:
-    void initTestCase() { Q_INIT_RESOURCE(planova); }
+    void initTestCase() { Q_INIT_RESOURCE(planova); installAppFonts(); }
     void init() { ThemeManager::instance().apply(ThemeMode::Light); }
     void cleanup() { ThemeManager::instance().apply(ThemeMode::Light); }  // a failed test must not leave Dark behind
     void cleanupTestCase() { ThemeManager::instance().apply(ThemeMode::Light); }
@@ -255,6 +258,16 @@ private slots:
         return -1;
     }
 
+    // The new project must not receive events from the page: count the files of its event log.
+    static int eventFileCount(Fixture& f, const Id& project)
+    {
+        const std::filesystem::path events = std::filesystem::path(f.dir.path().toStdString()) / project / "events";
+        int count = 0;
+        for (const auto& entry : std::filesystem::directory_iterator(events))
+            if (entry.is_regular_file()) ++count;
+        return count;
+    }
+
     void keyboardChangeIsSaved()
     {
         Fixture f;
@@ -331,6 +344,97 @@ private slots:
         QVERIFY(dragged != before);
         QTest::mouseRelease(slider, Qt::LeftButton, Qt::NoModifier, QPoint(endX, y));
         QCOMPARE(storedUnderstanding(f, ana), dragged);  // saved at once, no debounce wait
+    }
+
+    void pendingValueIsFlushedWhenAnotherMemberChanges()
+    {
+        Fixture f;
+        const Id ana = f.core.members().add("Ana", "Backend Developer", false);
+        const Id ben = f.core.members().add("Ben", "Frontend Developer", false);
+        const int anaBefore = storedUnderstanding(f, ana);
+        const int benBefore = storedUnderstanding(f, ben);
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1440, 900);
+        page->show();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+        QSlider* anaSlider = understandingSlider(page.get(), "Ana");
+        QSlider* benSlider = understandingSlider(page.get(), "Ben");
+        QVERIFY(anaSlider && benSlider);
+        QTest::keyClick(anaSlider, Qt::Key_Right);
+        QTest::keyClick(anaSlider, Qt::Key_Right);
+        QTest::keyClick(benSlider, Qt::Key_Right);   // within the debounce, for another member
+        QCOMPARE(storedUnderstanding(f, ana), anaBefore + 2);   // Ana was saved when Ben changed
+        QCOMPARE(storedUnderstanding(f, ben), benBefore);
+        QTest::qWait(900);
+        QCOMPARE(storedUnderstanding(f, ana), anaBefore + 2);
+        QCOMPARE(storedUnderstanding(f, ben), benBefore + 1);
+    }
+
+    void pendingValueIsFlushedOnHide()
+    {
+        Fixture f;
+        const Id ana = f.core.members().add("Ana", "Backend Developer", false);
+        const int before = storedUnderstanding(f, ana);
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1440, 900);
+        page->show();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+        QSlider* slider = understandingSlider(page.get(), "Ana");
+        QVERIFY(slider);
+        QTest::keyClick(slider, Qt::Key_Right);
+        QCOMPARE(storedUnderstanding(f, ana), before);
+        page->hide();
+        QCOMPARE(storedUnderstanding(f, ana), before + 1);
+    }
+
+    void pendingValueIsFlushedOnDestruction()
+    {
+        Fixture f;
+        const Id ana = f.core.members().add("Ana", "Backend Developer", false);
+        const int before = storedUnderstanding(f, ana);
+        {
+            std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+            page->resize(1440, 900);
+            page->show();
+            QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+            QSlider* slider = understandingSlider(page.get(), "Ana");
+            QVERIFY(slider);
+            QTest::keyClick(slider, Qt::Key_Right);
+        }
+        QCOMPARE(storedUnderstanding(f, ana), before + 1);
+    }
+
+    void pendingValueIsNotWrittenToAnotherProject()
+    {
+        Fixture f;
+        const Id projectA = *f.core.currentProject();
+        const Id ana = f.core.members().add("Ana", "Backend Developer", false);
+        const int anaBefore = storedUnderstanding(f, ana);
+        const Id projectB = f.core.createProject("B", "team", "Agile", "idea");
+        f.core.openProject(projectB);
+        const Id zed = f.core.members().add("Zed", "Backend Developer", false);
+        const int zedBefore = storedUnderstanding(f, zed);
+        const int filesBefore = eventFileCount(f, projectB);
+        f.core.openProject(projectA);
+
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1440, 900);
+        page->show();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+        QSlider* slider = understandingSlider(page.get(), "Ana");
+        QVERIFY(slider);
+        QTest::keyClick(slider, Qt::Key_Right);   // pending, not saved yet
+
+        f.core.openProject(projectB);
+        QTest::qWait(900);                        // the debounce would have fired by now
+        QCOMPARE(storedUnderstanding(f, zed), zedBefore);
+        QCOMPARE(eventFileCount(f, projectB), filesBefore);   // nothing was appended to the new project
+        QCOMPARE(f.core.memberProjection().all().size(), size_t(1));
+        const auto* status = page->findChild<QLabel*>("statusLabel");
+        QVERIFY(status && !status->isVisible());   // no "member not found" error
+
+        f.core.openProject(projectA);
+        QCOMPARE(storedUnderstanding(f, ana), anaBefore);   // the discarded value was never written
     }
 
     void emptyHintNamesRealButton()

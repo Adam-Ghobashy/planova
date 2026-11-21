@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
     if (parser.isSet("demo")) {
         if (!core.currentProject()) {
             const auto all = core.projects().list();
-            core.openProject(all.empty() ? core.createProject("Planova", "Team Six", "Agile/Scrum", "Sample project")
+            core.openProject(all.empty() ? core.createProject("Planova", "Team Six", "Agile", "Sample project")
                                          : all.back().id);
         }
         demo::seedIfEmpty(core);

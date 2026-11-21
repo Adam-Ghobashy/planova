@@ -18,4 +18,5 @@ The `GUI Reference (Figma)/assets/fonts/` folder does not state a licence for th
 
 That font is deliberately **not** bundled. The owner should confirm the licence of Macintosh Skeletal Filled before
 Planova is distributed outside the team. If it cannot be redistributed, remove the file and its line in
-`resources/planova.qrc`; the app then falls back to Segoe UI for the Script role.
+`resources/planova.qrc`; the app then falls back to Segoe UI for the Script role. Also edit
+`tst_ThemeManager::fontsRegistered`, which checks that this font is registered, or that test will fail.

@@ -30,7 +30,7 @@ void tst_ProjectService::createThenList()
     FixedClock clock;
     ProjectService service(log, clock);
 
-    service.create("Planova", "Team Alpha", "Agile/Scrum", "idea");
+    service.create("Planova", "Team Alpha", "Agile", "idea");
 
     const auto projects = service.list();
     QCOMPARE(projects.size(), size_t(1));
@@ -48,7 +48,7 @@ void tst_ProjectService::reopenRestoresProject()
         FileEventStore store(path);
         EventLog log(store);
         ProjectService service(log, clock);
-        service.create("Planova", "Team Alpha", "Agile/Scrum", "idea");
+        service.create("Planova", "Team Alpha", "Agile", "idea");
     }
 
     FileEventStore store(path);

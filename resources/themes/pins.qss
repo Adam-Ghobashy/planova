@@ -62,7 +62,7 @@ QFrame#PinColumn { background-color: @Surface; border: 1px solid @Border; border
 QFrame#PinColumn[dropActive="true"] { background-color: @AccentSoft; border: 2px solid @Accent; }
 QLabel#PinColumnTitle { color: @TextPrimary; font-size: 13px; font-weight: 700; background: transparent; }
 QLabel#PinColumnCount {
-    background-color: @Track; color: @TextMuted; border-radius: 10px;
+    background-color: @Track; color: @TextSecondary; border-radius: 10px;
     min-width: 20px; max-height: 20px; padding: 0 6px; font-size: 11px; font-weight: 700;
 }
 QLabel#PinColumnEmpty { color: @TextMuted; padding: 28px 8px; background: transparent; }

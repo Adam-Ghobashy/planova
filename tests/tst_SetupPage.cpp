@@ -1,3 +1,4 @@
+#include "TestAppSetup.h"
 #include "FocusRingSupport.h"
 
 #include "planova/PlanovaCore.h"
@@ -54,7 +55,8 @@ struct Fixture {
 class tst_SetupPage : public QObject {
     Q_OBJECT
 private slots:
-    void initTestCase() { Q_INIT_RESOURCE(planova); }
+    void initTestCase() { Q_INIT_RESOURCE(planova);
+        installAppFonts(); }
     void init() { ThemeManager::instance().apply(ThemeMode::Light); }
     void cleanupTestCase() { ThemeManager::instance().apply(ThemeMode::Light); }
 

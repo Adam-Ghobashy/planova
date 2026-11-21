@@ -1,3 +1,4 @@
+#include "TestAppSetup.h"
 #include "app/Page.h"
 #include "app/Sidebar.h"
 #include "planova/PlanovaCore.h"
@@ -46,6 +47,7 @@ private slots:
     void initTestCase()
     {
         Q_INIT_RESOURCE(planova);
+        installAppFonts();
         QCoreApplication::setOrganizationName("PlanovaTest");
         qRegisterMetaType<Page>("Page");
     }
@@ -56,7 +58,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("A", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
         Sidebar sidebar(core);
 
         QVERIFY(itemWithLabel(sidebar, "Pins & Collab"));
@@ -68,7 +70,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("A", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
         Sidebar sidebar(core);
         QPushButton* pins = itemWithLabel(sidebar, "Pins & Collab");
         QPushButton* board = itemWithLabel(sidebar, "Phase Board");
@@ -98,7 +100,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("A", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
         Sidebar sidebar(core);
         QSignalSpy spy(&sidebar, &Sidebar::pageRequested);
 
@@ -114,7 +116,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("A", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
         Sidebar sidebar(core);
 
         sidebar.setActivePage(Page::Team);

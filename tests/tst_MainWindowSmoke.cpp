@@ -1,3 +1,4 @@
+#include "TestAppSetup.h"
 #include "app/CoreBridge.h"
 #include "app/DemoData.h"
 #include "app/MainWindow.h"
@@ -42,6 +43,7 @@ private slots:
     void initTestCase()
     {
         Q_INIT_RESOURCE(planova);
+        installAppFonts();
         QCoreApplication::setOrganizationName("PlanovaTest");
     }
     void init() { ThemeManager::instance().apply(ThemeMode::Light); }
@@ -53,7 +55,7 @@ private slots:
         QTemporaryDir dir;
         QVERIFY(dir.isValid());
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("Empty", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("Empty", "team", "Agile", "idea"));
         CoreBridge bridge(core);
 
         for (ThemeMode mode : {ThemeMode::Light, ThemeMode::Dark}) {
@@ -106,7 +108,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
         auto* pages = window.findChild<QStackedWidget*>();
@@ -118,7 +120,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         const Id member = core.members().add("Ana Lopez", "Backend Developer", false);
         const Id withPins = core.tasks().create(sampleTask("Has pins"));
         core.tasks().create(sampleTask("No pins"));
@@ -146,7 +148,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         demo::seedIfEmpty(core);
         CoreBridge bridge(core);
         for (ThemeMode mode : {ThemeMode::Light, ThemeMode::Dark}) {
@@ -182,7 +184,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         demo::seedIfEmpty(core);
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
@@ -225,7 +227,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         demo::seedIfEmpty(core);
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
@@ -256,7 +258,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         const Id member = core.members().add("Ana Lopez", "Backend Developer", false);
         for (int i = 0; i < 6; ++i)
             core.pins().create(PinCategory::HandoffNote, "pin " + std::to_string(i), {}, member, {});
@@ -288,7 +290,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
         auto* pages = window.findChild<QStackedWidget*>();
@@ -303,7 +305,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
         auto* repo = window.findChild<QLineEdit*>("repoInput");
@@ -316,7 +318,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
         window.resize(1440, 900);
@@ -345,7 +347,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
         window.resize(1440, 900);
@@ -364,7 +366,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
         auto* repo = window.findChild<QLineEdit*>("repoInput");
@@ -392,7 +394,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         demo::seedIfEmpty(core);
         core.git().connect("https://github.com/example/planova.git", "main");
         core.git().simulateSync(core.memberProjection().all());
@@ -439,7 +441,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
         window.resize(1440, 900);
@@ -470,7 +472,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
         auto* page = window.findChild<planova::git::GitHubIntegrationPage*>();
@@ -495,7 +497,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
         auto* repo = window.findChild<QLineEdit*>("repoInput");
@@ -529,7 +531,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
         auto* title = window.findChild<QLabel*>("SidebarGitTitle");
@@ -550,7 +552,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
         window.resize(1440, 900);
@@ -581,7 +583,7 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
         demo::seedIfEmpty(core);
         CoreBridge bridge(core);
         MainWindow window(core, bridge);

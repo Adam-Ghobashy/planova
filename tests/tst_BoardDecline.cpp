@@ -1,3 +1,4 @@
+#include "TestAppSetup.h"
 #include "app/CoreBridge.h"
 #include "board/PhaseBoardPage.h"
 #include "board/TaskCardWidget.h"
@@ -102,7 +103,8 @@ QStringList actionTexts(const TaskCardWidget& card)
 class tst_BoardDecline : public QObject {
     Q_OBJECT
 private slots:
-    void initTestCase() { Q_INIT_RESOURCE(planova); }
+    void initTestCase() { Q_INIT_RESOURCE(planova);
+        installAppFonts(); }
     void init() { ThemeManager::instance().apply(ThemeMode::Light); }
     void cleanup() { safetyNet().stop(); }
     void cleanupTestCase() { ThemeManager::instance().apply(ThemeMode::Light); }
@@ -171,7 +173,7 @@ private slots:
         QTemporaryDir dir;
         QVERIFY(dir.isValid());
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("A", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         const Id member = core.members().add("Ana", "Backend Developer", false);
         const Id task = core.tasks().create(sampleTask("Build API"));
@@ -204,7 +206,7 @@ private slots:
         QTemporaryDir dir;
         QVERIFY(dir.isValid());
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("A", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         const Id member = core.members().add("Ana", "Backend Developer", false);
         const Id task = core.tasks().create(sampleTask("Build API"));
@@ -225,7 +227,7 @@ private slots:
         QTemporaryDir dir;
         QVERIFY(dir.isValid());
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("A", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         const Id member = core.members().add("Ana", "Backend Developer", false);
         const Id task = core.tasks().create(sampleTask("Build API"));
@@ -253,7 +255,7 @@ private slots:
         QTemporaryDir dir;
         QVERIFY(dir.isValid());
         PlanovaCore core(dir.path().toStdString());
-        core.openProject(core.createProject("A", "team", "Agile/Scrum", "idea"));
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         const Id member = core.members().add("Ana", "Backend Developer", false);
         const Id task = core.tasks().create(sampleTask("Build API"));
