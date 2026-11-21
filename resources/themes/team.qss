@@ -342,20 +342,25 @@ QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:checked:hover {
     background-color: @AccentHover;
 }
 
+/* Focus rules for the switches. Surface fill and a TextPrimary ring: visible on the Accent fill of the checked
+   switch in both themes. The combined states are listed because ":checked:hover" has two pseudo-classes and
+   would otherwise win over a plain ":focus" (hover fill with focus text, ring lost); these have three and come later. */
 QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:focus,
-QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:focus {
-    /* Surface fill and a TextPrimary ring: visible on the Accent fill of the checked switch in both themes */
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:focus:hover,
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:focus:pressed,
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:checked:focus,
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:checked:focus:hover,
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:checked:focus:pressed,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:focus,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:focus:hover,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:focus:pressed,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:checked:focus,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:checked:focus:hover,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:checked:focus:pressed {
     background-color: @Surface;
     color: @TextPrimary;
     border: 2px solid @TextPrimary;
     padding: 5px 15px; /* the border grows by 1 px, so the button keeps its size */
-}
-
-QWidget#TeamSkillsPage QPushButton#resolveConflict:focus {
-    background-color: @Surface;
-    color: @TextPrimary;
-    border: 2px solid @TextPrimary;
-    padding: 2px 11px;
 }
 
 /* ---------- assignment / clash column ---------- */
@@ -399,6 +404,17 @@ QWidget#TeamSkillsPage QPushButton#resolveConflict:hover {
 
 QWidget#TeamSkillsPage QPushButton#resolveConflict:pressed {
     background-color: @AccentPressed;
+}
+
+/* Focus comes after hover and pressed (equal specificity), and the combined states are listed, so the Surface fill,
+   TextPrimary text and ring stay together while the mouse is over the button or it is pressed. */
+QWidget#TeamSkillsPage QPushButton#resolveConflict:focus,
+QWidget#TeamSkillsPage QPushButton#resolveConflict:focus:hover,
+QWidget#TeamSkillsPage QPushButton#resolveConflict:focus:pressed {
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 2px solid @TextPrimary;
+    padding: 2px 11px;
 }
 
 /* Hollow box when off, filled when on (the fill is the difference, not only the hue); focus gets a thick ring. */

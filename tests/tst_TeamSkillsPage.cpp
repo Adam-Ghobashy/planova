@@ -42,6 +42,7 @@ class tst_TeamSkillsPage : public QObject {
 private slots:
     void initTestCase() { Q_INIT_RESOURCE(planova); }
     void init() { ThemeManager::instance().apply(ThemeMode::Light); }
+    void cleanup() { ThemeManager::instance().apply(ThemeMode::Light); }  // a failed test must not leave Dark behind
     void cleanupTestCase() { ThemeManager::instance().apply(ThemeMode::Light); }
 
     void switchesPersist()
@@ -120,6 +121,77 @@ private slots:
         std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
         for (const QPushButton* b : page->findChildren<QPushButton*>())
             QVERIFY(b->text() != "Seed Demo Team");
+    }
+
+    // Dark Accent equals dark TextPrimary. A focused Accent-filled button must keep a Surface fill, TextPrimary text
+    // and a TextPrimary ring, also while hovered or pressed (":checked:hover", ":hover" and ":pressed" rules must not win).
+    void focusRingStaysReadable_data()
+    {
+        QTest::addColumn<bool>("dark");
+        QTest::addColumn<bool>("switchButton");  // false: the Resolve button of a conflict
+        QTest::addColumn<QString>("state");  // focused, hovered or pressed
+        for (bool dark : {false, true}) {
+            for (bool sw : {true, false}) {
+                for (const char* state : {"focused", "hovered", "pressed"}) {
+                    const QByteArray row = QByteArray(dark ? "dark " : "light ")
+                                           + (sw ? "checked switch" : "resolve button")
+                                           + " " + state;
+                    QTest::newRow(row.constData()) << dark << sw << QString::fromLatin1(state);
+                }
+            }
+        }
+    }
+    void focusRingStaysReadable()
+    {
+        QFETCH(bool, dark);
+        QFETCH(bool, switchButton);
+        QFETCH(QString, state);
+        Fixture f;
+        const Id ana = f.core.members().add("Ana", "Backend Developer", false);
+        const Id task = f.core.tasks().create(sampleTask("Build API"));
+        f.core.tasks().assign(task, ana, "board");
+        f.core.conflicts().decline(task, ana, "Overloaded");
+
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1200, 900);
+        page->show();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+        auto* button = page->findChild<QPushButton*>(switchButton ? "autoMatchSwitch" : "resolveConflict");
+        QVERIFY(button);
+        if (switchButton) button->setChecked(true);
+
+        ThemeManager::instance().apply(dark ? ThemeMode::Dark : ThemeMode::Light);
+        QCoreApplication::processEvents();
+        if (state == "hovered") {
+            // No real pointer is available here, so mark the button hovered. If the style does not react to that,
+            // the hover cannot be rendered in this environment and the row is skipped.
+            const QImage before = button->grab().toImage();
+            button->setAttribute(Qt::WA_UnderMouse, true);
+            if (button->grab().toImage() == before) QSKIP("hover cannot be rendered in this environment");
+        }
+        if (state == "pressed") button->setDown(true);
+        button->setFocus(Qt::TabFocusReason);
+        QCoreApplication::processEvents();
+        if (state == "hovered") button->setAttribute(Qt::WA_UnderMouse, true);  // an event loop run may reset it
+        const bool focused = button->hasFocus();
+        const QImage image = button->grab().toImage();
+        const QColor text = ThemeManager::instance().color(Token::TextPrimary);
+        const QColor surface = ThemeManager::instance().color(Token::Surface);
+        ThemeManager::instance().apply(ThemeMode::Light);
+        if (!focused) QSKIP("window not active in this environment, focus state cannot be rendered");
+
+        const int y = image.height() / 2;
+        const QRgb ring = image.pixel(1, y);   // x = 0 is the antialiased rounded edge
+        const QRgb fill = image.pixel(4, y);   // inside the 2 px ring, left of the text
+        QCOMPARE(QColor(ring).rgb(), text.rgb());
+        QVERIFY2(ring != fill, "focus ring cannot be told from the button fill");
+        QVERIFY2(fill == surface.rgb(), "a focused button must keep the Surface fill (hover or pressed fill won)");
+        bool textFound = false;
+        for (int py = 4; py < image.height() - 4 && !textFound; ++py)
+            for (int px = 4; px < image.width() - 4; ++px)
+                if (image.pixel(px, py) == text.rgb()) { textFound = true; break; }
+        QVERIFY2(textFound, "button text is not drawn in TextPrimary");
+        QVERIFY2(fill != text.rgb(), "button text cannot be told from the fill");
     }
 
     void emptyHintNamesRealButton()
