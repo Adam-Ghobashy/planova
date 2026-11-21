@@ -22,3 +22,12 @@ inline constexpr const char* TaskUnassigned  = "TaskUnassigned";
 inline constexpr const char* DependencyAdded = "DependencyAdded";
 // S4 block
 inline constexpr const char* SlicerWeightsChanged = "SlicerWeightsChanged";
+// S5 block
+inline constexpr const char* PinCreated       = "PinCreated";
+inline constexpr const char* PinCommentAdded  = "PinCommentAdded";
+inline constexpr const char* PinResolved      = "PinResolved";
+inline constexpr const char* PinEdited        = "PinEdited";
+inline constexpr const char* PinMoved         = "PinMoved";
+inline constexpr const char* PinRemoved       = "PinRemoved";
+inline constexpr const char* ConflictRaised   = "ConflictRaised";
+inline constexpr const char* ConflictResolved = "ConflictResolved";

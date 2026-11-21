@@ -58,4 +58,6 @@ planova_add_ui_test(tst_LeaderboardModel)
 # --- S5 ---
 planova_add_ui_test(tst_LeavePinDialog)
 planova_add_ui_test(tst_RelativeTime)
+planova_add_test(tst_PinService)
+planova_add_test(tst_PinProjection)
 # --- end S5 ---

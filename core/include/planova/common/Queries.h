@@ -21,6 +21,7 @@ struct IPinQuery {
     virtual ~IPinQuery() = default;
     virtual int openCount() const = 0;
     virtual std::vector<PinDto> latest(int n) const = 0;
+    virtual int pinCountForTask(const Id& taskId) const = 0;
 };
 
 struct IConflictQuery {

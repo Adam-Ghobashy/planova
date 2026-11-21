@@ -55,6 +55,7 @@ private:
     struct NoPinQuery : IPinQuery {
         int openCount() const override { return 0; }
         std::vector<PinDto> latest(int) const override { return {}; }
+        int pinCountForTask(const Id&) const override { return 0; }
     };
 
     std::filesystem::path projectEventsDir(const Id& projectId) const;

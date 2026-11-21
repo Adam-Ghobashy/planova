@@ -75,6 +75,7 @@ struct FakePins : IPinQuery {
     std::vector<PinDto> pins;
     bool ignoreLimit = false; // simulates a query that returns more than n
     int openCount() const override { return static_cast<int>(pins.size()); }
+    int pinCountForTask(const Id&) const override { return 0; }
     std::vector<PinDto> latest(int n) const override
     {
         std::vector<PinDto> out;

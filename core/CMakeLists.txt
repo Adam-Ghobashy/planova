@@ -47,3 +47,10 @@ target_sources(planova_core PRIVATE
     src/stats/StatsService.cpp
 )
 # --- end S6 ---
+
+# --- S5 ---
+target_sources(planova_core PRIVATE
+    src/pins/PinProjection.cpp
+    src/pins/PinService.cpp
+)
+# --- end S5 ---
