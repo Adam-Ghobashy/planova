@@ -1,4 +1,5 @@
 #include "team/TeamSkillsPage.h"
+#include <QApplication>
 #include <QFont>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -49,6 +50,7 @@ const QStringList kKnownRoles = {
 constexpr int kProfileCol = 0, kSkillsCol = 1, kUnderstandingCol = 2, kAssignmentCol = 3;
 constexpr int kProfileWidth = 205;
 constexpr int kUnderstandingWidth = 140;
+constexpr int kUnderstandingSaveDelayMs = 500;   // pause after the last key press before the value is saved
 constexpr int kAssignmentWidth = 160;
 constexpr int kColumnGap = 10;
 
@@ -125,6 +127,12 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     statusTimer_->setSingleShot(true);
     statusTimer_->setInterval(4000);
     connect(statusTimer_, &QTimer::timeout, statusLabel_, &QLabel::hide);
+
+    // Keyboard and wheel steps on an Understanding slider are saved once the user pauses.
+    understandingTimer_ = new QTimer(this);
+    understandingTimer_->setSingleShot(true);
+    understandingTimer_->setInterval(kUnderstandingSaveDelayMs);
+    connect(understandingTimer_, &QTimer::timeout, this, &TeamSkillsPage::commitUnderstanding);
 
     mainLayout->addLayout(headerLayout);
 
@@ -701,22 +709,20 @@ QWidget* TeamSkillsPage::buildUnderstandingColumn(const MemberDto& member, QWidg
     undSlider->setValue(member.understanding);
     undSlider->setAccessibleName(QString("Project understanding of %1").arg(QString::fromStdString(member.name)));
 
-    connect(undSlider, &QSlider::valueChanged, this, [undVal](int v) {
-        undVal->setText(QString("%1%").arg(v));
-    });
+    // The slider is found again by these two after refresh() rebuilds the card, to give it back the keyboard focus.
+    undSlider->setObjectName("understandingSlider");
+    undSlider->setProperty("memberId", QString::fromStdString(member.id));
+
+    connect(undSlider, &QSlider::valueChanged, this,
+            [this, undVal, id = member.id, role = member.role, undSlider](int v) {
+                undVal->setText(QString("%1%").arg(v));
+                // While the mouse drags, the release saves. Keys, wheel and a click on the groove arrive here.
+                if (!undSlider->isSliderDown()) queueUnderstanding(id, role, v);
+            });
     connect(undSlider, &QSlider::sliderReleased, this,
             [this, id = member.id, role = member.role, undSlider]() {
-                updating_ = true;
-                try {
-                    service_.update(id, role, undSlider->value());
-                } catch (const exception& e) {
-                    updating_ = false;
-                    showStatus(QString::fromUtf8(e.what()));
-                    return;
-                }
-                updating_ = false;
-                refresh();
-                showStatus("Updated project understanding");
+                queueUnderstanding(id, role, undSlider->value());
+                commitUnderstanding();
             });
     auto* undBlock = new QVBoxLayout();
     undBlock->setSpacing(4);
@@ -765,6 +771,16 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
 }
 
 void TeamSkillsPage::refresh() {
+    // A value still waiting for its pause is saved first, so a rebuild never throws a keyboard change away.
+    flushUnderstanding();
+
+    // The cards are rebuilt, so the slider the user is working with is remembered by member id and focused again below.
+    QString focusedSliderMember;
+    if (const auto* focused = qobject_cast<QSlider*>(QApplication::focusWidget());
+        focused && focused->objectName() == "understandingSlider" && isAncestorOf(focused)) {
+        focusedSliderMember = focused->property("memberId").toString();
+    }
+
     while (QLayoutItem* item = cardsLayout_->takeAt(0)) {
         if (QWidget* w = item->widget()) {
             w->deleteLater();
@@ -796,7 +812,11 @@ void TeamSkillsPage::refresh() {
         }
         sumUnderstanding += m.understanding;
         sumVelocity += m.velocity;
-        cardsLayout_->addWidget(buildMemberCard(m, static_cast<int>(i)));
+        QFrame* card = buildMemberCard(m, static_cast<int>(i));
+        cardsLayout_->addWidget(card);
+        if (!focusedSliderMember.isEmpty() && QString::fromStdString(m.id) == focusedSliderMember) {
+            if (auto* slider = card->findChild<QSlider*>("understandingSlider")) slider->setFocus(Qt::OtherFocusReason);
+        }
     }
 
     const double count = static_cast<double>(allMembers.size());
@@ -805,6 +825,35 @@ void TeamSkillsPage::refresh() {
         QString("%1%").arg( qRound(sumUnderstanding / count) ));
     avgVelocityValue_->setText(
         QString::number(sumVelocity / count, 'f', 2));
+}
+
+void TeamSkillsPage::queueUnderstanding(const Id& memberId, const string& role, int value) {
+    pending_ = {memberId, role, value, true};
+    understandingTimer_->start();   // every step restarts the wait, so holding an arrow key saves once at the end
+}
+
+bool TeamSkillsPage::flushUnderstanding() {
+    understandingTimer_->stop();
+    if (!pending_.valid) return true;
+    const PendingUnderstanding toSave = pending_;
+    pending_.valid = false;
+
+    updating_ = true;   // our own change must not trigger a second refresh through CoreBridge::changed
+    try {
+        service_.update(toSave.memberId, toSave.role, toSave.value);
+    } catch (const exception& e) {
+        updating_ = false;
+        showStatus(QString::fromUtf8(e.what()));
+        return false;
+    }
+    updating_ = false;
+    return true;
+}
+
+void TeamSkillsPage::commitUnderstanding() {
+    const bool saved = flushUnderstanding();
+    refresh();
+    if (saved) showStatus("Updated project understanding");
 }
 
 void TeamSkillsPage::showStatus(const QString& text) {

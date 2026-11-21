@@ -2,6 +2,7 @@
 // Usage: planova_screenshots <outDir> [--theme light|dark|both] [--page N]  [--clash] [--dialogs] [--splash] 
 // --height N / --width N set the window size (default 1440x900), to see the bottom or the right side of a page.
 // --empty skips the demo data, to check the empty-project look.
+// --connect connects a sample repository and simulates one sync, to see the GitHub page with data.
 // --dialogs saves one PNG per dialog and theme instead (each dialog opened over the Board page).
 // --setup-steps saves every step of the Setup page (filled with sample data) and its error and blocked states.
 // --welcome-states saves the Welcome page with no projects, with no search match and with focus on a card.
@@ -55,6 +56,7 @@ struct Options {
     bool cardMenu = false;
     bool empty = false;
     bool clash = false;
+    bool connect = false;   // connect a sample repository and run one sync, so the GitHub page has data
     bool welcomeStates = false;
     bool setupSteps = false;
     int height = 0; // 0 keeps the default window height
@@ -75,6 +77,8 @@ bool parseArgs(const QStringList& args, Options& options)
             options.height = args[++i].toInt();
         else if (args[i] == "--page" && i + 1 < args.size())
             options.page = args[++i].toInt();
+        else if (args[i] == "--connect")
+            options.connect = true;
         else if (args[i] == "--clash")
             options.clash = true;
         else if (args[i] == "--empty")
@@ -157,6 +161,11 @@ int main(int argc, char* argv[])
                 break;
             }
         }
+    }
+
+    if (options.connect) {
+        core.git().connect("https://github.com/example/planova.git", "main");
+        core.git().simulateSync(core.memberProjection().all());
     }
 
     CoreBridge bridge(core);

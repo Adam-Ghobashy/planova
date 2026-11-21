@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QSlider>
 #include <QTemporaryDir>
 #include <QTest>
 
@@ -236,6 +237,100 @@ private slots:
                 if (image.pixel(px, py) == text.rgb()) { textFound = true; break; }
         QVERIFY2(textFound, "button text is not drawn in TextPrimary");
         QVERIFY2(fill != text.rgb(), "button text cannot be told from the fill");
+    }
+
+    // ---- Understanding slider: keyboard changes are saved too ----
+    // The slider of one member, found by its accessible name.
+    static QSlider* understandingSlider(QWidget* page, const QString& name)
+    {
+        for (QSlider* s : page->findChildren<QSlider*>())
+            if (s->accessibleName() == QString("Project understanding of %1").arg(name) && s->isVisible())
+                return s;
+        return nullptr;
+    }
+    static int storedUnderstanding(Fixture& f, const Id& id)
+    {
+        for (const auto& m : f.core.memberProjection().all())
+            if (m.id == id) return m.understanding;
+        return -1;
+    }
+
+    void keyboardChangeIsSaved()
+    {
+        Fixture f;
+        const Id ana = f.core.members().add("Ana", "Backend Developer", false);
+        const int before = storedUnderstanding(f, ana);
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1440, 900);
+        page->show();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+        QSlider* slider = understandingSlider(page.get(), "Ana");
+        QVERIFY(slider);
+        slider->setFocus(Qt::TabFocusReason);
+        QTest::keyClick(slider, Qt::Key_Right);
+        QTest::keyClick(slider, Qt::Key_Right);
+        QCOMPARE(slider->value(), before + 2);
+        QCOMPARE(storedUnderstanding(f, ana), before);   // nothing saved while the keys are still being pressed
+        QTest::qWait(900);                               // past the debounce
+        QCOMPARE(storedUnderstanding(f, ana), before + 2);
+    }
+
+    void focusSurvivesSave()
+    {
+        Fixture f;
+        const Id ana = f.core.members().add("Ana", "Backend Developer", false);
+        f.core.members().add("Ben", "Frontend Developer", false);
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1440, 900);
+        page->show();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+        page->activateWindow();
+        QSlider* old = understandingSlider(page.get(), "Ana");
+        QVERIFY(old);
+        old->setFocus(Qt::TabFocusReason);
+        if (!old->hasFocus()) QSKIP("window not active in this environment, focus cannot be checked");
+        QTest::keyClick(old, Qt::Key_PageUp);
+        QTest::qWait(900);
+        QTest::qWait(50);   // the old card is deleted on the next event loop turn
+        QSlider* now = understandingSlider(page.get(), "Ana");
+        QVERIFY(now);
+        QVERIFY2(now != old, "the card was not rebuilt, the test proves nothing");
+        QVERIFY2(now->hasFocus(), "the keyboard user lost focus after the save");
+        QCOMPARE(now->value(), storedUnderstanding(f, ana));
+        // and the user can keep going: a second save works and focus is still on the member's slider
+        const int saved = storedUnderstanding(f, ana);
+        QTest::keyClick(now, Qt::Key_Right);
+        QTest::qWait(900);
+        QTest::qWait(50);
+        QCOMPARE(storedUnderstanding(f, ana), saved + 1);
+        QSlider* last = understandingSlider(page.get(), "Ana");
+        QVERIFY(last && last->hasFocus());
+    }
+
+    void mouseReleaseStillSaves()
+    {
+        Fixture f;
+        const Id ana = f.core.members().add("Ana", "Backend Developer", false);
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1440, 900);
+        page->show();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+        QSlider* slider = understandingSlider(page.get(), "Ana");
+        QVERIFY(slider);
+        const int before = slider->value();
+        const int span = slider->width() - 20;
+        const int startX = 10 + span * before / 100;
+        const int endX = 10 + span * 90 / 100;
+        const int y = slider->height() / 2;
+        QTest::mousePress(slider, Qt::LeftButton, Qt::NoModifier, QPoint(startX, y));
+        QTest::mouseMove(slider, QPoint((startX + endX) / 2, y));
+        QTest::mouseMove(slider, QPoint(endX, y));
+        QVERIFY(slider->isSliderDown());
+        QCOMPARE(storedUnderstanding(f, ana), before);   // not saved mid-drag
+        const int dragged = slider->value();
+        QVERIFY(dragged != before);
+        QTest::mouseRelease(slider, Qt::LeftButton, Qt::NoModifier, QPoint(endX, y));
+        QCOMPARE(storedUnderstanding(f, ana), dragged);  // saved at once, no debounce wait
     }
 
     void emptyHintNamesRealButton()

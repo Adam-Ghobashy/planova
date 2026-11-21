@@ -6,11 +6,28 @@
 #include <QFont>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QResizeEvent>
 #include <QScrollArea>
 #include <QStyle>
 #include <exception>
 
 namespace planova::git {
+
+namespace {
+// The two lists go side by side from this page width on (about 1100 px of content plus the 24 px margins). Below it they
+// stack, so neither table is squeezed. The page width is used, not the content width, so a scroll bar cannot flip the layout.
+constexpr int kSplitMinPageWidth = 1160;
+constexpr int kListMinHeight = 180;
+constexpr int kListMaxVisibleRows = 8;   // longer lists scroll inside the table
+
+// Lets a table show its rows without an inner scroll bar, up to kListMaxVisibleRows.
+void fitTableHeight(QTableWidget* table) {
+    const int rows = qMin(table->rowCount(), kListMaxVisibleRows);
+    const int wanted = table->horizontalHeader()->sizeHint().height()
+                       + rows * table->verticalHeader()->defaultSectionSize() + 2 * table->frameWidth();
+    table->setMinimumHeight(qMax(kListMinHeight, wanted));
+}
+}
 
 GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
                                              const GitProjection& gitProjection,
@@ -142,7 +159,7 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     connLayout->addLayout(formRow);
 
     // Says why Connect is off; hidden as soon as a URL is typed.
-    connectHint_ = new QLabel("Enter a repository URL to enable Connect.", connCard);
+    connectHint_ = new QLabel("Enter a repository URL to enable Connect and Simulate Git Sync.", connCard);
     connectHint_->setObjectName("connectHint");
     connLayout->addWidget(connectHint_);
     connect(repoInput_, &QLineEdit::textChanged, this, &GitHubIntegrationPage::updateButtons);
@@ -178,66 +195,79 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
 
     mainLayout->addWidget(metricsCard);
 
-    auto* commitsCard = new QFrame(contentWidget);
-    commitsCard->setObjectName("card");
-    auto* commitsLayout = new QVBoxLayout(commitsCard);
+    // Commits and issues share one grid: two equal columns on a wide page, one column on a narrow one (arrangeLists).
+    auto* listsHost = new QWidget(contentWidget);
+    listsLayout_ = new QGridLayout(listsHost);
+    listsLayout_->setContentsMargins(0, 0, 0, 0);
+    listsLayout_->setSpacing(16);
+
+    commitsCard_ = new QFrame(listsHost);
+    commitsCard_->setObjectName("card");
+    auto* commitsLayout = new QVBoxLayout(commitsCard_);
     commitsLayout->setContentsMargins(20, 16, 20, 16);
     commitsLayout->setSpacing(10);
 
-    auto* commitsTitle = new QLabel("Recent Commits", commitsCard);
+    auto* commitsTitle = new QLabel("Recent commits", commitsCard_);
     commitsTitle->setObjectName("cardTitle");
-    auto* commitsSub = new QLabel("Latest commits synced from the repository.", commitsCard);
+    auto* commitsSub = new QLabel("Latest commits synced from the repository.", commitsCard_);
     commitsSub->setObjectName("cardSubtitle");
     commitsLayout->addWidget(commitsTitle);
     commitsLayout->addWidget(commitsSub);
 
-    commitsTable_ = new QTableWidget(0, 4, commitsCard);
+    commitsTable_ = new QTableWidget(0, 4, commitsCard_);
     commitsTable_->setObjectName("assignmentsTable");
+    commitsTable_->setAccessibleName("Recent commits");
     commitsTable_->setHorizontalHeaderLabels({"Hash", "Commit Message", "Author", "Timestamp"});
     commitsTable_->verticalHeader()->setVisible(false);
     commitsTable_->setShowGrid(false);
     commitsTable_->setSelectionBehavior(QAbstractItemView::SelectRows);
     commitsTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    commitsTable_->setTextElideMode(Qt::ElideRight);   // long text is cut with "...", the full text is in the tooltip
+    commitsTable_->setWordWrap(false);
+    commitsTable_->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     commitsTable_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     commitsTable_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
     commitsTable_->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
     commitsTable_->horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
-    commitsTable_->setMinimumHeight(180);
-    commitsLayout->addWidget(commitsTable_);
-    emptyCommits_ = makeEmptyHint("No commits yet. Connect a repository, then use Simulate Git Sync.", commitsCard);
-    commitsLayout->addWidget(emptyCommits_);
+    commitsTable_->setMinimumHeight(kListMinHeight);
+    commitsLayout->addWidget(commitsTable_, 1);
+    emptyCommits_ = makeEmptyHint(QString(), commitsCard_);   // the text depends on the connection, see refresh()
+    commitsLayout->addWidget(emptyCommits_, 1);
 
-    mainLayout->addWidget(commitsCard);
-
-    auto* issuesCard = new QFrame(contentWidget);
-    issuesCard->setObjectName("card");
-    auto* issuesLayout = new QVBoxLayout(issuesCard);
+    issuesCard_ = new QFrame(listsHost);
+    issuesCard_->setObjectName("card");
+    auto* issuesLayout = new QVBoxLayout(issuesCard_);
     issuesLayout->setContentsMargins(20, 16, 20, 16);
     issuesLayout->setSpacing(10);
 
-    auto* issuesTitle = new QLabel("GitHub Issues", issuesCard);
+    auto* issuesTitle = new QLabel("Issues", issuesCard_);
     issuesTitle->setObjectName("cardTitle");
-    auto* issuesSub = new QLabel("Tracked repository issues and open/closed status.", issuesCard);
+    auto* issuesSub = new QLabel("Tracked repository issues and open/closed status.", issuesCard_);
     issuesSub->setObjectName("cardSubtitle");
     issuesLayout->addWidget(issuesTitle);
     issuesLayout->addWidget(issuesSub);
 
-    issuesTable_ = new QTableWidget(0, 3, issuesCard);
+    issuesTable_ = new QTableWidget(0, 3, issuesCard_);
     issuesTable_->setObjectName("assignmentsTable");
+    issuesTable_->setAccessibleName("Issues");
     issuesTable_->setHorizontalHeaderLabels({"Issue #", "Title", "State"});
     issuesTable_->verticalHeader()->setVisible(false);
     issuesTable_->setShowGrid(false);
     issuesTable_->setSelectionBehavior(QAbstractItemView::SelectRows);
     issuesTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    issuesTable_->setTextElideMode(Qt::ElideRight);
+    issuesTable_->setWordWrap(false);
+    issuesTable_->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     issuesTable_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     issuesTable_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
     issuesTable_->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-    issuesTable_->setMinimumHeight(150);
-    issuesLayout->addWidget(issuesTable_);
-    emptyIssues_ = makeEmptyHint("No issues tracked yet.", issuesCard);
-    issuesLayout->addWidget(emptyIssues_);
+    issuesTable_->setMinimumHeight(kListMinHeight);
+    issuesLayout->addWidget(issuesTable_, 1);
+    emptyIssues_ = makeEmptyHint(QString(), issuesCard_);
+    issuesLayout->addWidget(emptyIssues_, 1);
 
-    mainLayout->addWidget(issuesCard);
+    arrangeLists();
+    mainLayout->addWidget(listsHost);
 
     mainLayout->addStretch();
     scrollArea->setWidget(contentWidget);
@@ -253,6 +283,31 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     refresh();
 }
 
+void GitHubIntegrationPage::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+    arrangeLists();
+}
+
+void GitHubIntegrationPage::arrangeLists() {
+    const bool sideBySide = width() >= kSplitMinPageWidth;
+    // The first call finds the grid empty and places the cards whatever the mode.
+    if (sideBySide == listsSideBySide_ && listsLayout_->count() > 0) return;
+    listsSideBySide_ = sideBySide;
+
+    listsLayout_->removeWidget(commitsCard_);
+    listsLayout_->removeWidget(issuesCard_);
+    if (sideBySide) {
+        listsLayout_->addWidget(commitsCard_, 0, 0);
+        listsLayout_->addWidget(issuesCard_, 0, 1);
+    } else {
+        listsLayout_->addWidget(commitsCard_, 0, 0);
+        listsLayout_->addWidget(issuesCard_, 1, 0);
+    }
+    // Two equal columns when side by side; the second column and row only exist for the layout that uses them.
+    listsLayout_->setColumnStretch(0, 1);
+    listsLayout_->setColumnStretch(1, sideBySide ? 1 : 0);
+}
+
 void GitHubIntegrationPage::updateButtons() {
     const bool hasUrl = !repoInput_->text().trimmed().isEmpty();
     const bool connected = gitProjection_.isConnected();
@@ -260,7 +315,13 @@ void GitHubIntegrationPage::updateButtons() {
     connectHint_->setVisible(!hasUrl);
     disconnectBtn_->setEnabled(connected);
     // Sync needs a saved repository, or a typed one that it connects first.
-    syncBtn_->setEnabled(connected || hasUrl);
+    const bool canSync = connected || hasUrl;
+    syncBtn_->setEnabled(canSync);
+    // A disabled button says why, to the pointer (tooltip) and to a screen reader (description).
+    const QString syncHelp = canSync ? "Generate sample commits and issues for the repository"
+                                     : "Connect a repository first: enter its URL under Repository Connection.";
+    syncBtn_->setToolTip(syncHelp);
+    syncBtn_->setAccessibleDescription(syncHelp);
 }
 
 void GitHubIntegrationPage::recolorIssueStates() {
@@ -343,9 +404,15 @@ void GitHubIntegrationPage::refresh() {
     if (connected) {
         connectionBadge_->setText("● Connected (simulated)");
         connectionBadge_->setProperty("state", "connected");
-        repoInput_->setText(QString::fromStdString(gitProjection_.repoUrl()));
-        branchInput_->setText(QString::fromStdString(gitProjection_.branch()));
-        branchValue_->setText(QString::fromStdString(gitProjection_.branch()));
+        // The form follows the saved repository, but text the user typed and has not connected stays. It counts as
+        // typed when it differs from what was loaded last time and the saved repository did not change since.
+        const QString savedRepo = QString::fromStdString(gitProjection_.repoUrl());
+        const QString savedBranch = QString::fromStdString(gitProjection_.branch());
+        if (repoInput_->text() == loadedRepo_ || savedRepo != loadedRepo_) repoInput_->setText(savedRepo);
+        if (branchInput_->text() == loadedBranch_ || savedBranch != loadedBranch_) branchInput_->setText(savedBranch);
+        loadedRepo_ = savedRepo;
+        loadedBranch_ = savedBranch;
+        branchValue_->setText(savedBranch);
     } else {
         connectionBadge_->setText("○ Disconnected");
         connectionBadge_->setProperty("state", "disconnected");
@@ -376,30 +443,44 @@ void GitHubIntegrationPage::refresh() {
     emptyCommits_->setVisible(commits.empty());
     issuesTable_->setVisible(!issues.empty());
     emptyIssues_->setVisible(issues.empty());
+    // Each empty list names the next action; it differs once a repository is connected.
+    const QString nextStep = connected ? QString("Use Simulate Git Sync to load them.")
+                                       : QString("Connect a repository, then use Simulate Git Sync.");
+    emptyCommits_->setText("No commits yet. " + nextStep);
+    emptyIssues_->setText("No issues yet. " + nextStep);
+
+    // Long text is elided by the table; the tooltip keeps the full text readable.
+    auto makeItem = [](const QString& text) {
+        auto* item = new QTableWidgetItem(text);
+        item->setToolTip(text);
+        return item;
+    };
 
     // Populate Commits Table
     commitsTable_->setRowCount(static_cast<int>(commits.size()));
     for (int i = 0; i < static_cast<int>(commits.size()); ++i) {
         const auto& c = commits[i];
-        commitsTable_->setItem(i, 0, new QTableWidgetItem(QString::fromStdString(c.hash)));
-        commitsTable_->setItem(i, 1, new QTableWidgetItem(QString::fromStdString(c.message)));
-        commitsTable_->setItem(i, 2, new QTableWidgetItem(QString::fromStdString(c.author)));
+        commitsTable_->setItem(i, 0, makeItem(QString::fromStdString(c.hash)));
+        commitsTable_->setItem(i, 1, makeItem(QString::fromStdString(c.message)));
+        commitsTable_->setItem(i, 2, makeItem(QString::fromStdString(c.author)));
         const QString timeStr = c.ts > 0
-                                    ? QDateTime::fromSecsSinceEpoch(c.ts).toString("yyyy-MM-dd HH:mm")
+                                    ? QDateTime::fromMSecsSinceEpoch(c.ts).toString("yyyy-MM-dd HH:mm")   // ts is in milliseconds
                                     : QString("Just now");
-        commitsTable_->setItem(i, 3, new QTableWidgetItem(timeStr));
+        commitsTable_->setItem(i, 3, makeItem(timeStr));
     }
 
     // Populate Issues Table
     issuesTable_->setRowCount(static_cast<int>(issues.size()));
     for (int i = 0; i < static_cast<int>(issues.size()); ++i) {
         const auto& iss = issues[i];
-        issuesTable_->setItem(i, 0, new QTableWidgetItem(QString("#%1").arg(iss.number)));
-        issuesTable_->setItem(i, 1, new QTableWidgetItem(QString::fromStdString(iss.title)));
-        auto* stateItem = new QTableWidgetItem(iss.open ? "OPEN" : "CLOSED");
+        issuesTable_->setItem(i, 0, makeItem(QString("#%1").arg(iss.number)));
+        issuesTable_->setItem(i, 1, makeItem(QString::fromStdString(iss.title)));
+        auto* stateItem = makeItem(iss.open ? "OPEN" : "CLOSED");
         stateItem->setForeground(ThemeManager::instance().color(iss.open ? Token::Accent : Token::TextMuted));
         issuesTable_->setItem(i, 2, stateItem);
     }
+    fitTableHeight(commitsTable_);
+    fitTableHeight(issuesTable_);
     updateButtons();
 }
 

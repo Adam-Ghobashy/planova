@@ -48,6 +48,10 @@ private:
                             QWidget* parent);
     void resolveConflict(const Id& conflictId, const Id& memberId);
     void showStatus(const QString& text);
+    // Understanding slider: a keyboard or wheel change waits for a pause before it is saved, a mouse release saves now.
+    void queueUnderstanding(const Id& memberId, const std::string& role, int value);
+    bool flushUnderstanding();   // saves the waiting value, if any; false when the service rejected it
+    void commitUnderstanding();  // flush, rebuild, confirm
 
     MemberService& service_;
     const MemberProjection& members_;
@@ -58,6 +62,9 @@ private:
 
     QLabel* statusLabel_ = nullptr;
     QTimer* statusTimer_ = nullptr;
+    QTimer* understandingTimer_ = nullptr;   // single shot, restarted by every slider step
+    struct PendingUnderstanding { Id memberId; std::string role; int value = 0; bool valid = false; };
+    PendingUnderstanding pending_;
 
     QLineEdit* nameInput_ = nullptr;
     QComboBox* roleCombo_ = nullptr;

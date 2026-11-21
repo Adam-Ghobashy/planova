@@ -5,6 +5,7 @@
 #include "planova/git/GitProjection.h"
 #include "planova/git/GitService.h"
 #include <QFrame>
+#include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -26,6 +27,9 @@ public:
 
     void refresh();
 
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+
 private slots:
     void onConnectClicked();
     void onDisconnectClicked();
@@ -35,6 +39,7 @@ private:
     void showStatus(const QString& text);
     void updateButtons();          // Connect, Disconnect and Sync follow the URL field and the saved state
     void recolorIssueStates();     // issue state colours are set per item, so a theme change recolours them
+    void arrangeLists();           // commits and issues side by side on a wide page, stacked on a narrow one
 
     GitService& gitService_;
     const GitProjection& gitProjection_;
@@ -61,6 +66,14 @@ private:
     QTableWidget* issuesTable_ = nullptr;
     QLabel* emptyCommits_ = nullptr;
     QLabel* emptyIssues_ = nullptr;
+    QFrame* commitsCard_ = nullptr;
+    QFrame* issuesCard_ = nullptr;
+    QGridLayout* listsLayout_ = nullptr;
+    bool listsSideBySide_ = false;
+
+    // What refresh() last wrote into the form, so it can tell text the user typed from text it loaded itself.
+    QString loadedRepo_;
+    QString loadedBranch_;
 
     bool updating_ = false;
 };

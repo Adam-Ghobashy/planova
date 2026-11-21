@@ -11,6 +11,7 @@
 #include "planova/PlanovaCore.h"
 #include "theme/ThemeManager.h"
 #include <QApplication>
+#include <cmath>
 #include <QFrame>
 #include <QLabel>
 #include <QLineEdit>
@@ -18,6 +19,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QStackedWidget>
+#include <QTableWidget>
 #include <QTemporaryDir>
 #include <QTest>
 
@@ -382,6 +384,144 @@ private slots:
         ThemeManager::instance().apply(ThemeMode::Light);
         QApplication::processEvents();
         QCOMPARE(repo->text(), QString("https://github.com/acme/typed-again.git"));
+    }
+
+    // ---- GitHub page: lists, sync button and typed text ----
+    // Commits left, issues right when the window is wide; stacked when it is not, so neither table is squeezed.
+    void commitsAndIssuesSideBySide()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        demo::seedIfEmpty(core);
+        core.git().connect("https://github.com/example/planova.git", "main");
+        core.git().simulateSync(core.memberProjection().all());
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        window.show();
+        window.findChild<QStackedWidget*>()->setCurrentIndex(static_cast<int>(Page::GitHub));
+        auto* page = window.findChild<planova::git::GitHubIntegrationPage*>();
+        QVERIFY(page);
+        auto range = [&](QWidget* w, bool horizontal) {
+            const QPoint topLeft = w->mapTo(page, QPoint(0, 0));
+            return horizontal ? QPair<int, int>(topLeft.x(), topLeft.x() + w->width())
+                              : QPair<int, int>(topLeft.y(), topLeft.y() + w->height());
+        };
+        auto overlaps = [](QPair<int, int> a, QPair<int, int> b) { return a.first < b.second && b.first < a.second; };
+
+        window.resize(1440, 900);
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        QTest::qWait(50);   // layout requests chain through the scroll area, one event loop turn each
+        const auto tables = page->findChildren<QTableWidget*>();   // creation order: commits, issues
+        QCOMPARE(tables.size(), 2);
+        QTableWidget* commits = tables[0];
+        QTableWidget* issues = tables[1];
+        QVERIFY(commits && issues);
+        QVERIFY(commits->isVisible() && issues->isVisible());
+        QVERIFY2(!overlaps(range(commits, true), range(issues, true)), "wide: the tables overlap horizontally");
+        QVERIFY2(overlaps(range(commits, false), range(issues, false)), "wide: the tables are not side by side");
+        QVERIFY(range(commits, true).first < range(issues, true).first);   // commits on the left
+        QVERIFY2(std::abs(commits->width() - issues->width()) <= 2, "wide: columns are not equal");
+
+        window.resize(900, 900);   // the window stops at its minimum width (1157), so the page is about 930 px wide
+        QTest::qWait(50);   // layout requests chain through the scroll area, one event loop turn each
+        QVERIFY2(overlaps(range(commits, true), range(issues, true)), "narrow: the tables should share one column");
+        QVERIFY2(!overlaps(range(commits, false), range(issues, false)), "narrow: the tables should be stacked");
+        QVERIFY2(range(commits, true).second <= page->width(), "narrow: the commits table clips");
+
+        window.resize(1440, 900);   // and back again
+        QTest::qWait(50);   // layout requests chain through the scroll area, one event loop turn each
+        QVERIFY(!overlaps(range(commits, true), range(issues, true)));
+    }
+
+    // Each list says what to do next while it is empty, and the connected wording differs from the unconnected one.
+    void emptyListsSayWhatToDoNext()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        window.resize(1440, 900);
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        window.findChild<QStackedWidget*>()->setCurrentIndex(static_cast<int>(Page::GitHub));
+        QApplication::processEvents();
+        auto* page = window.findChild<planova::git::GitHubIntegrationPage*>();
+        const auto hints = page->findChildren<QLabel*>("EmptyHint");   // creation order: commits, issues
+        QCOMPARE(hints.size(), 2);
+        QLabel* commitsHint = hints[0];
+        QLabel* issuesHint = hints[1];
+        QVERIFY(commitsHint && issuesHint);
+        QVERIFY(commitsHint->isVisible() && issuesHint->isVisible());
+        QVERIFY(!page->findChildren<QTableWidget*>().first()->isVisible());
+        QVERIFY(commitsHint->text().contains("Connect a repository"));
+        QVERIFY(issuesHint->text().contains("Connect a repository"));
+
+        core.git().connect("https://github.com/example/planova.git", "main");
+        QApplication::processEvents();
+        QVERIFY(commitsHint->isVisible());
+        QVERIFY(!commitsHint->text().contains("Connect a repository"));
+        QVERIFY(commitsHint->text().contains("Simulate Git Sync"));
+    }
+
+    // A disabled Simulate Git Sync says why, to the pointer and to a screen reader.
+    void syncButtonExplainsWhyDisabled()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        auto* page = window.findChild<planova::git::GitHubIntegrationPage*>();
+        auto* repo = window.findChild<QLineEdit*>("repoInput");
+        QPushButton* sync = nullptr;
+        for (auto* b : page->findChildren<QPushButton*>("primaryButton"))
+            if (b->text() == "Simulate Git Sync") sync = b;
+        QVERIFY(sync && repo);
+        QVERIFY(!sync->isEnabled());
+        QVERIFY(sync->toolTip().contains("Connect a repository first"));
+        QVERIFY(sync->accessibleDescription().contains("Connect a repository first"));
+        QVERIFY(window.findChild<QLabel*>("connectHint")->text().contains("Simulate Git Sync"));
+
+        repo->setText("https://github.com/example/planova.git");
+        QVERIFY(sync->isEnabled());
+        QVERIFY(!sync->toolTip().contains("Connect a repository first"));
+        QVERIFY(!sync->accessibleDescription().contains("Connect a repository first"));
+    }
+
+    // Repository and branch text the user typed but has not connected must survive any other change in the core.
+    void typedTextSurvivesUnrelatedCoreChange()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile/Scrum", "idea"));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        auto* repo = window.findChild<QLineEdit*>("repoInput");
+        auto* branch = window.findChild<QLineEdit*>("branchInput");
+        QVERIFY(repo && branch);
+
+        core.git().connect("https://github.com/acme/saved.git", "main");
+        QApplication::processEvents();
+        QCOMPARE(repo->text(), QString("https://github.com/acme/saved.git"));   // untouched fields follow the saved state
+
+        repo->setText("https://github.com/acme/typed.git");
+        branch->setText("draft");
+        core.members().add("Ana", "Backend Developer", false);                   // not a git change
+        QApplication::processEvents();
+        QCOMPARE(repo->text(), QString("https://github.com/acme/typed.git"));
+        QCOMPARE(branch->text(), QString("draft"));
+
+        core.git().simulateSync(core.memberProjection().all());                  // a git change, same repository
+        QApplication::processEvents();
+        QCOMPARE(repo->text(), QString("https://github.com/acme/typed.git"));
+        QCOMPARE(branch->text(), QString("draft"));
+
+        core.git().connect("https://github.com/acme/other.git", "dev");          // the saved repository itself changed
+        QApplication::processEvents();
+        QCOMPARE(repo->text(), QString("https://github.com/acme/other.git"));
+        QCOMPARE(branch->text(), QString("dev"));
     }
 
     // The sidebar card shows the saved repository only; without one it says so and sync is off.
