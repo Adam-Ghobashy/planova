@@ -38,6 +38,7 @@ private slots:
 private:
     bool recalculate();
     void fitTableHeight();
+    void updateRecalculateIcon();
     void showStatus(const QString& text);
     planova::slicer::SlicerService& slicer_;
     ITaskQuery& tasks_;

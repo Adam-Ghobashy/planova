@@ -395,3 +395,25 @@ QWidget#TeamSkillsPage QPushButton#resolveConflict:hover {
 QWidget#TeamSkillsPage QPushButton#resolveConflict:pressed {
     background-color: @AccentPressed;
 }
+
+/* Hollow box when off, filled when on (the fill is the difference, not only the hue); focus gets a thick ring. */
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid @TextMuted;
+    background: @Surface;
+}
+
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:checked {
+    background: @Accent;
+    border-color: @Accent;
+}
+
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:focus {
+    border: 2px solid @TextPrimary;
+}
+
+QWidget#TeamSkillsPage QSlider::handle:horizontal:focus {
+    border: 2px solid @TextPrimary;
+}

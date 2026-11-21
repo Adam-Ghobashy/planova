@@ -193,3 +193,65 @@ QWidget#ChaosSlicerPage QComboBox#overrideCombo QAbstractItemView {
     selection-background-color: @AccentSoft;
     selection-color: @TextPrimary;
 }
+
+/* ---------- polish (Task 18) ---------- */
+/* The global QWidget rule paints every label on the page colour, so titles inside cards must be transparent. */
+QWidget#ChaosSlicerPage QLabel#pageTitle,
+QWidget#ChaosSlicerPage QLabel#cardTitle,
+QWidget#ChaosSlicerPage QLabel#cardSubtitle,
+QWidget#ChaosSlicerPage QLabel#sliderNameLabel,
+QWidget#ChaosSlicerPage QLabel#sliderValueLabel {
+    background: transparent;
+}
+
+QWidget#ChaosSlicerPage QLabel#emptyLabel {
+    background: transparent;
+    color: @TextSecondary;
+}
+
+/* Keyboard focus: the handle gets a thick TextPrimary ring, buttons a ring of the same colour. */
+QWidget#ChaosSlicerPage QSlider::handle:horizontal:focus {
+    border: 2px solid @TextPrimary;
+}
+
+QWidget#ChaosSlicerPage QPushButton#primaryButton:focus,
+QWidget#ChaosSlicerPage QPushButton#applyButton:focus,
+QWidget#ChaosSlicerPage QPushButton#sliceButton:focus {
+    border: 2px solid @TextPrimary;
+    padding: 6px 16px;
+}
+
+QWidget#ChaosSlicerPage QPushButton#secondaryButton:focus,
+QWidget#ChaosSlicerPage QPushButton#recalculateButton:focus {
+    border: 2px solid @TextPrimary;
+    padding: 7px 15px;
+}
+
+QWidget#ChaosSlicerPage QPushButton:disabled {
+    background-color: @SurfaceAlt;
+    color: @TextMuted;
+}
+
+/* Checkboxes (none on this page today): hollow when off, filled when on, thick ring on focus. */
+QWidget#ChaosSlicerPage QCheckBox {
+    background: transparent;
+    color: @TextPrimary;
+    spacing: 8px;
+}
+
+QWidget#ChaosSlicerPage QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid @TextMuted;
+    background: @Surface;
+}
+
+QWidget#ChaosSlicerPage QCheckBox::indicator:checked {
+    background: @Accent;
+    border-color: @Accent;
+}
+
+QWidget#ChaosSlicerPage QCheckBox::indicator:focus {
+    border: 2px solid @TextPrimary;
+}

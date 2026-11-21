@@ -3,6 +3,7 @@
 #include "slicer/AssignmentTableModel.h"
 #include "slicer/PizzaWidget.h"
 #include "slicer/SlicerTableDelegate.h"
+#include "planova/common/EventTypes.h"
 #include "slicer/WeightSlidersPanel.h"
 #include "theme/ThemeManager.h"
 #include <QFrame>
@@ -77,6 +78,8 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     recalculateBtn_->setObjectName("recalculateButton");
     connect(recalculateBtn_, &QPushButton::clicked, this, &ChaosSlicerPage::onRecalculate);
     headerLayout->addWidget(recalculateBtn_);
+    updateRecalculateIcon();
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, &ChaosSlicerPage::updateRecalculateIcon);
 
     applyBtn_ = new QPushButton("Apply Assignments to Board", contentWidget);
     applyBtn_->setObjectName("applyButton");
@@ -210,17 +213,25 @@ void ChaosSlicerPage::showStatus(const QString& text) {
     statusTimer_->start();
 }
 
+void ChaosSlicerPage::updateRecalculateIcon() {
+    recalculateBtn_->setIcon(ThemeManager::instance().icon("refresh", Token::TextPrimary));
+}
+
 void ChaosSlicerPage::fitTableHeight() {
     const int rows = model_->rowCount();
     table_->setVisible(rows > 0);
     emptyLabel_->setVisible(rows == 0);
+    // One line that says what to do next.
+    emptyLabel_->setText(members_.all().empty()
+                             ? "No team members yet. Add members on the Team & Skills page, then slice the project."
+                             : "No unassigned tasks to slice. Add tasks on the Phase Board and they appear here.");
     const int rowHeight = table_->verticalHeader()->defaultSectionSize();
     table_->setFixedHeight(table_->horizontalHeader()->height() + rows * rowHeight + 2);
 }
 
 void ChaosSlicerPage::refreshFromBoard(const QString& eventType) {
     if (applying_) return;
-    if (eventType == "ProjectOpened" || eventType == "SlicerWeightsChanged")
+    if (eventType == QString::fromUtf8(ProjectOpened) || eventType == QString::fromUtf8(SlicerWeightsChanged))
         sliders_->setWeights(slicer_.savedWeights());
     if (recalculate()) showStatus("Board changed: assignments recalculated");
 }

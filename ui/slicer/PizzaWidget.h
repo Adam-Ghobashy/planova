@@ -26,6 +26,8 @@ public:
     double pieRadius() const;
     int sliceAt(const QPointF& pos) const;
     double legendBottom() const;
+    QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
 
 signals:
     void memberSelected(const QString& memberId);
@@ -44,7 +46,8 @@ private:
     LegendLayout layoutLegend(double top) const;
     double legendTop() const;
     double legendHeight() const;
-    void updateMinimumHeight();
+    double belowPieHeight() const;
+    double idealRadius() const;
     bool hasAssignedSlices() const;
     bool hasCuts() const;
     std::vector<double> cutAngles() const;

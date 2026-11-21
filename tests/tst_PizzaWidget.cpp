@@ -1,3 +1,4 @@
+#include "slicer/PizzaText.h"
 #include "slicer/PizzaWidget.h"
 #include <QSignalSpy>
 #include <string>
@@ -123,6 +124,32 @@ private slots:
         QVERIFY(w.legendBottom() <= w.height());
         w.resize(400, 420);    // narrower: more rows
         QVERIFY(w.legendBottom() <= w.height());
+    }
+    void legendPlural() {
+        QCOMPARE(legendText("Mai Khalaf", 1), QString("Mai  1 task"));
+        QCOMPARE(legendText("Mai Khalaf", 2), QString("Mai  2 tasks"));
+        QCOMPARE(legendText("Mai Khalaf", 0), QString("Mai  0 tasks"));
+    }
+    void pizzaHeightFitsContent() {
+        PizzaWidget w;
+        std::vector<Portion> six;
+        for (int i = 0; i < 6; ++i) {
+            const std::string id = std::to_string(i + 1);
+            six.push_back(portion(id.c_str(), ("Member Number" + id).c_str(), 1, i * 60.0, 60.0));
+        }
+        w.resize(1100, 500);
+        w.setPortions(six);
+        w.resize(1100, w.sizeHint().height());
+        QVERIFY(w.pieRadius() <= 160.0);
+        QVERIFY(w.height() - w.legendBottom() <= 40.0);
+        QVERIFY(w.legendBottom() <= w.height());
+        QCOMPARE(w.sizePolicy().verticalPolicy(), QSizePolicy::Fixed);
+    }
+    void narrowPizzaShrinksTheRadius() {
+        PizzaWidget w;
+        w.setPortions({portion("1", "Alice Smith", 2, 0, 180), portion("2", "Bob Jones", 2, 180, 180)});
+        w.resize(240, 500);
+        QVERIFY(w.pieRadius() <= (240 - 40) / 2.0);
     }
     void selectionIsClearedWhenThatMemberGoesAway() {
         PizzaWidget w;

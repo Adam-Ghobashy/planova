@@ -39,6 +39,22 @@ int pillWidth(const QStyleOptionViewItem& option, const QModelIndex& index, int 
     return fm.horizontalAdvance(index.data(role).toString()) + 16 + 16;
 }
 
+// Wraps text to the width and keeps two lines at most; the second line is elided with "...".
+QString twoLines(const QString& text, const QFontMetrics& fm, int width) {
+    const QStringList words = text.split(' ', Qt::SkipEmptyParts);
+    QString first;
+    int used = 0;
+    while (used < words.size()) {
+        const QString candidate = first.isEmpty() ? words[used] : first + ' ' + words[used];
+        if (!first.isEmpty() && fm.horizontalAdvance(candidate) > width) break;
+        first = candidate;
+        ++used;
+    }
+    const QString rest = words.mid(used).join(' ');
+    if (rest.isEmpty()) return fm.elidedText(first, Qt::ElideRight, width);
+    return fm.elidedText(first, Qt::ElideRight, width) + '\n' + fm.elidedText(rest, Qt::ElideRight, width);
+}
+
 QColor complexityColor(int complexity) {
     static const Token ramp[5] = {Token::Member3, Token::Complexity2, Token::PizzaCheese,
                                   Token::Complexity4, Token::Accent};
@@ -97,15 +113,28 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
 
     const int col = index.column();
 
+    // Selection is also shown by a bar on the left edge, so it does not rely on the tint alone.
+    // Keyboard focus draws an outline around the current cell.
+    if (col == AssignmentTableModel::TaskComplexity && (option.state & QStyle::State_Selected)) {
+        painter->fillRect(QRect(rect.left(), rect.top(), 3, rect.height() - 1), tm.color(Token::Accent));
+    }
+    if (option.state & QStyle::State_HasFocus) {
+        painter->setPen(QPen(tm.color(Token::Accent), 2));
+        painter->setBrush(Qt::NoBrush);
+        painter->drawRect(QRectF(rect).adjusted(1, 1, -1, -2));
+    }
+
     if (col == AssignmentTableModel::TaskComplexity) {
         QFont titleFont = painter->font();
         titleFont.setPointSize(10);
         titleFont.setBold(true);
         painter->setFont(titleFont);
         painter->setPen(tm.color(Token::TextPrimary));
-        painter->drawText(QRect(rect.left() + 12, rect.top() + 8, rect.width() - 20, 20),
-                          Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine,
-                          index.data(AssignmentTableModel::TaskTitleRole).toString());
+        const int titleWidth = rect.width() - 20;
+        const QString title = QFontMetrics(titleFont).elidedText(
+            index.data(AssignmentTableModel::TaskTitleRole).toString(), Qt::ElideRight, titleWidth);
+        painter->drawText(QRect(rect.left() + 12, rect.top() + 8, titleWidth, 20),
+                          Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine, title);
 
         const int complexity = index.data(AssignmentTableModel::TaskComplexityRole).toInt();
         const int dotY = rect.top() + 36;
@@ -136,20 +165,12 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         painter->setFont(font);
         const QString priority = index.data(AssignmentTableModel::PriorityRole).toString();
 
-        QColor background = tm.color(Token::SurfaceAlt);
-        QColor foreground = tm.color(Token::TextMuted);
-        QColor border = tm.color(Token::Border);
-        if (priority == "CRITICAL") {
-            background = tm.color(Token::DangerSoft);
-            foreground = tm.color(Token::DangerText);
-            border = tm.color(Token::DangerSoft);
-        } else if (priority == "HIGH") {
-            background = tm.color(Token::AccentSoft);
-            foreground = tm.color(Token::Accent);
-            border = tm.color(Token::Accent);
-        } else if (priority == "MEDIUM") {
-            background = tm.color(Token::StatusBar);
-        }
+        // As in the design: Critical is the danger badge, every other priority is the primary badge.
+        // The text always names the priority, so colour is never the only signal.
+        const bool critical = priority == "CRITICAL";
+        const QColor background = tm.color(critical ? Token::DangerSoft : Token::AccentSoft);
+        const QColor foreground = tm.color(critical ? Token::DangerText : Token::Accent);
+        const QColor border = tm.color(critical ? Token::DangerSoft : Token::Accent);
         drawPill(painter, pillRectFor(rect, QFontMetrics(font), priority), priority, background, foreground,
                  border, 4);
 
@@ -162,11 +183,12 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         const int cy = rect.top() + rect.height() / 2;
         const int avatarX = rect.left() + 16;
 
-        painter->setPen(Qt::NoPen);
-        painter->setBrush(tm.color(Token::TextPrimary));
+        // Avatar as in the design: raised fill, thin border ring, primary-colour initials.
+        painter->setPen(QPen(tm.color(Token::Border), 1));
+        painter->setBrush(tm.color(Token::SurfaceRaised));
         painter->drawEllipse(QPointF(avatarX, cy), 11, 11);
         painter->setFont(boldFont(painter->font(), 8));
-        painter->setPen(tm.color(Token::AccentText));
+        painter->setPen(tm.color(Token::TextPrimary));
         painter->drawText(QRectF(avatarX - 11, cy - 11, 22, 22), Qt::AlignCenter, initials);
 
         QFont nameFont = painter->font();
@@ -196,9 +218,11 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         QFont font = painter->font();
         font.setPointSize(9);
         painter->setFont(font);
-        painter->setPen(tm.color(Token::TextPrimary));
-        painter->drawText(rect.adjusted(10, 6, -10, -6), Qt::AlignLeft | Qt::AlignVCenter | Qt::TextWordWrap,
-                          index.data(AssignmentTableModel::RationaleRole).toString());
+        painter->setPen(tm.color(Token::TextSecondary));
+        // At most two lines; the full text is in the tooltip.
+        const QString text = twoLines(index.data(AssignmentTableModel::RationaleRole).toString(),
+                                      QFontMetrics(font), rect.width() - 20);
+        painter->drawText(rect.adjusted(10, 6, -10, -6), Qt::AlignLeft | Qt::AlignVCenter, text);
 
     } else if (col == AssignmentTableModel::Status) {
         const bool waiting = index.data(AssignmentTableModel::WaitingOnDepRole).toBool();

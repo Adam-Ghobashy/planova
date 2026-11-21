@@ -145,6 +145,14 @@ private slots:
                  QString("Good Backend proficiency (3/5) with balanced load (0h)."));
     }
 
+    void rationaleNamesUiUxAsUiUx() {
+        WeightedScoringStrategy strat;
+        TaskDto t = task("t1", Priority::Medium, 3, 5);
+        t.skill = SkillCategory::UiUx;
+        auto res = strat.assign({t}, {member("1", "Alice", {{SkillCategory::UiUx, 4}})}, ScoringWeights{});
+        QVERIFY(QString::fromStdString(res[0].rationale).contains("UI/UX proficiency"));
+    }
+
     void rationaleLevelBasic() {
         WeightedScoringStrategy strat;
         auto res = strat.assign({task("t1", Priority::Medium, 3, 5)},

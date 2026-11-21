@@ -29,6 +29,21 @@ private slots:
         QCOMPARE(model.data(model.index(0, 4)).toString(), QString("Rationale text"));
         QCOMPARE(model.data(model.index(0, 5)).toString(), QString("Ready"));
     }
+    void uiUxLabel() {
+        TaskDto t = task(false);
+        t.skill = SkillCategory::UiUx;
+        AssignmentTableModel model;
+        model.setAssignments({Assignment{"t1", "1", 85, "R", false}}, {t}, members());
+        QCOMPARE(model.data(model.index(0, 1), AssignmentTableModel::RequiredSkillRole).toString(), QString("UI/UX"));
+        QCOMPARE(model.data(model.index(0, 1)).toString(), QString("UI/UX"));
+    }
+    void titleTooltipIsFull() {
+        TaskDto t = task(false);
+        t.title = "Integrate Critical Path Algorithm with the Weighted Scoring Strategy";
+        AssignmentTableModel model;
+        model.setAssignments({Assignment{"t1", "1", 85, "R", false}}, {t}, members());
+        QCOMPARE(model.data(model.index(0, 0), Qt::ToolTipRole).toString(), QString::fromStdString(t.title));
+    }
     void waitingStatusUsesThemeTokens() {
         AssignmentTableModel model;
         model.setAssignments({Assignment{"t1", "1", 85, "R", true}}, {task(true)}, members());

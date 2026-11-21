@@ -24,7 +24,7 @@ constexpr SkillMeta kAllSkills[] = {
     {SkillCategory::Backend, "Backend"},
     {SkillCategory::Frontend, "Frontend"},
     {SkillCategory::Storage, "Storage"},
-    {SkillCategory::UiUx, "UI / UX"},
+    {SkillCategory::UiUx, "UI/UX"},
     {SkillCategory::Integration, "Integration"},
     {SkillCategory::Testing, "Testing"},
     {SkillCategory::Documentation, "Documentation"}

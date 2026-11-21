@@ -81,6 +81,8 @@ private slots:
             addPair(Token::PositiveText, Token::SuccessSoft);   // finished step check mark
             addPair(Token::DangerText, Token::Surface);         // field error text
             addPair(Token::DangerText, Token::Background);   // the other text pairs on Surface are covered above
+            // Chaos Slicer table: match badge and Ready pill text.
+            addPair(Token::TextPrimary, Token::SuccessSoft);
         }
     }
 

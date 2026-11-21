@@ -1,4 +1,5 @@
 #include "slicer/PizzaWidget.h"
+#include "slicer/PizzaText.h"
 #include "theme/ThemeManager.h"
 #include <QEasingCurve>
 #include <QFont>
@@ -19,7 +20,8 @@ constexpr double kPi = 3.14159265358979323846;
 constexpr double kMargin = 20.0;
 constexpr double kLegendGap = 22.0;
 constexpr double kHintHeight = 26.0;
-constexpr double kMinRadius = 120.0;
+constexpr double kMaxRadius = 160.0;
+constexpr double kMinRadius = 40.0;
 constexpr double kPillHeight = 26.0;
 constexpr double kPillSpacing = 10.0;
 constexpr double kRestOffset = 6.0;
@@ -42,15 +44,6 @@ QString initialsOf(const std::string& name) {
     if (parts.isEmpty()) return {};
     if (parts.size() == 1) return parts[0].left(1).toUpper();
     return (parts.first().left(1) + parts.last().left(1)).toUpper();
-}
-
-QString firstNameOf(const std::string& name) {
-    const QStringList parts = QString::fromStdString(name).trimmed().split(' ', Qt::SkipEmptyParts);
-    return parts.isEmpty() ? QString() : parts.first();
-}
-
-QString pillText(const Portion& p) {
-    return QString("%1  %2 tasks").arg(firstNameOf(p.memberName)).arg(p.taskCount);
 }
 
 QColor memberColor(int index) {
@@ -92,8 +85,7 @@ void paintPizzaDisc(QPainter& painter, const QPointF& c, double r) {
 }
 
 PizzaWidget::PizzaWidget(QWidget* parent) : QWidget(parent) {
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    setMinimumSize(280, 420);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     setMouseTracking(true);
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this] { update(); });
 
@@ -117,7 +109,7 @@ void PizzaWidget::setPortions(const std::vector<planova::slicer::Portion>& porti
         selectedMemberId_.clear();
         emit memberSelected(QString());
     }
-    updateMinimumHeight();
+    updateGeometry();
     update();
 }
 
@@ -165,21 +157,34 @@ double PizzaWidget::legendBottom() const {
     return legendTop() + legendHeight();
 }
 
-double PizzaWidget::pieRadius() const {
-    const double reserve = kRestOffset + kSpreadOffset + kLegendGap + legendHeight() + kHintHeight;
-    const double byWidth = (width() - 2 * kMargin) / 2.0;
-    const double byHeight = (height() - reserve - 2 * kMargin) / 2.0;
-    return (std::max)(40.0, (std::min)(byWidth, byHeight));
+// Space needed below the pie: slice offsets, the gap to the legend, the legend and the hint line.
+double PizzaWidget::belowPieHeight() const {
+    return kRestOffset + kSpreadOffset + kLegendGap + legendHeight() + kHintHeight;
 }
 
-void PizzaWidget::updateMinimumHeight() {
-    const double reserve = kRestOffset + kSpreadOffset + kLegendGap + legendHeight() + kHintHeight;
-    setMinimumHeight(static_cast<int>(std::ceil((std::max)(420.0, 2 * kMargin + 2 * kMinRadius + reserve))));
+// The radius the content wants: at most 160 px, smaller only when the widget is narrow.
+double PizzaWidget::idealRadius() const {
+    return (std::max)(kMinRadius, (std::min)(kMaxRadius, (width() - 2 * kMargin) / 2.0));
+}
+
+double PizzaWidget::pieRadius() const {
+    const double byHeight = (height() - belowPieHeight() - kMargin) / 2.0;
+    return (std::max)(kMinRadius, (std::min)(idealRadius(), byHeight));
+}
+
+// The height follows the content (pie plus legend plus hint), so there is no dead space under the legend.
+QSize PizzaWidget::sizeHint() const {
+    const double height = kMargin + 2 * idealRadius() + belowPieHeight();
+    return QSize(2 * static_cast<int>(kMargin + kMaxRadius), static_cast<int>(std::ceil(height)));
+}
+
+QSize PizzaWidget::minimumSizeHint() const {
+    return QSize(280, sizeHint().height());
 }
 
 void PizzaWidget::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
-    updateMinimumHeight();
+    updateGeometry();  // the legend wraps differently at a new width, so the wanted height changes
 }
 
 QPointF PizzaWidget::pieCenter() const {
@@ -420,7 +425,7 @@ PizzaWidget::LegendLayout PizzaWidget::layoutLegend(double top) const {
     const double maxRowWidth = width() - 2 * kMargin;
 
     std::vector<double> widths;
-    for (const Portion& p : portions_) widths.push_back(fm.horizontalAdvance(pillText(p)) + 34.0);
+    for (const Portion& p : portions_) widths.push_back(fm.horizontalAdvance(legendText(p.memberName, p.taskCount)) + 34.0);
 
     LegendLayout layout;
     layout.rects.assign(portions_.size(), QRectF());
@@ -466,7 +471,7 @@ double PizzaWidget::drawLegend(QPainter& painter) const {
         painter.drawEllipse(QPointF(r.left() + 13, r.center().y()), 4, 4);
         painter.setPen(tm.color(Token::TextPrimary));
         painter.drawText(QRectF(r.left() + 24, r.top(), r.width() - 28, r.height()),
-                         Qt::AlignLeft | Qt::AlignVCenter, pillText(portions_[i]));
+                         Qt::AlignLeft | Qt::AlignVCenter, legendText(portions_[i].memberName, portions_[i].taskCount));
     }
     return layout.bottom;
 }
