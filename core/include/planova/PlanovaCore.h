@@ -84,10 +84,10 @@ private:
     SystemClock clock_;
     ProjectService projects_;
     MemberProjection memberProjection_;
+    TaskProjection taskProjection_; // before members_, which unassigns tasks when a member is removed
     MemberService members_;
     GitProjection gitProjection_;
     GitService git_;
-    TaskProjection taskProjection_;
     TaskService tasks_;
     planova::ConflictProjection conflictProjection_; // before slicer_, which skips members with open conflicts
     planova::slicer::WeightedScoringStrategy strategy_;

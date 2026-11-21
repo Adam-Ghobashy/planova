@@ -6,6 +6,7 @@
 #include "planova/git/GitProjection.h"
 #include "planova/git/GitService.h"
 #include "planova/store/EventLog.h"
+#include "planova/task/TaskProjection.h"
 #include "planova/team/MemberProjection.h"
 #include "planova/team/MemberService.h"
 
@@ -116,7 +117,8 @@ private slots:
         log.add(memberProj);
         log.add(gitProj);
 
-        MemberService memberSvc(log, clock);
+        TaskProjection taskProj;
+        MemberService memberSvc(log, clock, memberProj, taskProj);
         memberSvc.add("Adam", "Backend Lead", true);
         memberSvc.add("Zeyad", "UI Designer", false);
 

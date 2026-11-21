@@ -10,13 +10,31 @@
 
 using namespace std;
 
-MemberService::MemberService(EventLog& log, IClock& clock)
-    : log_(log), clock_(clock)
+namespace {
+
+string trimmed(const string& text)
+{
+    return QString::fromStdString(text).trimmed().toStdString();
+}
+
+} // namespace
+
+MemberService::MemberService(EventLog& log, IClock& clock, const IMemberQuery& members,
+                             const ITaskQuery& tasks)
+    : log_(log), clock_(clock), members_(members), tasks_(tasks)
 {
 }
 
-Id MemberService::add(const string& name, const string& role, bool isLead)
+void MemberService::requireMember(const Id& id) const
 {
+    if (!members_.byId(id)) {
+        throw invalid_argument("Member not found: " + id);
+    }
+}
+
+Id MemberService::add(const string& rawName, const string& role, bool isLead)
+{
+    const string name = trimmed(rawName);
     if (name.empty()) {
         throw invalid_argument("Member name cannot be empty");
     }
@@ -44,6 +62,7 @@ Id MemberService::add(const string& name, const string& role, bool isLead)
 
 void MemberService::update(const Id& id, const string& role, int understanding)
 {
+    requireMember(id);
     int clampedUnderstanding = std::clamp(understanding, 0, 100);
 
     const int64_t ts = clock_.nowMs();
@@ -65,8 +84,24 @@ void MemberService::update(const Id& id, const string& role, int understanding)
 
 void MemberService::remove(const string& id)
 {
-    if (id.empty()) {
-        throw invalid_argument("Member ID cannot be empty");
+    requireMember(id);
+
+    // Free the member's open tasks first; finished tasks keep their assignee for the leaderboard.
+    for (const auto& task : tasks_.all()) {
+        if (task.assignee == id && task.status != TaskStatus::Done) {
+            const int64_t unassignTs = clock_.nowMs();
+            QJsonObject unassign; // same shape as TaskService::unassign
+            unassign["taskId"] = QString::fromStdString(task.id);
+            unassign["reason"] = "member removed";
+
+            Event unassignEvent;
+            unassignEvent.id = makeEventId(unassignTs, "system", unassign);
+            unassignEvent.ts = unassignTs;
+            unassignEvent.author = "system";
+            unassignEvent.type = TaskUnassigned;
+            unassignEvent.payload = unassign;
+            log_.append(unassignEvent);
+        }
     }
 
     const int64_t ts = clock_.nowMs();
@@ -86,6 +121,7 @@ void MemberService::remove(const string& id)
 
 void MemberService::rate(const Id& id, SkillCategory category, int rating)
 {
+    requireMember(id);
     if (rating < 1 || rating > 5) {
         throw invalid_argument("Skill rating must be between 1 and 5");
     }

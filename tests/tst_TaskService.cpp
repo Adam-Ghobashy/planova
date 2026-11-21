@@ -130,7 +130,7 @@ private slots:
     void assignKnownMemberWorks() {
         MemberProjection members;
         log->add(members);
-        MemberService memberSvc(*log, clock);
+        MemberService memberSvc(*log, clock, members, *proj);
         const Id m = memberSvc.add("Ana", "Developer", false);
         TaskService strict(*log, *proj, clock, &members);
         Id a = strict.create(nt("A"));

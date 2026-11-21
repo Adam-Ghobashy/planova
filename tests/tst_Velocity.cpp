@@ -6,6 +6,7 @@
 #include "planova/common/Clock.h"
 #include "planova/common/EventTypes.h"
 #include "planova/store/EventLog.h"
+#include "planova/task/TaskProjection.h"
 #include "planova/team/MemberProjection.h"
 #include "planova/team/MemberService.h"
 #include "planova/team/VelocityCalculator.h"
@@ -72,7 +73,8 @@ private slots:
         MemberProjection proj;
         log.add(proj);
 
-        MemberService svc(log, clock);
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
         Id memberId = svc.add("Adam", "Backend Lead", true);
 
         QCOMPARE(proj.byId(memberId)->velocity, 1.0);
@@ -106,7 +108,8 @@ private slots:
         MemberProjection proj;
         log.add(proj);
 
-        MemberService svc(log, clock);
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
         Id memberId = svc.add("Adam", "Backend Lead", true);
 
         appendEvent(log, "evt-assign", clock.nowMs(), TaskAssigned,
@@ -135,7 +138,8 @@ private slots:
         MemberProjection proj;
         log.add(proj);
 
-        MemberService svc(log, clock);
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
         svc.add("Adam", "Backend Lead", true);
         clock.advance(10);
         svc.add("Zeyad", "UI Designer", false);
