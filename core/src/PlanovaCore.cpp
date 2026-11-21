@@ -9,6 +9,7 @@
 #include <QString>
 #include <algorithm>
 #include <iterator>
+#include <set>
 #include <stdexcept>
 #include <utility>
 
@@ -163,6 +164,21 @@ void PlanovaCore::openProject(const Id& projectId)
 std::optional<Id> PlanovaCore::currentProject() const
 {
     return currentProject_;
+}
+
+std::vector<std::string> PlanovaCore::brokenEventFiles() const
+{
+    // Both stores read the same folder until a project is opened, so list each file once.
+    std::set<std::filesystem::path> paths;
+    for (const auto& path : workspaceStore_.brokenFiles())
+        paths.insert(path);
+    for (const auto& path : store_.brokenFiles())
+        paths.insert(path);
+
+    std::vector<std::string> names;
+    for (const auto& path : paths)
+        names.push_back(path.filename().string());
+    return names;
 }
 
 ProjectService& PlanovaCore::projects()

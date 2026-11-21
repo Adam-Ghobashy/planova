@@ -22,6 +22,8 @@
 #include "planova/team/MemberService.h"
 #include <filesystem>
 #include <optional>
+#include <string>
+#include <vector>
 
 class SystemClock : public IClock {
 public:
@@ -43,6 +45,8 @@ public:
     bool hasProjectData(const Id& projectId) const;
     void openProject(const Id& projectId);
     std::optional<Id> currentProject() const;
+    // Names of event files skipped as unreadable by the latest load of the project list and the open project.
+    std::vector<std::string> brokenEventFiles() const;
 
     ProjectService& projects();
     MemberService& members();

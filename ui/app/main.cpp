@@ -4,6 +4,7 @@
 #include "app/SplashWindow.h"
 #include "planova/PlanovaCore.h"
 #include "theme/ThemeManager.h"
+#include "widgets/ModalDialog.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -42,6 +43,15 @@ int main(int argc, char* argv[])
     const auto projects = core.projects().list();
     if (!projects.empty() && core.hasProjectData(projects.back().id))
         core.openProject(projects.back().id);
+
+    const auto damaged = core.brokenEventFiles();
+    if (!damaged.empty()) {
+        const QString text = damaged.size() == 1
+            ? QObject::tr("1 file in the project folder is damaged and was skipped. Everything else loaded normally.")
+            : QObject::tr("%1 files in the project folder are damaged and were skipped. Everything else loaded normally.")
+                  .arg(damaged.size());
+        ModalDialog::info(nullptr, QObject::tr("Some saved changes could not be read"), text);
+    }
 
     // Sample data only on request; a normal start shows the real (possibly empty) project.
     if (parser.isSet("demo")) {

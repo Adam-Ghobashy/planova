@@ -54,14 +54,25 @@ void FileEventStore::append(const Event& event)
     if (!tmp.open(QIODevice::WriteOnly))
         throw std::runtime_error("Cannot write event file");
 
-    tmp.write(QJsonDocument(toJson(event)).toJson(QJsonDocument::Compact));
+    const QByteArray data = QJsonDocument(toJson(event)).toJson(QJsonDocument::Compact);
+    if (tmp.write(data) != data.size() || !tmp.flush()) {
+        tmp.close();
+        tmp.remove();
+        throw std::runtime_error("Cannot write event file");
+    }
     tmp.close();
 
     std::filesystem::rename(tmpPath, finalPath);
 }
 
+std::vector<std::filesystem::path> FileEventStore::brokenFiles() const
+{
+    return broken_;
+}
+
 std::vector<Event> FileEventStore::readAll() const
 {
+    broken_.clear();
     std::vector<Event> events;
     if (!std::filesystem::exists(dir_))
         return events;
@@ -71,12 +82,16 @@ std::vector<Event> FileEventStore::readAll() const
             continue;
 
         QFile file(QString::fromStdString(entry.path().string()));
-        if (!file.open(QIODevice::ReadOnly))
+        if (!file.open(QIODevice::ReadOnly)) {
+            broken_.push_back(entry.path());
             continue;
+        }
 
         const auto doc = QJsonDocument::fromJson(file.readAll());
         if (doc.isObject())
             events.push_back(fromJson(doc.object()));
+        else
+            broken_.push_back(entry.path());
     }
 
     std::sort(events.begin(), events.end(), [](const Event& a, const Event& b) {
