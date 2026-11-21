@@ -2,6 +2,7 @@
 #include "Tokens.h"
 #include <QColor>
 #include <QFont>
+#include <QIcon>
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -22,6 +23,10 @@ public:
     void toggle();
 
     QColor color(Token token) const;
+
+    // Loads :/icons/<name>.svg, replaces currentColor with the token colour and renders it into a pixmap
+    // twice the nominal 24 px size, so it stays sharp on high-density screens.
+    QIcon icon(const QString& name, Token tint) const;
 
     // Registers every bundled font from :/fonts. Call once, before apply().
     void loadFonts();

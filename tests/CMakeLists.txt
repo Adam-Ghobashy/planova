@@ -48,6 +48,7 @@ planova_add_ui_test(tst_Contrast)
 planova_add_ui_test(tst_ThemeRepaint)
 planova_add_ui_test(tst_ModalDialog)
 planova_add_ui_test(tst_SplashTimeline)
+planova_add_ui_test(tst_Sidebar)
 # --- end S1 ---
 # --- S6 ---
 planova_add_test(tst_ProgressCalculator)

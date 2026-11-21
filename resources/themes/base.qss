@@ -57,10 +57,101 @@ QWidget#Sidebar {
     border-right: 1px solid @Border;
 }
 
-QWidget#Sidebar QPushButton#SidebarNavButton {
+/* Everything inside the sidebar except the git card paints on the sidebar colour. */
+QWidget#Sidebar QLabel {
+    background: transparent;
+}
+
+QLabel#brandName {
+    font-family: "Space Grotesk", "Segoe UI";
     color: @TextPrimary;
-    background-color: @Sidebar;
-    border-right: 1px solid @Border;
+}
+
+QLabel#sidebarLabel {
+    color: @TextMuted;
+}
+
+/* Nav item: a button holding icon, text and badge labels. Property "active" marks the current page.
+   Active is also bold (not colour only). Focus shows a 2px ring in the accent colour. */
+QPushButton#navItem {
+    background-color: transparent;
+    color: @TextSecondary;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 0px;
+    text-align: left;
+}
+
+QPushButton#navItem QLabel#navLabel {
+    color: @TextSecondary;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+QPushButton#navItem:hover {
+    background-color: @SurfaceHover;
+}
+
+QPushButton#navItem:hover QLabel#navLabel {
+    color: @TextPrimary;
+}
+
+QPushButton#navItem:pressed {
+    background-color: @Track;
+}
+
+QPushButton#navItem[active="true"] {
+    background-color: @NavActiveBg;
+    border: 2px solid @NavActiveBg;
+}
+
+QPushButton#navItem[active="true"] QLabel#navLabel {
+    color: @NavActiveText;
+    font-weight: 700;
+}
+
+QPushButton#navItem:focus {
+    border: 2px solid @Accent;
+}
+
+QPushButton#navItem QLabel#navBadge {
+    background-color: @NavBadgeBg;
+    color: @NavBadgeText;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 9px;
+    padding: 2px 6px;
+    min-width: 18px;
+}
+
+/* On the active item the badge is inverted so it stays readable on the active background. */
+QPushButton#navItem[active="true"] QLabel#navBadge {
+    background-color: @AccentText;
+    color: @Accent;
+}
+
+QPushButton#themeToggle {
+    background-color: transparent;
+    color: @TextSecondary;
+    border: 1px solid @Border;
+    border-radius: 10px;
+    padding: 6px 12px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+QPushButton#themeToggle:hover {
+    background-color: @SurfaceHover;
+    color: @TextPrimary;
+}
+
+QPushButton#themeToggle:pressed {
+    background-color: @Track;
+}
+
+QPushButton#themeToggle:focus {
+    border: 2px solid @Accent;
 }
 
 QFrame#SidebarGitCard {

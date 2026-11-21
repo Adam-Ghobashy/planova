@@ -58,6 +58,7 @@ public:
     planova::IPinBoardQuery& pinBoard();
     IPinQuery& pinQuery();
     planova::ConflictService& conflicts();
+    // Decline-conflict state only; GitProjection also implements IConflictQuery for git merge conflicts.
     IConflictQuery& conflictQuery();
     const planova::ConflictProjection& conflictProjection() const;
 

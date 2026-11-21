@@ -7,7 +7,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Test)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg Test)
 
 enable_testing()
 add_subdirectory(core)

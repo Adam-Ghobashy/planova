@@ -5,6 +5,8 @@
 #include "app/CoreBridge.h"
 #include "app/DemoData.h"
 #include "app/MainWindow.h"
+#include "app/Page.h"
+#include "app/Sidebar.h"
 #include "app/SplashWindow.h"
 #include "board/NewTaskDialog.h"
 #include "pins/DeclineDialog.h"
@@ -141,8 +143,9 @@ int main(int argc, char* argv[])
     }
 
     if (options.dialogs) {
-        // Dialogs sit on top of the Board page (index 5), as they do in the app.
-        pages->setCurrentIndex(5);
+        // Dialogs sit on top of the Board page, as they do in the app.
+        pages->setCurrentIndex(static_cast<int>(Page::Board));
+        window.findChild<Sidebar*>()->setActivePage(Page::Board);
         NoOpConflicts conflicts;
         const auto tasks = core.taskQuery().all();
         const auto members = core.memberProjection().all();
@@ -214,6 +217,8 @@ int main(int argc, char* argv[])
         if (ThemeManager::instance().mode() != mode)
             ThemeManager::instance().apply(mode);
         pages->setCurrentIndex(job.second);
+        // The stack is switched directly, so tell the sidebar which item to highlight.
+        window.findChild<Sidebar*>()->setActivePage(static_cast<Page>(job.second));
         QTimer::singleShot(250, [&, job]() {
             const QString path = QString("%1/page%2-%3.png").arg(options.outDir).arg(job.second).arg(job.first);
             if (!window.grab().save(path))

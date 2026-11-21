@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "board/PhaseBoardPage.h"
 #include "git/GitHubIntegrationPage.h"
+#include "Sidebar.h"
 #include "home/HomePage.h"
 #include "slicer/ChaosSlicerPage.h"
 #include "team/TeamSkillsPage.h"
@@ -9,24 +10,12 @@
 #include "welcome/SetupWizard.h"
 #include "welcome/WelcomePage.h"
 #include <QDialog>
-#include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPushButton>
 #include <QStatusBar>
-#include <QStyle>
-#include <QStringList>
-#include <QVBoxLayout>
-
-namespace {
-const QStringList kScreens = {
-    "Welcome", "Projects Hub", "Chaos Slicer (Pizza)", "Pins & Collab",
-    "Team & Skills", "Phase Board", "Fair Tracking & Charts", "GitHub Integration", "Project Home"
-};
-}
 
 MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
-    : QMainWindow(parent), core_(core), bridge_(bridge), pages_(new QStackedWidget(this))
+    : QMainWindow(parent), core_(core), bridge_(bridge), sidebar_(new Sidebar(core, this)), pages_(new QStackedWidget(this))
 {
     setWindowTitle("Planova");
     resize(1280, 820);
@@ -35,11 +24,15 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     auto* layout = new QHBoxLayout(central);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
-    layout->addWidget(buildSidebar());
+    layout->addWidget(sidebar_);
     layout->addWidget(pages_, 1);
     setCentralWidget(central);
+    // Start with focus on the page area, so no sidebar item shows a focus ring before the user presses Tab.
+    central->setFocusPolicy(Qt::ClickFocus);
+    central->setFocus();
 
     buildPages();
+    showPage(Page::Welcome);
     if (core_.currentProject())
         showHomeForCurrentProject(); // a project was auto-opened at start-up
 
@@ -55,6 +48,8 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
         statusBar()->showMessage(msg);
     };
 
+    connect(&bridge_, &CoreBridge::changed, sidebar_, &Sidebar::refresh);
+    connect(sidebar_, &Sidebar::pageRequested, this, &MainWindow::showPage);
     connect(&bridge_, &CoreBridge::changed, this, [updateTelemetry](const QString& eventType) {
         updateTelemetry(eventType);
     });
@@ -81,6 +76,7 @@ void MainWindow::buildPages()
     // One line per page, in Page enum order.
     pages_->addWidget(welcome);
     pages_->addWidget(hub);
+    pages_->addWidget(new QWidget(pages_)); // Page::Setup placeholder until the setup page exists
     pages_->addWidget(slicerPage);
     pages_->addWidget(pinsPage);
     pages_->addWidget(teamPage);
@@ -118,6 +114,7 @@ void MainWindow::buildPages()
 void MainWindow::showPage(Page page)
 {
     pages_->setCurrentIndex(static_cast<int>(page));
+    sidebar_->setActivePage(page);
 }
 
 void MainWindow::showHomeForCurrentProject()
@@ -132,86 +129,4 @@ void MainWindow::showHomeForCurrentProject()
         }
     }
     showPage(Page::Home);
-}
-
-QWidget* MainWindow::buildSidebar()
-{
-    auto* sidebar = new QWidget(this);
-    sidebar->setFixedWidth(230);
-    sidebar->setObjectName("Sidebar");
-    auto* layout = new QVBoxLayout(sidebar);
-    layout->setContentsMargins(12, 16, 12, 16);
-    layout->setSpacing(6);
-
-    for (int i = 0; i < kScreens.size(); ++i) {
-        auto* button = new QPushButton(kScreens[i], sidebar);
-        button->setObjectName("SidebarNavButton");
-        button->setCursor(Qt::PointingHandCursor);
-        connect(button, &QPushButton::clicked, this, [this, i] {
-            // kScreens is in Page enum order, so the button index is the page index.
-            showPage(static_cast<Page>(i));
-        });
-        layout->addWidget(button);
-    }
-    layout->addStretch();
-
-    auto* gitCard = new QFrame(sidebar);
-    gitCard->setObjectName("SidebarGitCard");
-    auto* gitLayout = new QHBoxLayout(gitCard);
-    gitLayout->setContentsMargins(12, 10, 12, 10);
-    gitLayout->setSpacing(8);
-
-    auto* dotLbl = new QLabel("●", gitCard);
-    dotLbl->setObjectName("SidebarGitDot");
-    gitLayout->addWidget(dotLbl);
-
-    auto* textCol = new QVBoxLayout();
-    textCol->setSpacing(1);
-    auto* syncTitle = new QLabel("Synced with Git", gitCard);
-    syncTitle->setObjectName("SidebarGitTitle");
-    auto* syncSub = new QLabel("Peer Event Store", gitCard);
-    syncSub->setObjectName("SidebarGitSubtitle");
-    textCol->addWidget(syncTitle);
-    textCol->addWidget(syncSub);
-    gitLayout->addLayout(textCol, 1);
-
-    auto* syncBtn = new QPushButton("⟳", gitCard);
-    syncBtn->setFixedSize(28, 28);
-    syncBtn->setCursor(Qt::PointingHandCursor);
-    syncBtn->setToolTip("Simulate Git Sync");
-    syncBtn->setObjectName("SidebarSyncButton");
-    connect(syncBtn, &QPushButton::clicked, this, [this] {
-        // Not connected yet: the GitHub page is where the user enters the repository.
-        if (!core_.gitProjection().isConnected()) {
-            showPage(Page::GitHub);
-            return;
-        }
-        core_.git().simulateSync(core_.memberProjection().all());
-        showPage(Page::GitHub);
-    });
-    gitLayout->addWidget(syncBtn);
-
-    auto updateGitCard = [this, dotLbl, syncTitle, syncSub]() {
-        const bool connected = core_.gitProjection().isConnected();
-        // The colour comes from the qss; the property selects it. Re-polish so it takes effect.
-        dotLbl->setProperty("state", connected ? "connected" : "disconnected");
-        dotLbl->style()->unpolish(dotLbl);
-        dotLbl->style()->polish(dotLbl);
-        if (connected) {
-            syncTitle->setText("Synced with Git");
-            syncSub->setText(QString::fromStdString(
-                "Branch: " + core_.gitProjection().branch() + " (" +
-                std::to_string(core_.gitProjection().commits().size()) + " commits)"));
-        } else {
-            syncTitle->setText("Git Disconnected");
-            syncSub->setText("Click ⟳ to sync");
-        }
-    };
-    connect(&bridge_, &CoreBridge::changed, this, [updateGitCard](const QString&) {
-        updateGitCard();
-    });
-    updateGitCard();
-
-    layout->addWidget(gitCard);
-    return sidebar;
 }

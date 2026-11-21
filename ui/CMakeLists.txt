@@ -2,6 +2,7 @@ add_library(planova_ui STATIC
     theme/ThemeManager.cpp
     app/CoreBridge.cpp
     app/MainWindow.cpp
+    app/Sidebar.cpp
     welcome/WelcomePage.cpp
     welcome/ProjectsHubPage.cpp
     ../resources/planova.qrc
@@ -9,7 +10,7 @@ add_library(planova_ui STATIC
 
 )
 target_include_directories(planova_ui PUBLIC .)
-target_link_libraries(planova_ui PUBLIC Qt6::Widgets planova_core)
+target_link_libraries(planova_ui PUBLIC Qt6::Widgets Qt6::Svg planova_core)
 
 # --- S1 ---
 target_sources(planova_ui PRIVATE

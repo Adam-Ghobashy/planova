@@ -6,11 +6,14 @@
 #include <QFontDatabase>
 #include <QFile>
 #include <QGuiApplication>
+#include <QPainter>
 #include <QPalette>
+#include <QPixmap>
 #include <QRegularExpression>
 #include <QSet>
 #include <QSettings>
 #include <QStyleHints>
+#include <QSvgRenderer>
 
 namespace {
 QString readStyleSheet(const QString& path)
@@ -95,6 +98,26 @@ void ThemeManager::toggle()
 QColor ThemeManager::color(Token token) const
 {
     return tokenColor(m_mode, token);
+}
+
+QIcon ThemeManager::icon(const QString& name, Token tint) const
+{
+    QFile file(":/icons/" + name + ".svg");
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning().noquote() << "ThemeManager: icon not found" << name;
+        return QIcon();
+    }
+    QString svg = QString::fromUtf8(file.readAll());
+    // Opaque RGB is enough: SVG does not read the #AARRGGBB form the tokens may use.
+    svg.replace("currentColor", color(tint).name(QColor::HexRgb));
+
+    constexpr int kPixels = 48;
+    QPixmap pixmap(kPixels, kPixels);
+    pixmap.fill(Qt::transparent);
+    QSvgRenderer renderer(svg.toUtf8());
+    QPainter painter(&pixmap);
+    renderer.render(&painter);
+    return QIcon(pixmap);
 }
 
 QString ThemeManager::resolveTokens(const QString& css, ThemeMode mode)
