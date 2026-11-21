@@ -41,12 +41,15 @@ Id ConflictService::decline(const Id& taskId, const Id& memberId, const std::str
     const auto task = tasks_.byId(taskId);
     if (!task)
         throw std::invalid_argument("Task not found");
+    if (task->status == TaskStatus::Done)
+        throw std::invalid_argument("A finished task cannot be declined");
     if (!task->assignee || *task->assignee != memberId)
         throw std::invalid_argument("Task is not assigned to this member");
     const std::string cleanReason = trimmed(reason);
     if (cleanReason.empty())
         throw std::invalid_argument("Reason must not be empty");
 
+    // Each event gets its own time; the first one also seeds the conflict id.
     const int64_t ts = clock_.nowMs();
 
     QJsonObject raised;
@@ -78,8 +81,8 @@ Id ConflictService::decline(const Id& taskId, const Id& memberId, const std::str
     pin["taskId"] = q(taskId);
 
     append(ts, ConflictRaised, memberId, raised);
-    append(ts, TaskUnassigned, memberId, unassigned);
-    append(ts, PinCreated, memberId, pin);
+    append(clock_.nowMs(), TaskUnassigned, memberId, unassigned);
+    append(clock_.nowMs(), PinCreated, memberId, pin);
     return conflictId;
 }
 

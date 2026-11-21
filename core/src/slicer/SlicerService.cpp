@@ -36,13 +36,14 @@ std::vector<Assignment> SlicerService::preview(const ScoringWeights& weights) co
 
 int SlicerService::apply(const std::vector<Assignment>& assignments, const ScoringWeights& weights) {
     requireValid(weights);
-    const int64_t now = clock_.nowMs();
     int changed = 0;
 
     for (const auto& a : assignments) {
         auto task = tasks_.byId(a.taskId);
-        if (!task) continue;
+        // The plan may be stale: skip tasks that moved on and members who have declined since.
+        if (!task || task->status != TaskStatus::ToDo) continue;
         if (!members_.byId(a.memberId)) continue;
+        if (conflicts_ && conflicts_->hasOpenConflict(a.memberId)) continue;
         if (task->assignee && *task->assignee == a.memberId) continue;
 
         QJsonObject payload;
@@ -51,7 +52,7 @@ int SlicerService::apply(const std::vector<Assignment>& assignments, const Scori
         payload["by"] = QString::fromLatin1(SLICER_AUTHOR);
 
         Event e;
-        e.ts = now;
+        e.ts = clock_.nowMs();  // each event gets its own time so the order is stable
         e.author = SLICER_AUTHOR;
         e.type = TaskAssigned;
         e.payload = payload;
@@ -61,7 +62,7 @@ int SlicerService::apply(const std::vector<Assignment>& assignments, const Scori
     }
 
     const auto lastWeights = weights_.last();
-    if (changed > 0 || !lastWeights || *lastWeights != weights) appendWeightsEvent(weights, now);
+    if (changed > 0 || !lastWeights || *lastWeights != weights) appendWeightsEvent(weights);
     return changed;
 }
 
@@ -71,17 +72,17 @@ ScoringWeights SlicerService::savedWeights() const {
 
 void SlicerService::saveWeights(const ScoringWeights& weights) {
     requireValid(weights);
-    if (weights != savedWeights()) appendWeightsEvent(weights, clock_.nowMs());
+    if (weights != savedWeights()) appendWeightsEvent(weights);
 }
 
-void SlicerService::appendWeightsEvent(const ScoringWeights& weights, int64_t now) {
+void SlicerService::appendWeightsEvent(const ScoringWeights& weights) {
     QJsonObject payload;
     payload["skill"] = weights.skill;
     payload["workload"] = weights.workload;
     payload["priority"] = weights.priority;
 
     Event e;
-    e.ts = now;
+    e.ts = clock_.nowMs();
     e.author = SLICER_AUTHOR;
     e.type = SlicerWeightsChanged;
     e.payload = payload;

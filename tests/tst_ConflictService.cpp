@@ -16,6 +16,14 @@
 
 using namespace planova;
 
+// Moves forward by 1 ms on every call, like the real clock which never repeats a time.
+class TickingClock : public IClock {
+public:
+    int64_t nowMs() const override { return t_++; }
+private:
+    mutable int64_t t_ = 1000;
+};
+
 class tst_ConflictService : public QObject {
     Q_OBJECT
 
@@ -110,6 +118,23 @@ private slots:
     {
         QVERIFY_EXCEPTION_THROWN(svc->decline("nope", "m1", "Too busy"), std::invalid_argument);
         QVERIFY(store.events.empty());
+    }
+
+    void declineDoneTaskThrows()
+    {
+        tasks.setStatus("t1", TaskStatus::Done);
+        QVERIFY_EXCEPTION_THROWN(svc->decline("t1", "m1", "Too busy"), std::invalid_argument);
+        QVERIFY(store.events.empty());
+    }
+
+    void declineEventsHaveIncreasingTimestamps()
+    {
+        TickingClock ticking;
+        ConflictService tickingSvc(*log, tasks, *proj, ticking);
+        tickingSvc.decline("t1", "m1", "Too busy");
+        QCOMPARE(store.events.size(), size_t(3));
+        QVERIFY(store.events[1].ts > store.events[0].ts);
+        QVERIFY(store.events[2].ts > store.events[1].ts);
     }
 
     void blankReasonRejected()

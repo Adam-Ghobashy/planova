@@ -40,6 +40,14 @@ public:
     }
 };
 
+// Moves forward by 1 ms on every call, like the real clock which never repeats a time.
+class TickingClock : public IClock {
+public:
+    int64_t nowMs() const override { return t_++; }
+private:
+    mutable int64_t t_ = 1000;
+};
+
 // Says that one member has an open decline conflict.
 class FakeConflictQuery : public IConflictQuery {
 public:
@@ -101,6 +109,51 @@ private slots:
         bad.memberId = "nope";
         QCOMPARE(f.svc.apply({bad}, ScoringWeights{}), 0);
         for (const auto& e : f.store.events) QVERIFY(e.type != "TaskAssigned");
+    }
+    void applySkipsNonTodoTasks() {
+        Fixture f;
+        ScoringWeights w;
+        const auto preview = f.svc.preview(w);
+        f.tq.setStatus("t1", TaskStatus::InProgress);  // the task moved on after the preview
+        QCOMPARE(f.svc.apply(preview, w), 0);
+        for (const auto& e : f.store.events) QVERIFY(e.type != "TaskAssigned");
+    }
+    void applySkipsMembersWithOpenConflict() {
+        FakeTaskQuery tq;
+        FakeMemberQuery mq;
+        FakeEventStore store;
+        EventLog log{store};
+        FakeClock clock{1000};
+        WeightedScoringStrategy strategy;
+        FakeConflictQuery conflicts{"1"};
+        SlicerService svc{tq, mq, strategy, log, clock, &conflicts};
+        tq.addTask(TaskDto{"t1", "Task 1", SkillCategory::Backend, Priority::Medium, 3, 5,
+                           TaskStatus::ToDo, std::nullopt, {}});
+        mq.addMember(MemberDto{"1", "Alice", "Dev", false, {{SkillCategory::Backend, 5}}, 100, 1.0});
+
+        // The plan was made before Alice declined something, so it still names her.
+        const std::vector<Assignment> plan = {{"t1", "1", 80, "r", false}};
+        QCOMPARE(svc.apply(plan, ScoringWeights{}), 0);
+        for (const auto& e : store.events) QVERIFY(e.type != "TaskAssigned");
+    }
+    void applyEventsHaveIncreasingTimestamps() {
+        FakeTaskQuery tq;
+        FakeMemberQuery mq;
+        FakeEventStore store;
+        EventLog log{store};
+        TickingClock clock;
+        WeightedScoringStrategy strategy;
+        SlicerService svc{tq, mq, strategy, log, clock};
+        for (const char* id : {"t1", "t2", "t3"})
+            tq.addTask(TaskDto{id, id, SkillCategory::Backend, Priority::Medium, 3, 4, TaskStatus::ToDo,
+                               std::nullopt, {}});
+        mq.addMember(MemberDto{"1", "Alice", "Dev", false, {}, 100, 1.0});
+
+        ScoringWeights w;
+        QCOMPARE(svc.apply(svc.preview(w), w), 3);
+        QCOMPARE(int(store.events.size()), 4);  // three assignments and the weights event
+        for (size_t i = 1; i < store.events.size(); ++i)
+            QVERIFY(store.events[i].ts > store.events[i - 1].ts);
     }
     void weightsSurviveRestart() {
         Fixture f;

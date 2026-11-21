@@ -32,7 +32,7 @@ public:
     void saveWeights(const ScoringWeights& weights);
 
 private:
-    void appendWeightsEvent(const ScoringWeights& weights, int64_t now);
+    void appendWeightsEvent(const ScoringWeights& weights);
     ITaskQuery& tasks_;
     IMemberQuery& members_;
     IAssignmentStrategy& strategy_;
