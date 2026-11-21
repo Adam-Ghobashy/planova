@@ -1,6 +1,7 @@
 #include "PinsPage.h"
 
 #include <QAbstractButton>
+#include <QApplication>
 #include <QButtonGroup>
 #include <QDateTime>
 #include <QHBoxLayout>
@@ -118,6 +119,7 @@ void PinsPage::addChip(const QString& text, const Id& memberId, int memberIndex)
 {
     auto* b = new QPushButton(text, chipBar_);
     b->setObjectName("PinFilterChip");
+    b->setProperty("memberId", QString::fromStdString(memberId));  // finds the chip again after a rebuild
     b->setCheckable(true);
     b->setChecked(memberId == filterMemberId_);
     b->setCursor(Qt::PointingHandCursor);
@@ -144,6 +146,15 @@ void PinsPage::addChip(const QString& text, const Id& memberId, int memberIndex)
 
 void PinsPage::rebuildChips(const std::vector<PinView>& all)
 {
+    // The chips are rebuilt, so the focused one is remembered by member id and focused again below.
+    bool chipHadFocus = false;
+    QString focusedMember;
+    if (const QWidget* focused = QApplication::focusWidget();
+        focused && focused->objectName() == "PinFilterChip" && chipBar_->isAncestorOf(focused)) {
+        chipHadFocus = true;
+        focusedMember = focused->property("memberId").toString();
+    }
+
     while (QLayoutItem* item = chipLayout_->takeAt(0)) {
         if (QWidget* w = item->widget()) {
             chipGroup_->removeButton(qobject_cast<QAbstractButton*>(w));
@@ -161,6 +172,21 @@ void PinsPage::rebuildChips(const std::vector<PinView>& all)
                 static_cast<int>(i % 6) + 1);
     }
     chipLayout_->addStretch();
+
+    if (chipHadFocus) {
+        // A member who is gone has no chip any more: the "All" chip (the first one) takes the focus.
+        QAbstractButton* target = chipGroup_->buttons().value(0);
+        for (QAbstractButton* chip : chipGroup_->buttons()) {
+            if (chip->property("memberId").toString() == focusedMember) {
+                target = chip;
+                break;
+            }
+        }
+        if (target) {
+            target->show();   // a chip that is not shown yet cannot take the focus
+            target->setFocus(Qt::OtherFocusReason);
+        }
+    }
 }
 
 void PinsPage::refresh()
@@ -168,6 +194,11 @@ void PinsPage::refresh()
     members_ = memberQuery_.all();
     tasks_ = taskQuery_.all();
     const std::vector<PinView> all = query_.openPins();
+
+    // A filter on a removed member would hide every pin and leave no chip to clear it.
+    const bool filterMemberExists = std::any_of(members_.begin(), members_.end(),
+                                                [&](const MemberDto& m) { return m.id == filterMemberId_; });
+    if (!filterMemberId_.empty() && !filterMemberExists) filterMemberId_.clear();
 
     rebuildChips(all);
     emptyHint_->setVisible(all.empty());
