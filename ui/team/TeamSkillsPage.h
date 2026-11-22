@@ -16,6 +16,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <vector>
 
 namespace planova::team {
 
@@ -51,6 +52,9 @@ private:
     static void applyColumnWidths(QGridLayout* grid);
     QPushButton* makeSwitch(const QString& objectName, const QString& title, const QString& settingKey,
                             QWidget* parent);
+    void showSwitch(QPushButton* button, bool on);   // sets the check state and the "On"/"Off" text, saves nothing
+    void syncSwitches();                             // reads both settings of the open project again
+    bool roleEditorOpen() const;
     void resolveConflict(const Id& conflictId, const Id& memberId);
     void showStatus(const QString& text);
     // Understanding slider: a keyboard or wheel change waits for a pause before it is saved, a mouse release saves now.
@@ -86,7 +90,11 @@ private:
     QVBoxLayout* cardsLayout_ = nullptr;
     QLabel* emptyLabel_ = nullptr;
 
+    std::vector<QPushButton*> switches_;   // Auto-Match and Smart Assign
+
     bool updating_ = false;
+    // An understanding commit while a role editor is open only saves; the rebuild waits until the editor closes.
+    bool pendingRefresh_ = false;
 };
 
 } // namespace planova::team

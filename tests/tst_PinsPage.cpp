@@ -100,6 +100,7 @@ private slots:
         QVERIFY2(now != ben, "the chips were not rebuilt, the test proves nothing");
         QVERIFY(now->isChecked());
         QWidget* focused = QApplication::focusWidget();
+        if (!page->isActiveWindow()) QSKIP("window lost activation during the test, focus cannot be checked");
         QVERIFY2(focused, "focus was lost after the click");
         QCOMPARE(focused, static_cast<QWidget*>(now));
         QCOMPARE(focused->property("memberId").toString(), QString::fromStdString(f.ben));

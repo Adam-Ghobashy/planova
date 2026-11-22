@@ -5,7 +5,9 @@
 #include "theme/ThemeManager.h"
 
 #include <QApplication>
+#include <QComboBox>
 #include <QLabel>
+#include <QPointer>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QSlider>
@@ -204,6 +206,8 @@ private slots:
         page->resize(1200, 900);
         page->show();
         QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+        page->activateWindow();
+        static_cast<void>(QTest::qWaitForWindowActive(page.get()));   // activation is asynchronous; without the wait the focus row was sometimes skipped
         auto* button = page->findChild<QPushButton*>(switchButton ? "autoMatchSwitch" : "resolveConflict");
         QVERIFY(button);
         if (switchButton) button->setChecked(true);
@@ -298,13 +302,16 @@ private slots:
         page->show();
         QVERIFY(QTest::qWaitForWindowExposed(page.get()));
         page->activateWindow();
+        const bool active = QTest::qWaitForWindowActive(page.get());   // activation is asynchronous
         QSlider* old = understandingSlider(page.get(), "Ana");
         QVERIFY(old);
         old->setFocus(Qt::TabFocusReason);
-        if (!old->hasFocus()) QSKIP("window not active in this environment, focus cannot be checked");
+        if (!active || !old->hasFocus()) QSKIP("window not active in this environment, focus cannot be checked");
         QTest::keyClick(old, Qt::Key_PageUp);
         QTest::qWait(900);
         QTest::qWait(50);   // the old card is deleted on the next event loop turn
+        // A window that lost activation in the meantime (another window, the user) has no keyboard focus to check.
+        if (!page->isActiveWindow()) QSKIP("window lost activation during the test, focus cannot be checked");
         QSlider* now = understandingSlider(page.get(), "Ana");
         QVERIFY(now);
         QVERIFY2(now != old, "the card was not rebuilt, the test proves nothing");
@@ -316,6 +323,7 @@ private slots:
         QTest::qWait(900);
         QTest::qWait(50);
         QCOMPARE(storedUnderstanding(f, ana), saved + 1);
+        if (!page->isActiveWindow()) QSKIP("window lost activation during the test, focus cannot be checked");
         QSlider* last = understandingSlider(page.get(), "Ana");
         QVERIFY(last && last->hasFocus());
     }
@@ -437,6 +445,146 @@ private slots:
         QCOMPARE(storedUnderstanding(f, ana), anaBefore);   // the discarded value was never written
     }
 
+
+    // ---- Switches follow the open project; the role editor and the keyboard focus survive a rebuild ----
+    static QPushButton* ratingButton(QWidget* page, const QString& label, int rating, const QString& member)
+    {
+        const QString name = QString("%1 rating %2 of 5 for %3").arg(label).arg(rating).arg(member);
+        for (QPushButton* b : page->findChildren<QPushButton*>("ratingButton"))
+            if (b->accessibleName() == name) return b;
+        return nullptr;
+    }
+
+    void togglesFollowProject_data()
+    {
+        QTest::addColumn<QString>("switchName");
+        QTest::addColumn<QString>("settingKey");
+        QTest::addColumn<QString>("title");
+        QTest::newRow("auto match") << "autoMatchSwitch" << "autoMatch" << "Auto-Match Priority";
+        QTest::newRow("smart assign") << "smartAssignSwitch" << "smartAssign" << "Smart Assign";
+    }
+    void togglesFollowProject()
+    {
+        QFETCH(QString, switchName);
+        QFETCH(QString, settingKey);
+        QFETCH(QString, title);
+        Fixture f;
+        const Id projectA = *f.core.currentProject();
+        f.core.members().setSetting(settingKey.toStdString(), true);   // on in A
+        const Id projectB = f.core.createProject("B", "team", "Agile", "idea");   // off in B
+
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        auto* button = page->findChild<QPushButton*>(switchName);
+        QVERIFY(button);
+        QVERIFY(button->isChecked());
+        QCOMPARE(button->text(), title + ": On");
+
+        f.core.openProject(projectB);
+        const int filesBefore = eventFileCount(f, projectB);
+        page->refresh();
+        QVERIFY2(!button->isChecked(), "the switch still shows the setting of the previous project");
+        QCOMPARE(button->text(), title + ": Off");
+        QCOMPARE(eventFileCount(f, projectB), filesBefore);   // showing a setting must not save one
+
+        f.core.openProject(projectA);
+        page->refresh();
+        QVERIFY(button->isChecked());
+        QCOMPARE(button->text(), title + ": On");
+    }
+
+    void roleEditorSurvivesSliderCommit()
+    {
+        Fixture f;
+        const Id ana = f.core.members().add("Ana", "Backend Developer", false);
+        const int before = storedUnderstanding(f, ana);
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1440, 900);
+        page->show();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+
+        auto* editButton = page->findChild<QPushButton*>("editRoleButton");
+        QVERIFY(editButton);
+        editButton->click();
+        QPointer<QWidget> editor = page->findChild<QWidget*>("roleEditBox");
+        QVERIFY(editor && editor->isVisible());
+
+        QSlider* slider = understandingSlider(page.get(), "Ana");
+        QVERIFY(slider);
+        QTest::keyClick(slider, Qt::Key_Right);
+        QTest::qWait(600);   // past the 500 ms debounce: the value is committed
+        QTest::qWait(50);    // a rebuild would delete the old card on this turn
+        QCOMPARE(storedUnderstanding(f, ana), before + 1);   // the change was saved
+        QVERIFY2(editor, "the role editor was deleted by the understanding commit");
+        QVERIFY(editor->isVisible());
+
+        // Closing the editor catches up with the rebuild that was put off.
+        auto* cancel = editor->findChild<QPushButton*>("cancelRoleButton");
+        QVERIFY(cancel);
+        cancel->click();
+        QTest::qWait(50);
+        QSlider* rebuilt = understandingSlider(page.get(), "Ana");
+        QVERIFY(rebuilt);
+        QVERIFY2(rebuilt != slider, "the cards were not rebuilt after the editor closed");
+        QCOMPARE(rebuilt->value(), before + 1);
+        QVERIFY(!editor);   // the old card is gone
+    }
+
+    // The role editor stays open while the understanding is committed; saving the role afterwards must keep that value.
+    void roleSaveKeepsCommittedUnderstanding()
+    {
+        Fixture f;
+        const Id ana = f.core.members().add("Ana", "Backend Developer", false);
+        const int before = storedUnderstanding(f, ana);
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1440, 900);
+        page->show();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+
+        page->findChild<QPushButton*>("editRoleButton")->click();
+        QSlider* slider = understandingSlider(page.get(), "Ana");
+        QVERIFY(slider);
+        QTest::keyClick(slider, Qt::Key_Right);
+        QTest::qWait(600);
+        QCOMPARE(storedUnderstanding(f, ana), before + 1);
+
+        QComboBox* editCombo = page->findChild<QWidget*>("roleEditBox")->findChild<QComboBox*>("roleCombo");
+        QVERIFY(editCombo);
+        editCombo->setCurrentText("Frontend Developer");
+        page->findChild<QPushButton*>("saveRoleButton")->click();
+        QTest::qWait(50);
+        for (const auto& m : f.core.memberProjection().all()) {
+            if (m.id != ana) continue;
+            QCOMPARE(m.role, std::string("Frontend Developer"));
+            QCOMPARE(m.understanding, before + 1);
+        }
+    }
+
+    void skillButtonKeepsFocus()
+    {
+        Fixture f;
+        f.core.members().add("Ana", "Backend Developer", false);
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1440, 900);
+        page->show();
+        page->activateWindow();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+        const bool active = QTest::qWaitForWindowActive(page.get());
+
+        QPushButton* old = ratingButton(page.get(), "Frontend", 4, "Ana");
+        QVERIFY(old);
+        old->setFocus(Qt::TabFocusReason);
+        if (!active && !old->hasFocus()) QSKIP("window cannot be activated in this environment, focus cannot be checked");
+        QVERIFY(old->hasFocus());
+        old->click();   // rates and rebuilds the cards
+        QTest::qWait(50);
+
+        QPushButton* now = ratingButton(page.get(), "Frontend", 4, "Ana");
+        QVERIFY(now);
+        QVERIFY2(now != old, "the card was not rebuilt, the test proves nothing");
+        if (!page->isActiveWindow()) QSKIP("window lost activation during the test, focus cannot be checked");
+        QVERIFY2(now->hasFocus(), "the keyboard user lost focus after rating");
+        QCOMPARE(QApplication::focusWidget(), static_cast<QWidget*>(now));
+    }
     void emptyHintNamesRealButton()
     {
         Fixture f;

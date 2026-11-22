@@ -301,20 +301,35 @@ QPushButton* TeamSkillsPage::makeSwitch(const QString& objectName, const QString
     button->setCheckable(true);
     button->setCursor(Qt::PointingHandCursor);
     button->setMinimumHeight(32);
-    button->setChecked(members_.getSetting(settingKey.toStdString(), false));
-    auto showState = [button, title](bool on) {
-        button->setText(QString("%1: %2").arg(title, on ? "On" : "Off"));
-    };
-    showState(button->isChecked());
-    connect(button, &QPushButton::toggled, this, [this, showState, settingKey](bool on) {
-        showState(on);
+    button->setProperty("settingKey", settingKey);
+    button->setProperty("switchTitle", title);
+    showSwitch(button, members_.getSetting(settingKey.toStdString(), false));
+    connect(button, &QPushButton::toggled, this, [this, button, settingKey](bool on) {
+        showSwitch(button, on);
         try {
             service_.setSetting(settingKey.toStdString(), on);
         } catch (const exception& e) {
+            showSwitch(button, !on);   // the setting was not saved, so the switch goes back
             showStatus(QString::fromUtf8(e.what()));
         }
     });
+    switches_.push_back(button);
     return button;
+}
+
+void TeamSkillsPage::showSwitch(QPushButton* button, bool on) {
+    // No toggled signal: showing a setting must not save it again.
+    const QSignalBlocker blocker(button);
+    button->setChecked(on);
+    button->setText(QString("%1: %2").arg(button->property("switchTitle").toString(), on ? "On" : "Off"));
+}
+
+void TeamSkillsPage::syncSwitches() {
+    // The settings belong to the open project, so the switches are read again after every project change.
+    for (QPushButton* button : switches_) {
+        const string key = button->property("settingKey").toString().toStdString();
+        showSwitch(button, members_.getSetting(key, false));
+    }
 }
 
 QFrame* TeamSkillsPage::buildSettingsCard(QWidget* parent) {
@@ -478,6 +493,7 @@ QWidget* TeamSkillsPage::buildProfileColumn(const MemberDto& member, int colorIn
     editRoleBtn->setCursor(Qt::PointingHandCursor);
     editRoleBtn->setToolTip("Change this member's role");
     editRoleBtn->setObjectName("editRoleButton");
+    editRoleBtn->setProperty("focusKey", QString::fromStdString(member.id) + ":editRole");
     editRoleBtn->setMinimumHeight(24);   // pointer target of at least 24 px
     auto* removeBtn = new QPushButton("✕ Remove", actions);
     removeBtn->setCursor(Qt::PointingHandCursor);
@@ -563,9 +579,11 @@ QWidget* TeamSkillsPage::buildProfileColumn(const MemberDto& member, int colorIn
         roleLbl->show();
         actions->show();
         editRoleBtn->setFocus();
+        // An understanding commit was put off while this editor was open.
+        if (pendingRefresh_) refresh();
     });
 
-    auto doSaveRole = [this, id = member.id, und = member.understanding, name = member.name, editRoleCombo, editCustomRoleInput]() {
+    auto doSaveRole = [this, id = member.id, name = member.name, editRoleCombo, editCustomRoleInput]() {
         QString newRole = editRoleCombo->currentText();
         if (newRole == "Other..." || newRole == "Other") {
             newRole = editCustomRoleInput->text().trimmed();
@@ -573,6 +591,12 @@ QWidget* TeamSkillsPage::buildProfileColumn(const MemberDto& member, int colorIn
         if (newRole.isEmpty()) {
             newRole = "Developer";
         }
+        // Read the stored value, not the one from when the card was built: while this editor was open an
+        // understanding change may have been saved without a rebuild.
+        flushUnderstanding();   // a waiting slider value must not be saved later with the old role
+        int und = 0;
+        for (const MemberDto& m : members_.all())
+            if (m.id == id) und = m.understanding;
         updating_ = true;
         try {
             service_.update(id, newRole.toStdString(), und);
@@ -663,6 +687,11 @@ QWidget* TeamSkillsPage::buildSkillsColumn(const MemberDto& member, QWidget* par
                                            .arg(meta.label).arg(r).arg(QString::fromStdString(member.name)));
             const bool active = (r <= currentRating);
             rateBtn->setObjectName("ratingButton");
+            // Member + skill + step: the five steps of one skill must not share a key.
+            rateBtn->setProperty("focusKey", QString("%1:%2:%3")
+                                                 .arg(QString::fromStdString(member.id))
+                                                 .arg(static_cast<int>(meta.category))
+                                                 .arg(r));
             rateBtn->setProperty("active", active);
             // Re-polish so the qss [active] selector is applied.
             rateBtn->style()->unpolish(rateBtn);
@@ -713,9 +742,9 @@ QWidget* TeamSkillsPage::buildUnderstandingColumn(const MemberDto& member, QWidg
     undSlider->setValue(member.understanding);
     undSlider->setAccessibleName(QString("Project understanding of %1").arg(QString::fromStdString(member.name)));
 
-    // The slider is found again by these two after refresh() rebuilds the card, to give it back the keyboard focus.
+    // refresh() rebuilds the card and finds the slider again by its focus key to give it back the keyboard focus.
     undSlider->setObjectName("understandingSlider");
-    undSlider->setProperty("memberId", QString::fromStdString(member.id));
+    undSlider->setProperty("focusKey", QString::fromStdString(member.id) + ":understanding");
 
     connect(undSlider, &QSlider::valueChanged, this,
             [this, undVal, id = member.id, role = member.role, undSlider](int v) {
@@ -778,12 +807,14 @@ void TeamSkillsPage::refresh() {
     // A value still waiting for its pause is saved first, so a rebuild never throws a keyboard change away.
     flushUnderstanding();
 
-    // The cards are rebuilt, so the slider the user is working with is remembered by member id and focused again below.
-    QString focusedSliderMember;
-    if (const auto* focused = qobject_cast<QSlider*>(QApplication::focusWidget());
-        focused && focused->objectName() == "understandingSlider" && isAncestorOf(focused)) {
-        focusedSliderMember = focused->property("memberId").toString();
-    }
+    pendingRefresh_ = false;
+    syncSwitches();
+
+    // The cards are rebuilt, so the control the user is working with (slider, rating step or Edit Role button) is
+    // remembered by its "focusKey" and focused again below.
+    QString focusedKey;
+    if (const QWidget* focused = QApplication::focusWidget(); focused && isAncestorOf(focused))
+        focusedKey = focused->property("focusKey").toString();
 
     while (QLayoutItem* item = cardsLayout_->takeAt(0)) {
         if (QWidget* w = item->widget()) {
@@ -818,8 +849,13 @@ void TeamSkillsPage::refresh() {
         sumVelocity += m.velocity;
         QFrame* card = buildMemberCard(m, static_cast<int>(i));
         cardsLayout_->addWidget(card);
-        if (!focusedSliderMember.isEmpty() && QString::fromStdString(m.id) == focusedSliderMember) {
-            if (auto* slider = card->findChild<QSlider*>("understandingSlider")) slider->setFocus(Qt::OtherFocusReason);
+        if (!focusedKey.isEmpty() && focusedKey.startsWith(QString::fromStdString(m.id) + ":")) {
+            for (QWidget* w : card->findChildren<QWidget*>()) {
+                if (w->property("focusKey").toString() == focusedKey) {
+                    w->setFocus(Qt::OtherFocusReason);
+                    break;
+                }
+            }
         }
     }
 
@@ -872,8 +908,19 @@ void TeamSkillsPage::discardUnderstanding() {
 
 void TeamSkillsPage::commitUnderstanding() {
     const bool saved = flushUnderstanding();
-    refresh();
+    // The rebuild would delete a role editor the user is typing in, so it waits until the editor closes.
+    if (roleEditorOpen()) pendingRefresh_ = true;
+    else refresh();
     if (saved) showStatus("Updated project understanding");
+}
+
+bool TeamSkillsPage::roleEditorOpen() const {
+    for (int i = 0; i < cardsLayout_->count(); ++i) {
+        const QWidget* card = cardsLayout_->itemAt(i)->widget();
+        const QWidget* editor = card ? card->findChild<QWidget*>("roleEditBox") : nullptr;
+        if (editor && !editor->isHidden()) return true;
+    }
+    return false;
 }
 
 void TeamSkillsPage::showStatus(const QString& text) {
