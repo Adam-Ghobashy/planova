@@ -82,6 +82,33 @@ private slots:
         QVERIFY(other->accessibleDescription().isEmpty());
     }
 
+    // A long name is shortened so its centred text never runs under the "Current" mark.
+    void longCurrentNameStaysClearOfTheMark()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        const std::string longName = "A project with a really very long name that keeps on going and going";
+        core.openProject(core.createProject(longName, "The team with an equally long name", "Agile", ""));
+        StartDialog dialog(core, nullptr);
+        dialog.resize(1000, 800);
+        dialog.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+
+        QLabel* mark = nullptr;
+        for (auto* label : dialog.findChildren<QLabel*>("startDialogCurrent"))
+            mark = label;
+        QVERIFY(mark);
+        auto* button = qobject_cast<QPushButton*>(mark->parentWidget());
+        QVERIFY(button);
+        const int textWidth = button->fontMetrics().horizontalAdvance(button->text());
+        const int textRight = (button->width() + textWidth) / 2;   // the text is centred
+        QVERIFY2(textRight < mark->geometry().left(),
+                 qPrintable(QString("text ends at %1, the mark starts at %2").arg(textRight).arg(mark->geometry().left())));
+        QVERIFY(button->text().endsWith(QChar(0x2026)));
+        QCOMPARE(button->accessibleName(), "Open project " + QString::fromStdString(longName));
+        QVERIFY(button->toolTip().contains(QString::fromStdString(longName)));   // the whole name on hover
+    }
+
     void noProjectsShowsAMessage()
     {
         QTemporaryDir dir;

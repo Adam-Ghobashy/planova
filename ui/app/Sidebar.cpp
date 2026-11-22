@@ -151,6 +151,7 @@ QWidget* Sidebar::buildProjectSwitcher()
     caption->setObjectName("projectSwitcherCaption");
     switcherName_ = new QLabel(switcher_);
     switcherName_->setObjectName("projectSwitcherName");
+    switcherName_->setTextFormat(Qt::PlainText);   // a project name is never read as markup
     textCol->addWidget(caption);
     textCol->addWidget(switcherName_);
     row->addLayout(textCol, 1);
@@ -239,6 +240,7 @@ QWidget* Sidebar::buildGitCard()
 
     gitText_ = new QLabel(gitCard);
     gitText_->setObjectName("SidebarGitText");
+    gitText_->setTextFormat(Qt::PlainText);        // nor is a branch name
     gitLayout->addWidget(gitText_, 1);
 
     gitSyncButton_ = new QPushButton(gitCard);
@@ -322,8 +324,11 @@ void Sidebar::setProjectName(const QString& name)
 {
     const QString shown = name.isEmpty() ? QStringLiteral("No project open") : name;
     setElidedText(switcherName_, shown, kSwitcherTextWidth);
-    // The full name, even when the label shows it shortened.
+    // The full name, even when the label shows it shortened. The labels on the switcher let the mouse through, so
+    // their own tooltips never show: the button carries the full name.
     switcher_->setAccessibleName("Projects: " + shown);
+    switcher_->setToolTip(name.isEmpty() ? QStringLiteral("Open Projects Hub (Ctrl+0)")
+                                         : name + QStringLiteral(": open Projects Hub (Ctrl+0)"));
 }
 
 void Sidebar::setProjectOpen(bool open)

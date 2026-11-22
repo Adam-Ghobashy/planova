@@ -118,6 +118,9 @@ private slots:
         sidebar.refresh();
         QCOMPARE(name->text(), QString("Atlas"));
         QCOMPARE(switcher->accessibleName(), QString("Projects: Atlas"));
+        // The name label is mouse-transparent, so the button carries the tooltip with the full name.
+        QCOMPARE(switcher->toolTip(), QString("Atlas: open Projects Hub (Ctrl+0)"));
+        QCOMPARE(name->textFormat(), Qt::PlainText);   // a name is never read as markup
 
         // A long name is shortened on screen; the accessible name keeps all of it.
         const QString longName = "A very long project name that cannot fit in the sidebar";
@@ -125,6 +128,7 @@ private slots:
         QVERIFY(name->text() != longName);
         QVERIFY(name->text().endsWith(QChar(0x2026)));
         QCOMPARE(switcher->accessibleName(), "Projects: " + longName);
+        QCOMPARE(switcher->toolTip(), longName + ": open Projects Hub (Ctrl+0)");
 
         QSignalSpy spy(&sidebar, &Sidebar::pageRequested);
         QTest::mouseClick(switcher, Qt::LeftButton);
@@ -194,6 +198,7 @@ private slots:
         auto* text = sidebar.findChild<QLabel*>("SidebarGitText");
         QVERIFY(text);
         QCOMPARE(text->text(), QString("No repository"));
+        QCOMPARE(text->textFormat(), Qt::PlainText);   // the branch name is never read as markup
 
         core.git().connect("https://github.com/acme/portal.git", "main");
         sidebar.refresh();
