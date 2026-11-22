@@ -11,6 +11,8 @@
 #include "theme/ThemeManager.h"
 #include <QCoreApplication>
 #include <QLabel>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QSlider>
@@ -129,6 +131,19 @@ private slots:
         // ... and the refresh triggered by our own events did not overwrite it in the table.
         QCOMPARE(table->model()->index(0, AssignmentTableModel::ActionOverride).data(Qt::EditRole).toString(),
                  chosen);
+    }
+    void noHorizontalOverflowAtMinimumWidth() {
+        Board b;
+        b.addAlice();
+        b.addTask("t1");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        page.resize(900, 900);
+        page.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&page));
+
+        auto* area = page.findChild<QScrollArea*>("slicerScrollArea");
+        QVERIFY(area);
+        QVERIFY2(!area->horizontalScrollBar()->isVisible(), "the page scrolls sideways at 900 px");
     }
     void failedSaveIsShownNotThrown() {
         FakeTaskQuery tasks;

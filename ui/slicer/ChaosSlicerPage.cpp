@@ -11,6 +11,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QPushButton>
+#include <QScrollBar>
 #include <QScrollArea>
 #include <QTableView>
 #include <QTimer>
@@ -60,11 +61,10 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
         "Automated work division using weighted skill matching, workload leveling, and dependency ordering.",
         contentWidget);
     pageSubtitle->setObjectName("cardSubtitle");
+    pageSubtitle->setWordWrap(true);
     titleLayout->addWidget(pageTitle);
     titleLayout->addWidget(pageSubtitle);
-    headerLayout->addLayout(titleLayout);
-
-    headerLayout->addStretch();
+    headerLayout->addLayout(titleLayout, 1);  // takes the free width, so the subtitle wraps
 
     statusLabel_ = new QLabel(contentWidget);
     statusLabel_->setObjectName("statusLabel");
@@ -140,7 +140,7 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     table_->setSelectionBehavior(QAbstractItemView::SelectRows);
     table_->setSelectionMode(QAbstractItemView::SingleSelection);
     table_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    table_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    table_->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);  // narrow windows scroll instead of crushing columns
     table_->setMouseTracking(true);
     table_->setEditTriggers(QAbstractItemView::AllEditTriggers);
 
@@ -150,6 +150,7 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
 
     auto* header = table_->horizontalHeader();
     header->setStretchLastSection(false);
+    header->setMinimumSectionSize(110);  // the two stretch columns stop shrinking here, then the table scrolls
     header->setSectionResizeMode(AssignmentTableModel::TaskComplexity, QHeaderView::Stretch);
     header->setSectionResizeMode(AssignmentTableModel::Skill, QHeaderView::ResizeToContents);
     header->setSectionResizeMode(AssignmentTableModel::Priority, QHeaderView::ResizeToContents);
@@ -169,6 +170,9 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
 
     scrollArea->setWidget(contentWidget);
     rootLayout->addWidget(scrollArea);
+
+    // The scroll bar appears or disappears when the width changes; keep the table height in step.
+    connect(table_->horizontalScrollBar(), &QScrollBar::rangeChanged, this, [this] { fitTableHeight(); });
 
     recalculate();
 }
@@ -227,7 +231,10 @@ void ChaosSlicerPage::fitTableHeight() {
                              ? "No team members yet. Add members on the Team & Skills page, then slice the project."
                              : "No unassigned tasks to slice. Add tasks on the Phase Board and they appear here.");
     const int rowHeight = table_->verticalHeader()->defaultSectionSize();
-    table_->setFixedHeight(table_->horizontalHeader()->height() + rows * rowHeight + 2);
+    // Room for the horizontal scroll bar, only while the table is too narrow for its columns.
+    const QScrollBar* bar = table_->horizontalScrollBar();
+    const int barHeight = bar->maximum() > 0 ? bar->sizeHint().height() : 0;
+    table_->setFixedHeight(table_->horizontalHeader()->height() + rows * rowHeight + 2 + barHeight);
 }
 
 void ChaosSlicerPage::refreshFromBoard(const QString& eventType) {

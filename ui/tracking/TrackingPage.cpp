@@ -199,11 +199,14 @@ protected:
             painter.setBrush(track_);
             painter.drawRect(QRectF(kTrackLeft, y, trackWidth, kBarHeight));
 
-            // Reference: Math.max(12, value / max * trackWidth), so zero rows keep a stub.
-            const double fill = std::max(
-                kMinFill, maxValue > 0.0 ? bar.value / maxValue * trackWidth : 0.0);
-            painter.setBrush(fill_);
-            painter.drawRect(QRectF(kTrackLeft, y, fill, kBarHeight));
+            // A value of 0 draws no bar (the label stays); any other value keeps at least a small stub.
+            const double fill = (bar.value > 0.0 && maxValue > 0.0)
+                                    ? std::max(kMinFill, bar.value / maxValue * trackWidth)
+                                    : 0.0;
+            if (fill > 0.0) {
+                painter.setBrush(fill_);
+                painter.drawRect(QRectF(kTrackLeft, y, fill, kBarHeight));
+            }
 
             painter.setFont(valueFont);
             painter.setPen(value_);
@@ -343,7 +346,7 @@ void TrackingPage::buildUi()
     table_->setWordWrap(false);
     table_->setFrameShape(QFrame::NoFrame);
     table_->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-    table_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    table_->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     table_->verticalHeader()->hide();
     table_->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     table_->horizontalHeader()->setSectionsClickable(false);
