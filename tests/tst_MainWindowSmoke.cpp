@@ -21,6 +21,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSettings>
 #include <QShortcut>
 #include <QStackedWidget>
 #include <QStatusBar>
@@ -78,7 +79,11 @@ private slots:
         installAppFonts();
         QCoreApplication::setOrganizationName("PlanovaTest");
     }
-    void init() { ThemeManager::instance().apply(ThemeMode::Light); }
+    void init()
+    {
+        ThemeManager::instance().apply(ThemeMode::Light);
+        QSettings().remove("ui/lastPage");   // the test organisation name keeps this away from the real settings
+    }
     void cleanupTestCase() { ThemeManager::instance().apply(ThemeMode::Light); }
 
     // ---- Keyboard shortcuts ----
@@ -156,6 +161,67 @@ private slots:
         pressShortcut(window, Qt::Key_N, Qt::ControlModifier);
         QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Setup));
         QVERIFY(window.findChild<QLineEdit*>("projectNameEdit")->text().isEmpty());
+    }
+
+    // ---- Remember the last page ----
+    // The page the user left a project on is where the next start opens, if a project is open then.
+    void startsOnTheLastPage()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
+        CoreBridge bridge(core);
+        {
+            MainWindow window(core, bridge);
+            showActive(window);
+            pressShortcut(window, Qt::Key_2, Qt::ControlModifier);
+            QCOMPARE(window.findChild<QStackedWidget*>()->currentIndex(), static_cast<int>(Page::Board));
+        }
+        MainWindow next(core, bridge);
+        QCOMPARE(next.findChild<QStackedWidget*>()->currentIndex(), static_cast<int>(Page::Board));
+    }
+
+    // Setup and the Hub are never saved, so leaving through them keeps the last project page.
+    void hubAndSetupAreNotRemembered()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
+        CoreBridge bridge(core);
+        {
+            MainWindow window(core, bridge);
+            showActive(window);
+            pressShortcut(window, Qt::Key_5, Qt::ControlModifier);   // Team
+            pressShortcut(window, Qt::Key_0, Qt::ControlModifier);   // Hub
+            pressShortcut(window, Qt::Key_N, Qt::ControlModifier);   // Setup
+        }
+        QCOMPARE(QSettings().value("ui/lastPage").toInt(), static_cast<int>(Page::Team));
+    }
+
+    void startsOnHubWithoutProjectEvenWithASavedPage()
+    {
+        QSettings().setValue("ui/lastPage", static_cast<int>(Page::Board));
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        QCOMPARE(window.findChild<QStackedWidget*>()->currentIndex(), static_cast<int>(Page::Hub));
+    }
+
+    // Setup, Hub, numbers outside the page list and a value that is not a number all fall back to Home.
+    void badSavedPageFallsBackToHome()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
+        CoreBridge bridge(core);
+        for (const QVariant& saved : {QVariant(static_cast<int>(Page::Setup)), QVariant(static_cast<int>(Page::Hub)),
+                                      QVariant(99), QVariant(-1), QVariant("garbage")}) {
+            QSettings().setValue("ui/lastPage", saved);
+            MainWindow window(core, bridge);
+            QVERIFY2(window.findChild<QStackedWidget*>()->currentIndex() == static_cast<int>(Page::Home),
+                     qPrintable(saved.toString()));
+        }
     }
 
     // The start popup: pick a project opens its Home, Start new project opens Setup, "Not now" changes nothing.

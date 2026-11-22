@@ -14,6 +14,7 @@
 #include "widgets/ModalDialog.h"
 #include "theme/ThemeManager.h"
 #include <QHBoxLayout>
+#include <QSettings>
 #include <QShortcut>
 #include <QStatusBar>
 #include <exception>
@@ -39,10 +40,15 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     buildPages();
     addShortcuts();
     // A project that was auto-opened at start-up shows its Home; otherwise the Projects Hub is behind the start popup.
-    if (core_.currentProject())
+    // Read the saved page first: showing Home below would overwrite it.
+    const std::optional<Page> lastPage = savedPage();
+    if (core_.currentProject()) {
         showHomeForCurrentProject();
-    else
+        if (lastPage)
+            showPage(*lastPage);
+    } else {
         showPage(Page::Hub);
+    }
 
     connect(&bridge_, &CoreBridge::changed, sidebar_, &Sidebar::refresh);
     connect(sidebar_, &Sidebar::pageRequested, this, &MainWindow::showPage);
@@ -151,6 +157,22 @@ void MainWindow::showPage(Page page)
 {
     pages_->setCurrentIndex(static_cast<int>(page));
     sidebar_->setActivePage(page);
+    // Only the pages with a sidebar item are remembered; Setup and the Hub are not.
+    if (Sidebar::navOrder().contains(page))
+        QSettings().setValue("ui/lastPage", static_cast<int>(page));
+}
+
+std::optional<Page> MainWindow::savedPage() const
+{
+    bool isNumber = false;
+    const int value = QSettings().value("ui/lastPage").toInt(&isNumber);
+    if (!isNumber)
+        return std::nullopt;
+    for (Page page : Sidebar::navOrder()) {
+        if (static_cast<int>(page) == value)
+            return page;
+    }
+    return std::nullopt;
 }
 
 std::optional<ProjectDto> MainWindow::currentProjectInfo() const

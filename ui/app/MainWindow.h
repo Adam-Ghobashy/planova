@@ -26,6 +26,8 @@ private:
     void buildPages();
     void addShortcuts();
     void showPage(Page page);
+    // The page saved by the last session, if it is one of the sidebar pages.
+    std::optional<Page> savedPage() const;
     void showHomeForCurrentProject();
     std::optional<ProjectDto> currentProjectInfo() const;
     void updateStatusBar(const QString& lastEvent = QString());
