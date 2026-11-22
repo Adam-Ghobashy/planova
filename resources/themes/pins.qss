@@ -1,7 +1,7 @@
 /* Planova S5 (Pins and Collab). Colours are token placeholders; the old-colour mapping is at the top of base.qss. */
 
 /* ---------- page ---------- */
-QWidget#PinsPage { background-color: @Background; }
+QWidget#PinsPage { background-color: transparent; }
 QLabel#PinsTitle { color: @TextPrimary; font-size: 22px; font-weight: 700; }
 QLabel#PinsSubtitle { color: @TextMuted; font-size: 13px; }
 QLabel#DialogHint { color: @TextMuted; font-size: 12px; }
@@ -38,7 +38,7 @@ QPushButton#PinCommentSend:focus:pressed { padding: 3px 10px; }
 
 /* ---------- filter chips ---------- */
 QPushButton#PinFilterChip {
-    background-color: @Surface; color: @TextMuted; border: 1px solid @Border;
+    background-color: @GlassFillStrong; color: @TextMuted; border: 1px solid @Border;
     border-radius: 14px; padding: 6px 14px; font-weight: 600;
 }
 QPushButton#PinFilterChip[dot="true"] { padding-left: 28px; }
@@ -58,7 +58,9 @@ QLabel#ChipDot[member="5"] { background-color: @Member5; }
 QLabel#ChipDot[member="6"] { background-color: @Member6; }
 
 /* ---------- columns ---------- */
-QFrame#PinColumn { background-color: @Surface; border: 1px solid @Border; border-radius: 12px; }
+QFrame#PinColumn {
+    background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 12px;
+}
 QFrame#PinColumn[dropActive="true"] { background-color: @AccentSoft; border: 2px solid @Accent; }
 QLabel#PinColumnTitle { color: @TextPrimary; font-size: 13px; font-weight: 700; background: transparent; }
 QLabel#PinColumnCount {
@@ -69,7 +71,7 @@ QLabel#PinColumnEmpty { color: @TextMuted; padding: 28px 8px; background: transp
 QScrollArea#PinColumnScroll, QWidget#PinColumnBody { background: transparent; }
 
 /* ---------- cards ---------- */
-QFrame#PinCard { border: 1px solid @Border; border-radius: 10px; background-color: @Surface; }
+QFrame#PinCard { border: 1px solid @Border; border-radius: 10px; background-color: @GlassFillStrong; }
 /* Each category is a sticky-note colour: tint, border and text come from the design's sticky tokens
    (Handoff green, Blocker pink, Testing yellow, Architecture blue). */
 QFrame#PinCard[category="handoff"]      { background-color: @PinHandoff;      border-color: @StickyGreenBorder; }
@@ -124,7 +126,7 @@ QToolButton#PinMenuButton:focus { border-color: @Accent; color: @Accent; }
 QToolButton#PinMenuButton::menu-indicator { image: none; width: 0px; }
 
 QPushButton#PinResolveButton {
-    background-color: @SurfaceAlt; color: @TextPrimary; border: 1px solid @Border;
+    background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @Border;
     border-radius: 8px; padding: 4px 12px; font-weight: 600;
 }
 QPushButton#PinResolveButton:hover { border-color: @Accent; }
@@ -135,12 +137,14 @@ QToolButton#PinCommentChip:hover { color: @Accent; }
 QToolButton#PinCommentChip:focus { border-color: @Accent; color: @Accent; }
 QToolButton#PinCommentChip:checked { color: @Accent; }
 
-QFrame#PinCommentsPanel { background-color: @Surface; border: 1px solid @Border; border-radius: 8px; }
+QFrame#PinCommentsPanel {
+    background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 8px;
+}
 QFrame#PinCommentsPanel QLabel { background: transparent; }
 QLabel#PinCommentMeta { color: @TextMuted; font-size: 11px; font-weight: 600; }
 QLabel#PinCommentText { color: @TextPrimary; font-size: 12px; }
 QLineEdit#PinCommentInput {
-    background-color: @SurfaceAlt; color: @TextPrimary; border: 1px solid @Border;
+    background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @Border;
     border-radius: 8px; padding: 5px 8px;
 }
 QLineEdit#PinCommentInput:focus { border: 2px solid @Accent; padding: 4px 7px; }
@@ -154,7 +158,7 @@ QLabel#NavBadge {
 /* ---------- combo box (StyledComboBox, object name PinCombo) ----------
    Chevron is painted in C++ from the two qproperty colours (TextMuted, Accent). */
 QComboBox#PinCombo {
-    background-color: @Surface; color: @TextPrimary; border: 1px solid @Border; border-radius: 8px;
+    background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @Border; border-radius: 8px;
     padding: 6px 30px 6px 10px; min-height: 20px;
     combobox-popup: 0;
     qproperty-arrowColor: @TextMuted; qproperty-arrowActiveColor: @Accent;
@@ -169,19 +173,19 @@ QComboBox#PinCombo::drop-down {
 }
 QComboBox#PinCombo::down-arrow { image: none; }
 
-/* popup: opaque white card (Surface). Square outer corners: an opaque window cannot be rounded by QSS. */
+/* popup: an opaque card (SurfaceDialog). Square outer corners: an opaque window cannot be rounded by QSS. */
 QComboBox#PinCombo QComboBoxPrivateContainer {
-    background-color: @Surface; border: 1px solid @Border; border-radius: 0;
+    background-color: @SurfaceDialog; border: 1px solid @Border; border-radius: 0;
 }
 QComboBox#PinCombo QAbstractItemView {
-    background-color: @Surface; color: @TextPrimary; border: none; outline: 0; margin: 4px;
+    background-color: @SurfaceDialog; color: @TextPrimary; border: none; outline: 0; margin: 4px;
     selection-background-color: @AccentSoft; selection-color: @Accent;
 }
 QComboBox#PinCombo QAbstractItemView::item { min-height: 28px; padding: 2px 10px; border-radius: 6px; }
 QComboBox#PinCombo QAbstractItemView::item:selected { background-color: @AccentSoft; color: @Accent; }
 
 /* ---------- card menu ("...") ---------- */
-QMenu#PinCardMenu { background-color: @Surface; border: 1px solid @Border; border-radius: 10px; padding: 4px; }
+QMenu#PinCardMenu { background-color: @SurfaceDialog; border: 1px solid @Border; border-radius: 10px; padding: 4px; }
 QMenu#PinCardMenu::item { color: @TextPrimary; padding: 7px 24px 7px 14px; border-radius: 6px; margin: 1px 0; }
 QMenu#PinCardMenu::item:selected { background-color: @AccentSoft; color: @Accent; }
 

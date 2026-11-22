@@ -15,7 +15,7 @@ QDialog#ModalDialog QLabel { background: transparent; border: none; }
 QFrame#modalHeader { border-bottom: 1px solid @BorderSubtle; }
 QLabel#modalTitle { font-size: 16px; font-weight: 700; color: @TextPrimary; }
 QFrame#modalFooter {
-    background: @SurfaceRaised;
+    background: @GlassFill;
     border-top: 1px solid @BorderSubtle;
     border-bottom-left-radius: 19px;
     border-bottom-right-radius: 19px;
@@ -45,7 +45,7 @@ QDialog#ModalDialog QPushButton#modalPrimaryButton:hover { background: @AccentHo
 QDialog#ModalDialog QPushButton#modalPrimaryButton:pressed { background: @AccentPressed; border-color: @AccentPressed; }
 
 QDialog#ModalDialog QPushButton#modalSecondaryButton {
-    background: @SurfaceRaised; color: @TextPrimary; border-color: @BorderDefault;
+    background: @GlassFillStrong; color: @TextPrimary; border-color: @BorderDefault;
 }
 QDialog#ModalDialog QPushButton#modalSecondaryButton:hover { background: @SurfaceHover; border-color: @BorderStrong; }
 QDialog#ModalDialog QPushButton#modalSecondaryButton:pressed { background: @Track; }
@@ -85,7 +85,7 @@ QDialog#ModalDialog QLabel#modalError {
 }
 
 QDialog#ModalDialog QLineEdit, QDialog#ModalDialog QPlainTextEdit, QDialog#ModalDialog QSpinBox {
-    background: @Surface; color: @TextPrimary; border: 1px solid @BorderDefault; border-radius: 10px;
+    background: @GlassFillStrong; color: @TextPrimary; border: 1px solid @BorderDefault; border-radius: 10px;
     padding: 8px 11px; font-size: 13px;
     selection-background-color: @Accent; selection-color: @AccentText;
 }
@@ -110,7 +110,7 @@ QDialog#ModalDialog QPushButton#modalDangerButton:disabled { background: @Track;
 
 /* task dependency list: check boxes in a small scrolling box.
    The box is hollow when off and filled when on (the fill is the difference, not only the hue); the focused one gets a thick ring. */
-QScrollArea#modalDeps { background: @Surface; border: 1px solid @BorderDefault; border-radius: 10px; }
+QScrollArea#modalDeps { background: @GlassFillStrong; border: 1px solid @BorderDefault; border-radius: 10px; }
 QDialog#ModalDialog QCheckBox { spacing: 8px; font-size: 13px; color: @TextPrimary; background: transparent; }
 QDialog#ModalDialog QCheckBox::indicator {
     width: 16px; height: 16px; border-radius: 4px; border: 1px solid @TextMuted; background: @Surface;

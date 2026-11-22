@@ -41,8 +41,6 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     bridge_(bridge) {
     setObjectName("GitHubIntegrationPage");
 
-    setAutoFillBackground(true);
-
     // Styles come from github.qss, loaded once by ThemeManager.
 
     auto* rootLayout = new QVBoxLayout(this);

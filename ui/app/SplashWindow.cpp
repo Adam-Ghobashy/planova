@@ -134,7 +134,7 @@ void SplashWindow::paintEvent(QPaintEvent*)
     p.fillRect(QRectF(0, 0, width(), height() * kSheenEnd), sheen);
     p.restore();
 
-    p.setPen(QPen(theme.color(Token::BorderStrong), 1));
+    p.setPen(QPen(theme.color(Token::GlassEdge), 1));
     p.setBrush(Qt::NoBrush);
     p.drawPath(shape);
 

@@ -13,7 +13,7 @@
    - sliders: the handle turns into a ring (Surface fill, thick TextPrimary border), different from the normal handle
      in both themes (Accent and TextPrimary are the same colour in Dark). */
 
-QWidget#SetupPage { background-color: @Background; }
+QWidget#SetupPage { background-color: transparent; }
 
 QWidget#SetupPage QScrollArea#setupScroll,
 QWidget#SetupPage QWidget#setupViewport,
@@ -37,11 +37,11 @@ QWidget#SetupPage QLabel#stepBadge {
     font-size: 12px; font-weight: 700;
 }
 
-QWidget#SetupPage QWidget#setupFooter { background-color: @Background; border-top: 1px solid @BorderSubtle; }
+QWidget#SetupPage QWidget#setupFooter { background-color: @GlassFill; border-top: 1px solid @GlassEdge; }
 
 /* ---------- step card ---------- */
 QWidget#SetupPage QFrame#stepCard {
-    background-color: @Surface; border: 1px solid @BorderDefault; border-radius: 16px;
+    background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 16px;
 }
 QWidget#SetupPage QLabel#stepTitle {
     font-family: "Space Grotesk", "Segoe UI"; font-size: 20px; font-weight: 800; color: @TextPrimary;
@@ -56,36 +56,34 @@ QWidget#SetupPage QLabel#fieldHint[error="true"], QWidget#SetupPage QLabel#nameH
 }
 
 QWidget#SetupPage QLineEdit, QWidget#SetupPage QPlainTextEdit {
-    background-color: @Background; color: @TextPrimary; border: 1px solid @BorderStrong; border-radius: 10px;
+    background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @BorderStrong; border-radius: 10px;
     padding: 9px 12px; font-size: 13px; min-height: 20px;
     selection-background-color: @Accent; selection-color: @AccentText;
 }
-QWidget#SetupPage QLineEdit:hover, QWidget#SetupPage QPlainTextEdit:hover {
-    background-color: @Surface; border-color: @TextTertiary;
-}
+QWidget#SetupPage QLineEdit:hover, QWidget#SetupPage QPlainTextEdit:hover { border-color: @TextTertiary; }
 QWidget#SetupPage QLineEdit[error="true"] { border: 1px solid @DangerBorder; }
 QWidget#SetupPage QLineEdit:focus, QWidget#SetupPage QPlainTextEdit:focus {
-    background-color: @Surface; border: 2px solid @Accent; padding: 8px 11px;
+    border: 2px solid @Accent; padding: 8px 11px;
 }
 
 
 /* ---------- role combo box (StyledComboBox paints the chevron from the two qproperty colours) ---------- */
 QWidget#SetupPage QComboBox {
-    background-color: @Background; color: @TextPrimary; border: 1px solid @BorderStrong; border-radius: 10px;
+    background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @BorderStrong; border-radius: 10px;
     padding: 9px 30px 9px 12px; font-size: 13px; min-height: 20px; combobox-popup: 0;
     qproperty-arrowColor: @TextSecondary; qproperty-arrowActiveColor: @Accent;
 }
-QWidget#SetupPage QComboBox:hover { background-color: @Surface; border-color: @TextTertiary; }
+QWidget#SetupPage QComboBox:hover { border-color: @TextTertiary; }
 QWidget#SetupPage QComboBox:focus, QWidget#SetupPage QComboBox:on {
-    background-color: @Surface; border: 2px solid @Accent; padding: 8px 29px 8px 11px;
+    border: 2px solid @Accent; padding: 8px 29px 8px 11px;
 }
 QWidget#SetupPage QComboBox::drop-down {
     border: none; background: transparent; width: 30px; subcontrol-origin: padding; subcontrol-position: center right;
 }
 QWidget#SetupPage QComboBox::down-arrow { image: none; }
-QWidget#SetupPage QComboBox QComboBoxPrivateContainer { background-color: @Surface; border: 1px solid @BorderStrong; border-radius: 0; }
+QWidget#SetupPage QComboBox QComboBoxPrivateContainer { background-color: @SurfaceDialog; border: 1px solid @BorderStrong; border-radius: 0; }
 QWidget#SetupPage QComboBox QAbstractItemView {
-    background-color: @Surface; color: @TextPrimary; border: none; outline: 0; margin: 4px;
+    background-color: @SurfaceDialog; color: @TextPrimary; border: none; outline: 0; margin: 4px;
     selection-background-color: @AccentSoft; selection-color: @Accent;
 }
 QWidget#SetupPage QComboBox QAbstractItemView::item { min-height: 28px; padding: 2px 10px; border-radius: 6px; }
@@ -104,7 +102,7 @@ QWidget#SetupPage QPushButton[kind="primary"]:hover { background-color: @AccentH
 QWidget#SetupPage QPushButton[kind="primary"]:pressed { background-color: @AccentPressed; border-color: @AccentPressed; }
 
 QWidget#SetupPage QPushButton[kind="secondary"] {
-    background-color: @SurfaceRaised; color: @TextPrimary; border-color: @BorderDefault;
+    background-color: @GlassFillStrong; color: @TextPrimary; border-color: @BorderDefault;
 }
 QWidget#SetupPage QPushButton[kind="secondary"]:hover { background-color: @SurfaceHover; border-color: @BorderStrong; }
 QWidget#SetupPage QPushButton[kind="secondary"]:pressed { background-color: @Track; }
@@ -120,9 +118,9 @@ QWidget#SetupPage QPushButton[kind="secondary"]:disabled {
 
 /* ---------- model cards ---------- */
 QWidget#SetupPage QPushButton[kind="modelCard"] {
-    background-color: @Surface; border: 2px solid @ControlBorder; border-radius: 14px; padding: 1px; text-align: left;
+    background-color: @GlassFill; border: 2px solid @ControlBorder; border-radius: 14px; padding: 1px; text-align: left;
 }
-QWidget#SetupPage QPushButton[kind="modelCard"]:hover { border-color: @BorderStrong; background-color: @SurfaceRaised; }
+QWidget#SetupPage QPushButton[kind="modelCard"]:hover { border-color: @BorderStrong; background-color: @GlassFillStrong; }
 QWidget#SetupPage QPushButton[kind="modelCard"]:checked { border-color: @Accent; background-color: @AccentSoft; }
 QWidget#SetupPage QPushButton[kind="modelCard"]:focus { border: 3px solid @TextPrimary; padding: 0; }
 QWidget#SetupPage QLabel#modelCardTitle { font-size: 14px; font-weight: 700; color: @TextPrimary; }
@@ -131,7 +129,7 @@ QWidget#SetupPage QLabel#modelCardMark { font-size: 11px; font-weight: 700; colo
 
 /* ---------- team lead toggle: a chip that shows a check mark and a filled background when on ---------- */
 QWidget#SetupPage QPushButton[kind="chip"] {
-    background-color: @Background; color: @TextPrimary; border: 1px solid @ControlBorder; border-radius: 10px;
+    background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @ControlBorder; border-radius: 10px;
     padding: 4px 12px; min-height: 20px; font-size: 13px; font-weight: 600;
 }
 QWidget#SetupPage QPushButton[kind="chip"]:hover { background-color: @SurfaceHover; border-color: @TextTertiary; }
@@ -150,7 +148,7 @@ QWidget#SetupPage QPushButton[kind="ghost"]:focus { border: 2px solid @TextPrima
 /* ---------- team step ---------- */
 QWidget#SetupPage QLabel#noMembers { font-size: 13px; color: @TextSecondary; padding: 20px 0; }
 QWidget#SetupPage QFrame#memberRow {
-    background-color: @SurfaceRaised; border: 1px solid @BorderSubtle; border-radius: 12px;
+    background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 12px;
 }
 QWidget#SetupPage QLabel#memberTitle { font-size: 13px; font-weight: 700; color: @TextPrimary; }
 QWidget#SetupPage QLabel#skillLabel { font-size: 12px; color: @TextSecondary; min-width: 92px; }
@@ -168,7 +166,7 @@ QWidget#SetupPage QSlider::handle:horizontal:focus {
 
 /* ---------- slicer policy step: the same panel as the Chaos Slicer page ---------- */
 QWidget#SetupPage QWidget#WeightSlidersPanel {
-    background-color: @SurfaceRaised; border: 1px solid @BorderSubtle; border-radius: 12px;
+    background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 12px;
 }
 QWidget#SetupPage QWidget#WeightSlidersPanel QLabel { background: transparent; }
 QWidget#SetupPage QLabel#cardTitle { color: @TextPrimary; font-size: 14px; font-weight: 600; }

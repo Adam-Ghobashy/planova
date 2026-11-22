@@ -2,7 +2,7 @@
    (css/theme.css, css/home.css, css/components.css). */
 
 QWidget#homePage {
-    background-color: @Background;              /* Background */
+    background-color: transparent;              /* the glass backdrop shows through */
 }
 
 /* Header / branding */
@@ -26,7 +26,7 @@ QLabel#homeTitle {
 /* .btn.btn-secondary.btn-sm */
 
 QPushButton#homeHubButton {
-    background-color: @SurfaceAlt;              /* surface-raised */
+    background-color: @GlassFillStrong;         /* surface-raised, as glass */
     color: @TextPrimary;
     border: 1px solid @BorderDefault;
     border-radius: 6px;
@@ -36,7 +36,7 @@ QPushButton#homeHubButton {
 }
 
 QPushButton#homeHubButton:hover {
-    background-color: @SurfaceHover;
+    background-color: @SurfaceAlt;
     border-color: @BorderStrong;
 }
 
@@ -65,13 +65,14 @@ QPushButton#homeSlicerButton:pressed {
 /* Cards (.card) */
 
 QFrame#homePanel {
-    background-color: @Surface;
-    border: 1px solid @BorderDefault;
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
     border-radius: 14px;
 }
 
 QFrame#homePanel:hover {
-    border-color: @BorderStrong;
+    background-color: @GlassFillStrong;
 }
 
 QLabel#homePanelTitle {
@@ -116,12 +117,14 @@ QFrame#homeDivider {
 /* Sticky-notes panel */
 
 QFrame#homePinsPanel {
-    background-color: @Surface;
-    border: 1px solid @BorderDefault;
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
     border-radius: 14px;
 }
 
 QFrame#homePinsPanel:hover {
+    background-color: @GlassFillStrong;
     border-color: @Accent;                  /* brand-primary */
 }
 
@@ -145,7 +148,7 @@ QPushButton#homePinsMore {
 }
 
 QPushButton#homePinsMore:hover {
-    background-color: @SurfaceHover;
+    background-color: @GlassFillStrong;
     color: @TextPrimary;
 }
 
@@ -203,13 +206,15 @@ QWidget#stickyNoteWidget[category="testing"] {
 /* Quick links (.home-bottom-card) */
 
 QPushButton#quickLinkCard {
-    background-color: @Surface;
-    border: 1px solid @BorderDefault;
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
     border-radius: 14px;
     text-align: left;
 }
 
 QPushButton#quickLinkCard:hover {
+    background-color: @GlassFillStrong;
     border-color: @Accent;
 }
 
@@ -220,8 +225,8 @@ QPushButton#quickLinkCard:pressed {
 /* .home-bottom-icon */
 
 QLabel#quickLinkIcon {
-    background-color: @SurfaceAlt;              /* surface-raised */
-    border: 1px solid @BorderSubtle;
+    background-color: @GlassFillStrong;         /* surface-raised, as glass */
+    border: 1px solid @GlassEdge;
     border-radius: 10px;
     font-size: 20px;
 }
@@ -244,13 +249,14 @@ QLabel#quickLinkSubtitle {
 /* Stat cards (.oliver-stat-card) */
 
 QFrame#statCardWidget {
-    background-color: @Surface;
-    border: 1px solid @BorderDefault;
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
     border-radius: 14px;
 }
 
 QFrame#statCardWidget:hover {
-    border-color: @BorderStrong;    /* border-strong */
+    background-color: @GlassFillStrong;
 }
 
 QLabel#statCardTitle {

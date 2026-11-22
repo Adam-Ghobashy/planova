@@ -102,18 +102,19 @@ private slots:
         auto* table = page.findChild<QTableView*>("assignmentsTable");
         QVERIFY(table);
         const QImage lightTable = table->viewport()->grab().toImage();
-        QCOMPARE(lightPage.pixelColor(2, 2), tm.color(Token::Background));
+        // Pages are transparent, so the glass backdrop painted behind the app shows through.
+        QCOMPARE(lightPage.pixelColor(2, 2).alpha(), 0);
 
         tm.apply(ThemeMode::Dark);
         QApplication::processEvents();
 
         const QImage darkPage = page.grab().toImage();
         const QImage darkPizza = pizza->grab().toImage();
-        QCOMPARE(darkPage.pixelColor(2, 2), tm.color(Token::Background));
+        QCOMPARE(darkPage.pixelColor(2, 2).alpha(), 0);
         QVERIFY(lightPizza != darkPizza);
         QVERIFY(lightTable != table->viewport()->grab().toImage());
-        // The page must follow the app palette, not keep the one it had when it was built.
-        QCOMPARE(page.palette().color(QPalette::Window), tm.color(Token::Background));
+        // The page window colour stays transparent in the new theme (it never keeps an opaque colour from the old one).
+        QCOMPARE(page.palette().color(QPalette::Window).alpha(), 0);
 
         tm.apply(ThemeMode::Light);
     }

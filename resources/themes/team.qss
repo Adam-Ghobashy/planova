@@ -3,7 +3,7 @@
    scoped under this page so the two pages do not depend on each other. */
 
 QWidget#TeamSkillsPage {
-    background-color: @Background;
+    background-color: transparent;
     color: @TextPrimary;
     font-family: "Inter", "Segoe UI", sans-serif;
 }
@@ -18,8 +18,9 @@ QWidget#TeamSkillsPage QWidget#slicerScrollContent {
 }
 
 QWidget#TeamSkillsPage QFrame#card {
-    background-color: @Surface;
-    border: 1px solid @Border;
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
     border-radius: 12px;
 }
 
@@ -57,7 +58,7 @@ QWidget#TeamSkillsPage QPushButton#primaryButton:pressed {
 }
 
 QWidget#TeamSkillsPage QPushButton#secondaryButton {
-    background-color: @Surface;
+    background-color: @GlassFillStrong;
     color: @TextPrimary;
     border: 1px solid @Border;
     border-radius: 8px;
@@ -122,7 +123,7 @@ QWidget#TeamSkillsPage QSlider::handle:horizontal:hover {
 
 /* ---------- inputs ---------- */
 QWidget#TeamSkillsPage QLineEdit#lightInput {
-    background-color: @Background;
+    background-color: @GlassFillStrong;
     color: @TextPrimary;
     border: 1px solid @Border;
     border-radius: 8px;
@@ -133,7 +134,6 @@ QWidget#TeamSkillsPage QLineEdit#lightInput {
 QWidget#TeamSkillsPage QLineEdit#lightInput:focus {
     border: 2px solid @Accent;
     padding: 6px 11px;
-    background-color: @Surface;
 }
 
 QWidget#TeamSkillsPage QCheckBox#leadCheck {
@@ -145,7 +145,7 @@ QWidget#TeamSkillsPage QCheckBox#leadCheck {
 }
 
 QWidget#TeamSkillsPage QComboBox#roleCombo {
-    background-color: @Background;
+    background-color: @GlassFillStrong;
     color: @TextPrimary;
     border: 1px solid @Border;
     border-radius: 8px;
@@ -156,14 +156,12 @@ QWidget#TeamSkillsPage QComboBox#roleCombo {
 
 QWidget#TeamSkillsPage QComboBox#roleCombo:hover {
     border: 1px solid @Accent;
-    background-color: @Surface;
 }
 
 /* Focus is a 2 px ring, so it differs from the 1 px hover border; the padding shrinks by 1 px. */
 QWidget#TeamSkillsPage QComboBox#roleCombo:focus {
     border: 2px solid @Accent;
     padding: 5px 11px;
-    background-color: @Surface;
 }
 
 QWidget#TeamSkillsPage QComboBox#roleCombo::drop-down {
@@ -172,7 +170,7 @@ QWidget#TeamSkillsPage QComboBox#roleCombo::drop-down {
 }
 
 QWidget#TeamSkillsPage QComboBox#roleCombo QAbstractItemView {
-    background-color: @Surface;
+    background-color: @SurfaceDialog;
     color: @TextPrimary;
     border: 1px solid @Border;
     selection-background-color: @AccentSoft;
@@ -207,7 +205,7 @@ QWidget#TeamSkillsPage QFrame#card QLabel#leadBadge {
 
 
 QWidget#TeamSkillsPage QPushButton#editRoleButton {
-    background-color: @Background;
+    background-color: @GlassFillStrong;
     color: @Accent;
     border: 1px solid @Border;
     border-radius: 6px;
@@ -222,7 +220,7 @@ QWidget#TeamSkillsPage QPushButton#editRoleButton:hover {
 }
 
 QWidget#TeamSkillsPage QPushButton#removeMemberButton {
-    background-color: @Background;
+    background-color: @GlassFillStrong;
     color: @DangerAction;
     border: 1px solid @DangerSoft;
     border-radius: 6px;
@@ -252,7 +250,7 @@ QWidget#TeamSkillsPage QPushButton#saveRoleButton:hover {
 }
 
 QWidget#TeamSkillsPage QPushButton#cancelRoleButton {
-    background-color: @Background;
+    background-color: @GlassFillStrong;
     color: @TextMuted;
     border: 1px solid @Border;
     border-radius: 6px;
@@ -279,7 +277,7 @@ QWidget#TeamSkillsPage QFrame#card QLabel#skillLabel {
 
 /* property "active" is "true" for the rating steps up to the member's rating */
 QWidget#TeamSkillsPage QPushButton#ratingButton {
-    background-color: @Background;
+    background-color: @GlassFillStrong;
     color: @TextMuted;
     border: 1px solid @Border;
     border-radius: 6px;
@@ -361,7 +359,7 @@ QWidget#TeamSkillsPage QPushButton#cancelRoleButton:focus:hover {
 /* Checkable buttons: the text says "On" or "Off", the fill is only a second cue. */
 QWidget#TeamSkillsPage QPushButton#autoMatchSwitch,
 QWidget#TeamSkillsPage QPushButton#smartAssignSwitch {
-    background-color: @Background;
+    background-color: @GlassFillStrong;
     color: @TextPrimary;
     border: 1px solid @Border;
     border-radius: 8px;
@@ -534,7 +532,7 @@ QWidget#TeamSkillsPage QProgressBar#velocityBar::chunk {
     border-radius: 3px;
 }
 
-/* Layout containers inside a member row must not paint the page colour over the card (visible in dark). */
+/* Layout containers inside a member row stay transparent, so the glass card shows through. */
 QWidget#TeamSkillsPage QWidget#profileColumn,
 QWidget#TeamSkillsPage QWidget#skillsColumn,
 QWidget#TeamSkillsPage QWidget#understandingColumn,

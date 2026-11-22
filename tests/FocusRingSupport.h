@@ -8,8 +8,11 @@
 #include <QColor>
 #include <QHash>
 #include <QImage>
+#include <QPainter>
 #include <QString>
 #include <QWidget>
+
+#include "theme/ThemeManager.h"
 
 #include <algorithm>
 #include <cmath>
@@ -82,14 +85,22 @@ enum class Shape {
     Indicator, // check boxes and sliders: the indicator changes, the widget edge does not
 };
 
-// The widget as the user sees it: cropped out of its parent's rendering, so a transparent button shows the page
-// colour behind it instead of empty pixels.
+// The widget as the user sees it: cropped out of its parent's rendering and laid over the backdrop colour.
+// Pages and glass panels are translucent; in the app the glass backdrop (GlassBackdrop, starting at BackdropTop) is
+// painted behind them, so the rendering is composited over BackdropTop instead of empty pixels.
 inline QImage render(QWidget* widget)
 {
     QApplication::processEvents();
     QWidget* parent = widget->parentWidget();
     const QPixmap pixmap = parent ? parent->grab(widget->geometry()) : widget->grab();
-    return pixmap.toImage().convertToFormat(QImage::Format_ARGB32);
+    QImage grabbed = pixmap.toImage().convertToFormat(QImage::Format_ARGB32);
+    grabbed.setDevicePixelRatio(1.0);
+    QImage result(grabbed.size(), QImage::Format_ARGB32);
+    result.fill(ThemeManager::instance().color(Token::BackdropTop));
+    QPainter painter(&result);
+    painter.drawImage(0, 0, grabbed);
+    painter.end();
+    return result;
 }
 
 // Gives `widget` keyboard focus (Tab reason, so the style shows the ring) and checks the ring.

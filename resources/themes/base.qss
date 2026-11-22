@@ -29,15 +29,38 @@
    Contrast: tst_Contrast checks the text pairs of both themes at 4.5:1. Dark TextTertiary is 8E8E95, not the
    design --text-3 (71717A), which is only 4.0:1 on the dark Background; the contrast test requires 4.5. */
 
+/* Glass theme: plain widgets are transparent, so the glass backdrop (GlassBackdrop, painted behind the app) shows
+   through pages, scroll areas and containers. Panels (sidebar, cards, columns, tables, inputs) paint a translucent
+   fill: GlassFill, a 1 px GlassEdge border and a 1 px GlassSheen line on top; hover and inputs use GlassFillStrong.
+   Separate top-level windows (menus, tooltips, combo pop-ups) cannot be translucent without extra window flags, so
+   they stay solid SurfaceDialog. */
 QWidget {
-    background-color: @Background;
+    background-color: transparent;
     color: @TextPrimary;
     font-family: "Inter", "Segoe UI";
 }
 
-/* The page stack lets the glass backdrop (GlassBackdrop, painted behind the app) show through. */
-QStackedWidget {
+/* The main window paints the end colour of the backdrop, so the status bar (outside the backdrop) matches it. */
+QMainWindow {
+    background-color: @BackdropBottom;
+}
+
+QStackedWidget,
+QScrollArea,
+QScrollArea > QWidget > QWidget {
     background: transparent;
+}
+
+/* Status bar: a thin glass strip with a top edge line. */
+QStatusBar {
+    background-color: @GlassFill;
+    border-top: 1px solid @GlassEdge;
+    color: @TextSecondary;
+}
+
+QStatusBar QLabel {
+    background: transparent;
+    color: @TextSecondary;
 }
 
 /* Titles use the display face (Space Grotesk, falls back to the application font if it is missing). */
@@ -58,8 +81,8 @@ QPushButton {
 
 /* ---------- sidebar (S1) ---------- */
 QWidget#Sidebar {
-    background-color: @Sidebar;
-    border-right: 1px solid @Border;
+    background-color: @GlassFill;
+    border-right: 1px solid @GlassEdge;
 }
 
 /* Everything inside the sidebar except the git card paints on the sidebar colour. */
@@ -93,12 +116,10 @@ QPushButton#navItem QLabel#navLabel {
     font-weight: 500;
 }
 
+/* Hover changes only the button fill. Qt ignores a pseudo-state on an ancestor selector ("navItem:hover QLabel"
+   matched every label, so inactive labels were TextPrimary at rest), so the label keeps its colour on hover. */
 QPushButton#navItem:hover {
-    background-color: @SurfaceHover;
-}
-
-QPushButton#navItem:hover QLabel#navLabel {
-    color: @TextPrimary;
+    background-color: @GlassFillStrong;
 }
 
 QPushButton#navItem:pressed {
@@ -157,15 +178,16 @@ QPushButton#navItem QLabel#navLabel:disabled {
 /* Project switcher: a small card under the brand row. "active" is set while the Projects Hub is shown, and then it
    looks like an active nav item. */
 QPushButton#projectSwitcher {
-    background-color: @Surface;
-    border: 1px solid @Border;
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
     border-radius: 10px;
     padding: 0px;
     text-align: left;
 }
 
 QPushButton#projectSwitcher:hover {
-    background-color: @SurfaceHover;
+    background-color: @GlassFillStrong;
     border-color: @BorderStrong;
 }
 
@@ -207,7 +229,7 @@ QPushButton#projectSwitcher[active="true"] QLabel#projectSwitcherName {
 QPushButton#themeToggle {
     background-color: transparent;
     color: @TextSecondary;
-    border: 1px solid @Border;
+    border: 1px solid @GlassEdge;
     border-radius: 10px;
     padding: 6px 12px;
     text-align: left;
@@ -216,7 +238,7 @@ QPushButton#themeToggle {
 }
 
 QPushButton#themeToggle:hover {
-    background-color: @SurfaceHover;
+    background-color: @GlassFillStrong;
     color: @TextPrimary;
 }
 
@@ -230,8 +252,9 @@ QPushButton#themeToggle:focus {
 }
 
 QFrame#SidebarGitCard {
-    background-color: @Surface;
-    border: 1px solid @Border;
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
     border-radius: 10px;
 }
 
@@ -260,9 +283,9 @@ QLabel#SidebarGitText {
 }
 
 QPushButton#SidebarSyncButton {
-    background-color: @Background;
+    background-color: @GlassFillStrong;
     color: @Accent;
-    border: 1px solid @Border;
+    border: 1px solid @GlassEdge;
     border-radius: 6px;
     padding: 0px;
     font-size: 14px;
@@ -281,19 +304,19 @@ QPushButton#SidebarSyncButton:focus {
 
 /* No saved repository: flat and muted (the icon is tinted TextMuted in Sidebar.cpp); the tooltip says why. */
 QPushButton#SidebarSyncButton:disabled {
-    background-color: @SurfaceAlt;
-    border-color: @Border;
+    background-color: transparent;
+    border-color: @GlassEdge;
 }
 
 
 /* ---------- popups and scroll bars (every window; page and dialog files may override) ---------- */
 QToolTip {
-    background-color: @Surface; color: @TextPrimary; border: 1px solid @BorderStrong;
+    background-color: @SurfaceDialog; color: @TextPrimary; border: 1px solid @BorderStrong;
     border-radius: 6px; padding: 4px 8px; font-size: 12px;
 }
 
 QMenu {
-    background-color: @Surface; color: @TextPrimary; border: 1px solid @BorderStrong;
+    background-color: @SurfaceDialog; color: @TextPrimary; border: 1px solid @BorderStrong;
     border-radius: 10px; padding: 4px;
 }
 QMenu::item { padding: 7px 24px 7px 14px; border-radius: 6px; margin: 1px 0; background: transparent; }
@@ -303,7 +326,7 @@ QMenu::separator { height: 1px; background: @BorderSubtle; margin: 4px 8px; }
 
 /* drop-down list of a combo box */
 QComboBox QAbstractItemView {
-    background-color: @Surface; color: @TextPrimary; border: 1px solid @BorderStrong; outline: 0;
+    background-color: @SurfaceDialog; color: @TextPrimary; border: 1px solid @BorderStrong; outline: 0;
     selection-background-color: @AccentSoft; selection-color: @Accent;
 }
 

@@ -3,7 +3,7 @@
    Buttons: property kind is primary, secondary or ghost. On keyboard focus the border becomes a 2 px TextPrimary
    ring; an Accent-filled button also swaps its fill for Surface so the ring differs from the fill in both themes. */
 
-QWidget#WelcomePage { background-color: @Background; }
+QWidget#WelcomePage { background-color: transparent; }
 
 QWidget#WelcomePage QScrollArea#welcomeScroll,
 QWidget#WelcomePage QWidget#welcomeViewport,
@@ -15,8 +15,9 @@ QWidget#WelcomePage QWidget#workspaceStatePanel {
 }
 
 QWidget#WelcomePage QFrame#welcomeCard {
-    background-color: @Surface;
-    border: 1px solid @BorderDefault;
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
     border-radius: 20px;
 }
 
@@ -34,7 +35,7 @@ QWidget#WelcomePage QPushButton[kind="primary"]:hover { background-color: @Accen
 QWidget#WelcomePage QPushButton[kind="primary"]:pressed { background-color: @AccentPressed; border-color: @AccentPressed; }
 
 QWidget#WelcomePage QPushButton[kind="secondary"] {
-    background-color: @SurfaceRaised; color: @TextPrimary; border-color: @BorderDefault;
+    background-color: @GlassFillStrong; color: @TextPrimary; border-color: @BorderDefault;
 }
 QWidget#WelcomePage QPushButton[kind="secondary"]:hover { background-color: @SurfaceHover; border-color: @BorderStrong; }
 QWidget#WelcomePage QPushButton[kind="secondary"]:pressed { background-color: @Track; }
@@ -71,7 +72,7 @@ QWidget#WelcomePage QLabel#welcomeTitle {
 QWidget#WelcomePage QFrame#welcomeDivider { background-color: @BorderSubtle; border: none; }
 
 QWidget#WelcomePage QLineEdit#projectSearch {
-    background-color: @Surface; color: @TextPrimary; border: 1px solid @BorderDefault; border-radius: 10px;
+    background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @BorderDefault; border-radius: 10px;
     padding: 9px 14px; font-size: 13px; min-height: 20px;
     selection-background-color: @Accent; selection-color: @AccentText;
 }
@@ -79,7 +80,7 @@ QWidget#WelcomePage QLineEdit#projectSearch:hover { border-color: @BorderStrong;
 QWidget#WelcomePage QLineEdit#projectSearch:focus { border: 2px solid @Accent; padding: 8px 13px; }
 
 QWidget#WelcomePage QFrame#gitBanner {
-    background-color: @SurfaceRaised; border: 1px solid @BorderDefault; border-radius: 12px;
+    background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 12px;
 }
 QWidget#WelcomePage QLabel#gitBannerCaption { font-size: 11px; color: @TextSecondary; }
 QWidget#WelcomePage QLabel#gitBannerRepo { font-family: "JetBrains Mono", "Consolas"; font-size: 12px; font-weight: 500; color: @TextPrimary; }
@@ -93,9 +94,10 @@ QWidget#WelcomePage QLabel#workspaceState { font-size: 14px; color: @TextSeconda
 
 /* ---------- project card ---------- */
 QWidget#WelcomePage QFrame#ProjectCard {
-    background-color: @Surface; border: 1px solid @BorderDefault; border-radius: 12px; min-height: 120px;
+    background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 12px;
+    min-height: 120px;
 }
-QWidget#WelcomePage QFrame#ProjectCard:hover { border: 1px solid @BorderStrong; background-color: @SurfaceRaised; }
+QWidget#WelcomePage QFrame#ProjectCard:hover { border: 1px solid @BorderStrong; background-color: @GlassFillStrong; }
 QWidget#WelcomePage QFrame#ProjectCard[current="true"] { border: 1px solid @Accent; background-color: @AccentSoft; }
 QWidget#WelcomePage QFrame#ProjectCard QLabel { background: transparent; border: none; }
 QWidget#WelcomePage QLabel#projectName { font-size: 14px; font-weight: 700; color: @TextPrimary; }

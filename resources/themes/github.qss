@@ -3,7 +3,7 @@
    scoped under this page so the two pages do not depend on each other. */
 
 QWidget#GitHubIntegrationPage {
-    background-color: @Background;
+    background-color: transparent;
     color: @TextPrimary;
     font-family: "Inter", "Segoe UI", sans-serif;
 }
@@ -18,8 +18,9 @@ QWidget#GitHubIntegrationPage QWidget#slicerScrollContent {
 }
 
 QWidget#GitHubIntegrationPage QFrame#card {
-    background-color: @Surface;
-    border: 1px solid @Border;
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
     border-radius: 12px;
 }
 
@@ -60,7 +61,7 @@ QWidget#GitHubIntegrationPage QPushButton#connectButton:pressed {
 }
 
 QWidget#GitHubIntegrationPage QPushButton#secondaryButton {
-    background-color: @Surface;
+    background-color: @GlassFillStrong;
     color: @TextPrimary;
     border: 1px solid @Border;
     border-radius: 8px;
@@ -110,7 +111,7 @@ QWidget#GitHubIntegrationPage QLabel#statusLabel {
 
 QWidget#GitHubIntegrationPage QLineEdit#repoInput,
 QWidget#GitHubIntegrationPage QLineEdit#branchInput {
-    background-color: @Background;
+    background-color: @GlassFillStrong;
     color: @TextPrimary;
     border: 1px solid @Border;
     border-radius: 8px;
@@ -147,20 +148,27 @@ QWidget#GitHubIntegrationPage QFrame#card QLabel#connectionBadge[state="disconne
 
 /* ---------- tables ---------- */
 QWidget#GitHubIntegrationPage QTableView#assignmentsTable {
-    background-color: @Surface;
-    border: 1px solid @Border;
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
     border-radius: 12px;
-    gridline-color: @SurfaceAlt;
+    gridline-color: @GlassEdge;
     selection-background-color: @AccentSoft;
     selection-color: @TextPrimary;
     outline: none;
 }
 
+QWidget#GitHubIntegrationPage QHeaderView,
+QWidget#GitHubIntegrationPage QTableCornerButton::section {
+    background: transparent;
+    border: none;
+}
+
 QWidget#GitHubIntegrationPage QHeaderView::section {
-    background-color: @Background;
+    background-color: transparent;
     color: @TextMuted;
     border: none;
-    border-bottom: 1px solid @Border;
+    border-bottom: 1px solid @GlassEdge;
     padding: 10px 12px;
     font-size: 12px;
     font-weight: 600;
@@ -169,7 +177,7 @@ QWidget#GitHubIntegrationPage QHeaderView::section {
 
 QWidget#GitHubIntegrationPage QTableView::item {
     padding: 8px 12px;
-    border-bottom: 1px solid @SurfaceAlt;
+    border-bottom: 1px solid @GlassEdge;
 }
 
 /* ---------- notice and states ---------- */

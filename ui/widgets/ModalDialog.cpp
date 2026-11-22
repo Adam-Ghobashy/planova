@@ -231,9 +231,14 @@ void ModalDialog::paintEvent(QPaintEvent*)
     path.addRoundedRect(card.adjusted(0.5, 0.5, -0.5, -0.5), kRadius, kRadius);
     p.fillPath(path, theme.color(Token::Surface));
     p.fillPath(path, theme.color(Token::SurfaceGlass));
-    p.setPen(QPen(theme.color(Token::BorderStrong), 1));
+    p.setPen(QPen(theme.color(Token::GlassEdge), 1));
     p.setBrush(Qt::NoBrush);
     p.drawPath(path);
+
+    // Glass sheen: a 1 px highlight just inside the top edge, between the two rounded corners.
+    const double sheenY = card.top() + 1.5;
+    p.setPen(QPen(theme.color(Token::GlassSheen), 1));
+    p.drawLine(QPointF(card.left() + kRadius, sheenY), QPointF(card.right() - kRadius, sheenY));
 }
 
 void ModalDialog::showEvent(QShowEvent* e)

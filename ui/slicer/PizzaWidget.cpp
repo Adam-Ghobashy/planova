@@ -464,7 +464,7 @@ double PizzaWidget::drawLegend(QPainter& painter) const {
         const bool selected = !selectedMemberId_.isEmpty() &&
                               selectedMemberId_ == QString::fromStdString(portions_[i].memberId);
         painter.setPen(QPen(tm.color(selected ? Token::Accent : Token::Border), 1.0));
-        painter.setBrush(tm.color(selected ? Token::AccentSoft : Token::Surface));
+        painter.setBrush(tm.color(selected ? Token::AccentSoft : Token::GlassFillStrong));
         painter.drawRoundedRect(r, kPillHeight / 2, kPillHeight / 2);
         painter.setPen(Qt::NoPen);
         painter.setBrush(memberColor(static_cast<int>(i)));

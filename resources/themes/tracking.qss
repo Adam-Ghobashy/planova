@@ -1,7 +1,7 @@
 /* Fair Performance & Tracking (TrackingPage). Stat-card styling lives in home.qss (shared widget). */
 
 #TrackingPage {
-    background: @Background;
+    background: transparent;
 }
 
 /* Reference: h2 22px / 800, p 13px */
@@ -28,15 +28,16 @@ QLabel#TrackingCardCaption {
 
 /* Cards */
 QFrame#TrackingCard {
-    background: @Surface;
-    border: 1px solid @Border;
+    background: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
     border-radius: 14px;
 }
 
 QFrame#TrackingCardHeader {
     background: transparent;
     border: none;
-    border-bottom: 1px solid @Border;
+    border-bottom: 1px solid @GlassEdge;
     border-radius: 0px;
 }
 
@@ -67,7 +68,7 @@ QLabel#TrackingBadge {
 
 /* Metric toggle (reference .btn-sm: radius 6, padding 5px 10px, 12px / 600) */
 QPushButton#TrackingToggle {
-    background: @SurfaceAlt;
+    background: @GlassFillStrong;
     border: 1px solid @Border;
     border-radius: 6px;
     color: @TextPrimary;
@@ -153,7 +154,7 @@ QTableView#LeaderboardTable QHeaderView {
 QTableView#LeaderboardTable QHeaderView::section {
     background: transparent;
     border: none;
-    border-bottom: 1px solid @Border;
+    border-bottom: 1px solid @GlassEdge;
     color: @TextMuted;
     font-size: 13px;
     font-weight: 600;
@@ -165,7 +166,7 @@ QTableView#LeaderboardTable QTableCornerButton::section {
     border: none;
 }
 
-/* Card body: the app-wide QWidget fill would show the page colour inside the white card. */
+/* Card body: transparent, so the glass card shows through. */
 QWidget#TrackingCardBody {
     background: transparent;
 }

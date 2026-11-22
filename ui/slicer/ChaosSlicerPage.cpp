@@ -27,8 +27,6 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     : QWidget(parent), slicer_(slicer), tasks_(tasks), members_(members) {
     setObjectName("ChaosSlicerPage");
 
-    setAutoFillBackground(true);
-
     auto* rootLayout = new QVBoxLayout(this);
     rootLayout->setContentsMargins(0, 0, 0, 0);
     rootLayout->setSpacing(0);

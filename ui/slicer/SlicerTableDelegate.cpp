@@ -70,8 +70,8 @@ QColor slicerRowBackground(const QStyleOptionViewItem& option, const QModelIndex
         index.data(AssignmentTableModel::HighlightedRole).toBool()) {
         return tm.color(Token::AccentSoft);
     }
-    if (option.state & QStyle::State_MouseOver) return tm.color(Token::SurfaceAlt);
-    return tm.color(Token::Surface);
+    if (option.state & QStyle::State_MouseOver) return tm.color(Token::GlassFillStrong);
+    return QColor(Qt::transparent);   // at rest the glass table shows through
 }
 
 SlicerTableDelegate::SlicerTableDelegate(QObject* parent)
@@ -108,7 +108,7 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     const QRect rect = option.rect;
 
     painter->fillRect(rect, slicerRowBackground(option, index));
-    painter->setPen(QPen(tm.color(Token::SurfaceAlt), 1));
+    painter->setPen(QPen(tm.color(Token::GlassEdge), 1));
     painter->drawLine(rect.bottomLeft(), rect.bottomRight());
 
     const int col = index.column();

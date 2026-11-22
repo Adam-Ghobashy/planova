@@ -80,7 +80,7 @@ inline constexpr const char* kDarkHex[] = {
     "#FCA5A5", "#FCD34D", "#8E8BA8", "#DCDAE8", "#B8B5CC",
     "#C4C1D6", "#0B0A18", "#1E1B38", "#221F3E", "#B8141128", "#2EFFFFFF",
     "#3D3866", "#B3050414", "#CC000000", "#B4A9FF", "#8B7BFF",
-    "#2A2550", "#F4F4F7", "#262246", "#C4C1D6",
+    "#3D3478", "#F4F4F7", "#262246", "#C4C1D6",
     "#F4F4F7", "#3A2D1A", "#FCD34D",
     "#A3A0B8", "#17FFFFFF", "#0FFFFFFF", "#3D3866", "#262246", "#2C2848",
     "#3D3866", "#4E4880", "#59A9A6BD", "#99A9A6BD",
