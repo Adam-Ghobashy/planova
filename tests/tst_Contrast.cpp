@@ -47,21 +47,16 @@ QColor blend(const QColor& over, const QColor& under)
     return result;
 }
 
-// The brightest point of the backdrop: the centre of the primary glow, over the top of the gradient.
-QColor glowPoint(bool dark)
+// The two brightest points of the backdrop: the centre of each glow. The primary glow sits at the top of the
+// gradient (BackdropTop), the secondary glow at the bottom (BackdropBottom).
+QColor primaryGlowPoint(bool dark)
 {
     return blend(tokenColor(dark, Token::GlowPrimary), tokenColor(dark, Token::BackdropTop));
 }
 
-// A glass panel over that brightest point. Text on glass must stay readable even there.
-QColor glassBase(bool dark)
+QColor secondaryGlowPoint(bool dark)
 {
-    return blend(tokenColor(dark, Token::GlassFill), glowPoint(dark));
-}
-
-QColor glassStrongBase(bool dark)
-{
-    return blend(tokenColor(dark, Token::GlassFillStrong), glowPoint(dark));
+    return blend(tokenColor(dark, Token::GlowSecondary), tokenColor(dark, Token::BackdropBottom));
 }
 }
 
@@ -94,14 +89,21 @@ private slots:
         for (bool dark : {false, true}) {
             const char* mode = dark ? "dark" : "light";
             // Adds the pair on its solid surface. Text that sits on Background, Surface or SurfaceAlt will sit on
-            // glass panels too, so it is also checked on a glass panel and a strong glass panel at the glow point.
+            // glass panels too, so it is also checked on a glass panel and a strong glass panel at both glow centres.
+            const QColor glass = tokenColor(dark, Token::GlassFill);
+            const QColor strongGlass = tokenColor(dark, Token::GlassFillStrong);
             auto addPair = [&](Token text, Token surface) {
                 const QByteArray name = QByteArray(mode) + " " + kTokenNames[int(text)] + " on "
                                         + kTokenNames[int(surface)];
                 QTest::newRow(name.constData()) << dark << text << tokenColor(dark, surface);
                 if (surface == Token::Background || surface == Token::Surface || surface == Token::SurfaceAlt) {
-                    QTest::newRow((name + " as glass").constData()) << dark << text << glassBase(dark);
-                    QTest::newRow((name + " as strong glass").constData()) << dark << text << glassStrongBase(dark);
+                    const QColor glow1 = primaryGlowPoint(dark);
+                    const QColor glow2 = secondaryGlowPoint(dark);
+                    QTest::newRow((name + " as glass").constData()) << dark << text << blend(glass, glow1);
+                    QTest::newRow((name + " as strong glass").constData()) << dark << text << blend(strongGlass, glow1);
+                    QTest::newRow((name + " as glass (glow 2)").constData()) << dark << text << blend(glass, glow2);
+                    QTest::newRow((name + " as strong glass (glow 2)").constData())
+                        << dark << text << blend(strongGlass, glow2);
                 }
             };
             for (Token text : {Token::TextPrimary, Token::TextSecondary, Token::TextMuted}) {

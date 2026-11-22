@@ -18,9 +18,12 @@
 #include <QPainter>
 #include <QTableView>
 #include <QTest>
+#include <algorithm>
 
 using namespace planova::slicer;
 using planova::s6::LeaderboardTable;
+
+Q_DECLARE_METATYPE(ThemeMode)
 
 namespace {
 // Same fixture as tst_ChaosSlicerPage: a slicer with one member and one task.
@@ -43,6 +46,11 @@ struct Board {
 // Sum of the channel differences between two colours: 0 means equal.
 int colourDistance(const QColor& a, const QColor& b) {
     return qAbs(a.red() - b.red()) + qAbs(a.green() - b.green()) + qAbs(a.blue() - b.blue());
+}
+
+// The largest difference on any one channel: a per-channel tolerance check.
+int maxChannelDifference(const QColor& a, const QColor& b) {
+    return std::max({qAbs(a.red() - b.red()), qAbs(a.green() - b.green()), qAbs(a.blue() - b.blue())});
 }
 
 // What `over` looks like painted on top of the opaque colour `under`.
@@ -180,15 +188,46 @@ private slots:
         const QImage dark = backdrop.cachedBackdrop().toImage();
         QVERIFY(dark != light);
 
-        // Top left sits in the primary glow, at the top of the gradient.
-        const QColor topLeft = dark.pixelColor(0, 0);
-        const QColor glowOnTop = paintedOver(tm.color(Token::GlowPrimary), tm.color(Token::BackdropTop));
-        QVERIFY2(colourDistance(topLeft, glowOnTop) < colourDistance(topLeft, tm.color(Token::BackdropBottom)),
-                 qPrintable(topLeft.name()));
-
         backdrop.resize(500, 350);
         QApplication::processEvents();
         QCOMPARE(backdrop.cachedBackdrop().size(), backdrop.size() * backdrop.devicePixelRatioF());
+
+        tm.apply(ThemeMode::Light);
+    }
+
+    // The primary glow is painted where it should be: its centre shows the glow colour, a far corner does not.
+    void glassBackdropPaintsTheGlow_data() {
+        QTest::addColumn<ThemeMode>("mode");
+        QTest::addColumn<int>("minGlowDifference");
+        // The light glow is the accent at about 6% alpha, so it is much fainter than the dark one.
+        QTest::newRow("light") << ThemeMode::Light << 15;
+        QTest::newRow("dark") << ThemeMode::Dark << 60;
+    }
+
+    void glassBackdropPaintsTheGlow() {
+        QFETCH(ThemeMode, mode);
+        QFETCH(int, minGlowDifference);
+        auto& tm = ThemeManager::instance();
+        tm.apply(mode);
+        GlassBackdrop backdrop;
+        backdrop.resize(400, 300);
+        backdrop.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&backdrop));
+        const QImage image = backdrop.cachedBackdrop().toImage();
+        QVERIFY(!image.isNull());
+
+        // (a) The glow centre (15%, 10%) is the glow colour over the top of the gradient. The tolerance covers the
+        // gradient having moved 10% of the way towards BackdropBottom at that height.
+        const QColor glowCentre = image.pixelColor(int(image.width() * 0.15), int(image.height() * 0.10));
+        const QColor expectedGlow = paintedOver(tm.color(Token::GlowPrimary), tm.color(Token::BackdropTop));
+        QVERIFY2(maxChannelDifference(glowCentre, expectedGlow) <= 6,
+                 qPrintable(glowCentre.name() + " vs " + expectedGlow.name()));
+
+        // (b) The top-right corner is outside both glows: plain BackdropTop, clearly unlike the glow centre.
+        const QColor farCorner = image.pixelColor(image.width() - 1, 0);
+        QVERIFY2(maxChannelDifference(farCorner, tm.color(Token::BackdropTop)) <= 6, qPrintable(farCorner.name()));
+        QVERIFY2(colourDistance(farCorner, glowCentre) >= minGlowDifference,
+                 qPrintable(QString::number(colourDistance(farCorner, glowCentre))));
 
         tm.apply(ThemeMode::Light);
     }

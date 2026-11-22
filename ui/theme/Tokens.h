@@ -89,7 +89,7 @@ inline constexpr const char* kDarkHex[] = {
     "#4010B981", "#D1FAE5", "#40EC4899", "#FCE7F3",
     "#403B82F6", "#DBEAFE", "#40F59E0B", "#FEF3C7",
     "#34D399",
-    "#0B0A18", "#141130", "#387C5CFF", "#333B82F6", "#0FFFFFFF", "#17FFFFFF", "#1FFFFFFF"
+    "#0B0A18", "#141130", "#387C5CFF", "#1F3B82F6", "#0FFFFFFF", "#17FFFFFF", "#1FFFFFFF"
 };
 
 constexpr int kTokenCount = static_cast<int>(Token::GlassEdge) + 1;
