@@ -91,7 +91,7 @@ private slots:
     }
     void paletteFollowsTokens() {
         ThemeManager::instance().apply(ThemeMode::Dark);
-        QCOMPARE(qApp->palette().color(QPalette::Window), QColor("#0A0A0B"));
+        QCOMPARE(qApp->palette().color(QPalette::Window), QColor(kDarkHex[int(Token::Background)]));
         ThemeManager::instance().apply(ThemeMode::Light);
     }
     void fontsRegistered() {
