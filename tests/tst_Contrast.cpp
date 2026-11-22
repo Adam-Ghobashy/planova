@@ -104,6 +104,11 @@ private slots:
                     QTest::newRow((name + " as glass (glow 2)").constData()) << dark << text << blend(glass, glow2);
                     QTest::newRow((name + " as strong glass (glow 2)").constData())
                         << dark << text << blend(strongGlass, glow2);
+                    // A strong glass panel inside a glass panel (cards on a page panel): both layers add up.
+                    QTest::newRow((name + " as strong glass on glass").constData())
+                        << dark << text << blend(strongGlass, blend(glass, glow1));
+                    QTest::newRow((name + " as strong glass on glass (glow 2)").constData())
+                        << dark << text << blend(strongGlass, blend(glass, glow2));
                 }
             };
             for (Token text : {Token::TextPrimary, Token::TextSecondary, Token::TextMuted}) {
@@ -149,6 +154,10 @@ private slots:
                 addPair(Token::TextPrimary, surface);
                 addPair(Token::TextSecondary, surface);
             }
+            // Avatar initials on the six member colours (Board, Pins, Team, Tracking, Slicer pizza).
+            for (Token member : {Token::Member1, Token::Member2, Token::Member3, Token::Member4, Token::Member5,
+                                 Token::Member6})
+                addPair(Token::MemberText, member);
             // GitHub: the notice bar (TextSecondary on SurfaceAlt) and disabled buttons (TextMuted on SurfaceAlt)
             // are already covered by the general Text-on-Surface pairs above.
         }

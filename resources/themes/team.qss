@@ -181,7 +181,7 @@ QWidget#TeamSkillsPage QComboBox#roleCombo QAbstractItemView {
 /* ---------- member card ---------- */
 /* Avatar fills: property memberColor 1..6 = the Member1..Member6 colours of Tokens.h. */
 QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar {
-    color: @TextInverse;
+    color: @MemberText;
     border-radius: 20px;
     font-size: 14px;
     font-weight: 700;

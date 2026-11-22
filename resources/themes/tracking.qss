@@ -107,6 +107,7 @@ QPushButton#TrackingToggle:checked:focus:hover {
     qproperty-textMutedColor: @TextMuted;
     qproperty-accentColor: @Accent;
     qproperty-accentTextColor: @Surface;
+    qproperty-memberTextColor: @MemberText;
     qproperty-accentSoftColor: @AccentSoft;
     qproperty-successSoftColor: @SuccessSoft;
     qproperty-trackColor: @Track;

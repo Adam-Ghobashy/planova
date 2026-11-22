@@ -113,12 +113,12 @@ QLabel#PinAvatar {
     border-radius: 12px; color: @TextInverse; font-size: 10px; font-weight: 700;
     background-color: @TextMuted;
 }
-QLabel#PinAvatar[member="1"] { background-color: @Member1; }
-QLabel#PinAvatar[member="2"] { background-color: @Member2; }
-QLabel#PinAvatar[member="3"] { background-color: @Member3; }
-QLabel#PinAvatar[member="4"] { background-color: @Member4; }
-QLabel#PinAvatar[member="5"] { background-color: @Member5; }
-QLabel#PinAvatar[member="6"] { background-color: @Member6; }
+QLabel#PinAvatar[member="1"] { background-color: @Member1; color: @MemberText; }
+QLabel#PinAvatar[member="2"] { background-color: @Member2; color: @MemberText; }
+QLabel#PinAvatar[member="3"] { background-color: @Member3; color: @MemberText; }
+QLabel#PinAvatar[member="4"] { background-color: @Member4; color: @MemberText; }
+QLabel#PinAvatar[member="5"] { background-color: @Member5; color: @MemberText; }
+QLabel#PinAvatar[member="6"] { background-color: @Member6; color: @MemberText; }
 
 QToolButton#PinMenuButton { border: 2px solid transparent; border-radius: 6px; background: transparent; color: @TextMuted; font-weight: 700; padding: 0 4px; }
 QToolButton#PinMenuButton:hover { color: @Accent; }

@@ -21,6 +21,7 @@ class LeaderboardTable : public QTableView {
     Q_PROPERTY(QColor textMutedColor MEMBER textMuted_)
     Q_PROPERTY(QColor accentColor MEMBER accent_)
     Q_PROPERTY(QColor accentTextColor MEMBER accentText_)
+    Q_PROPERTY(QColor memberTextColor MEMBER memberText_)
     Q_PROPERTY(QColor accentSoftColor MEMBER accentSoft_)
     Q_PROPERTY(QColor successSoftColor MEMBER successSoft_)
     Q_PROPERTY(QColor trackColor MEMBER track_)
@@ -39,6 +40,7 @@ public:
     QColor textMutedColor() const { return textMuted_; }
     QColor accentColor() const { return accent_; }
     QColor accentTextColor() const { return accentText_; }
+    QColor memberTextColor() const { return memberText_; }   // initials on a Member1..6 badge
     QColor accentSoftColor() const { return accentSoft_; }
     QColor successSoftColor() const { return successSoft_; }
     QColor trackColor() const { return track_; }
@@ -60,7 +62,7 @@ public:
     }
 
 private:
-    QColor textPrimary_, textMuted_, accent_, accentText_, accentSoft_, successSoft_, track_,
+    QColor textPrimary_, textMuted_, accent_, accentText_, memberText_, accentSoft_, successSoft_, track_,
         surfaceAlt_, border_;
     QColor member1_, member2_, member3_, member4_, member5_, member6_;
 };

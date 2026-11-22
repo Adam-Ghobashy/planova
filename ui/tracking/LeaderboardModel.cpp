@@ -333,7 +333,7 @@ void MemberCellDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
     initialsFont.setBold(true);
     initialsFont.setPixelSize(10);
     painter->setFont(initialsFont);
-    painter->setPen(tinted ? table->accentTextColor() : table->textPrimaryColor());
+    painter->setPen(tinted ? table->memberTextColor() : table->textPrimaryColor());
     painter->drawText(badge, Qt::AlignCenter, index.data(LeaderboardModel::InitialsRole).toString());
 
     QFont nameFont(option.font);

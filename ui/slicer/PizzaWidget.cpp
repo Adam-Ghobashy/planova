@@ -385,7 +385,7 @@ void PizzaWidget::drawSlice(QPainter& painter, int index) const {
     font.setBold(true);
     font.setPointSize(9);
     painter.setFont(font);
-    painter.setPen(tm.color(Token::AccentText));
+    painter.setPen(tm.color(Token::MemberText));
     painter.drawText(QRectF(badge.x() - 14, badge.y() - 14, 28, 28), Qt::AlignCenter, initialsOf(p.memberName));
     painter.restore();
 }
