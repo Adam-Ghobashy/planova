@@ -664,6 +664,43 @@ private slots:
         QCOMPARE(caption->text(), QString("+1 in review"));
     }
 
+    // At the smallest supported window no pin card is cut off: each card fits inside its column, and the page
+    // scrolls sideways instead (as the Board does).
+    void pinCardsNotClippedAtSmallWindow()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
+        demo::seedIfEmpty(core);   // the demo has one pin in each column
+        CoreBridge bridge(core);
+        for (ThemeMode mode : {ThemeMode::Light, ThemeMode::Dark}) {
+            ThemeManager::instance().apply(mode);
+            MainWindow window(core, bridge);
+            window.resize(1125, 748);
+            window.show();
+            QVERIFY(QTest::qWaitForWindowExposed(&window));
+            window.findChild<QStackedWidget*>()->setCurrentIndex(static_cast<int>(Page::Pins));
+            QApplication::processEvents();
+            QCOMPARE(window.size(), QSize(1125, 748));
+
+            int checked = 0;
+            for (const QScrollArea* area : window.findChildren<QScrollArea*>("PinColumnScroll")) {
+                if (!area->isVisible()) continue;
+                ++checked;
+                QVERIFY2(area->widget()->width() <= area->viewport()->width(),
+                         qPrintable(QString("column content is %1 px but the viewport is %2 px")
+                                        .arg(area->widget()->width()).arg(area->viewport()->width())));
+            }
+            QVERIFY(checked >= 4);
+            for (const QPushButton* resolve : window.findChildren<QPushButton*>("PinResolveButton")) {
+                if (!resolve->isVisible()) continue;
+                const QWidget* card = resolve->parentWidget();
+                QVERIFY2(resolve->geometry().right() < card->width(), "Resolve sticks out of its card");
+                QVERIFY2(resolve->width() >= resolve->sizeHint().width(), "Resolve is squeezed");
+            }
+        }
+    }
+
     // At the smallest supported window no stat card number is squeezed (the In Progress card also has a caption).
     void homeStatCardsFitAtSmallWindow()
     {

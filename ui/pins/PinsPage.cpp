@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <algorithm>
@@ -71,15 +72,26 @@ PinsPage::PinsPage(IPinBoardQuery& query, IPinCommands& commands, IMemberQuery& 
     root->addWidget(emptyHint_);
 
     // Columns
-    auto* cols = new QHBoxLayout;
+    // Columns sit in a sideways scroll area (like the Board), so narrow windows scroll instead of cutting cards.
+    auto* host = new QWidget;
+    host->setObjectName("PinColumnsHost");
+    auto* cols = new QHBoxLayout(host);
+    cols->setContentsMargins(0, 0, 0, 0);
     cols->setSpacing(14);
     for (PinCategory c : kColumnOrder) {
-        auto* col = new PinColumnWidget(c, categoryTitle(c), this);
+        auto* col = new PinColumnWidget(c, categoryTitle(c), host);
         connect(col, &PinColumnWidget::pinDropped, this, &PinsPage::onDropped);
         columns_.push_back(col);
         cols->addWidget(col, 1);
     }
-    root->addLayout(cols, 1);
+    auto* scroll = new QScrollArea(this);
+    scroll->setObjectName("PinsScroll");
+    scroll->setWidgetResizable(true);
+    scroll->setFocusPolicy(Qt::NoFocus);   // the controls inside take focus; the area itself would be a Tab stop with no ring
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);   // each column scrolls its own cards
+    scroll->setWidget(host);
+    root->addWidget(scroll, 1);
 
     connect(leave, &QPushButton::clicked, this, &PinsPage::onLeavePin);
 

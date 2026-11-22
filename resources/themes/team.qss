@@ -36,7 +36,7 @@ QWidget#TeamSkillsPage QLabel#cardTitle {
 
 QWidget#TeamSkillsPage QLabel#cardSubtitle {
     color: @TextMuted;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
 }
 
 QWidget#TeamSkillsPage QPushButton#primaryButton {
@@ -413,7 +413,7 @@ QWidget#TeamSkillsPage QWidget#assignmentColumn {
 
 QWidget#TeamSkillsPage QFrame#card QLabel#assignmentText {
     color: @TextPrimary;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
 }
 
 QWidget#TeamSkillsPage QFrame#card QLabel#clashBadge {
@@ -428,7 +428,7 @@ QWidget#TeamSkillsPage QFrame#card QLabel#clashBadge {
 
 QWidget#TeamSkillsPage QFrame#card QLabel#conflictText {
     color: @TextMuted;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
 }
 
 QWidget#TeamSkillsPage QPushButton#resolveConflict {

@@ -311,9 +311,8 @@ void PizzaWidget::paintEvent(QPaintEvent* ) {
     const double legendEnd = drawLegend(painter);
     if (!sliced_ && !animating_ && hasCuts()) {
         painter.setPen(tm.color(Token::TextMuted));
-        QFont font = painter.font();
-        font.setPixelSize(12);
-        painter.setFont(font);
+        QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
+                painter.setFont(font);
         painter.drawText(QRectF(0, legendEnd + 2, width(), 20), Qt::AlignCenter,
                          "Press \"Slice the Project\" to divide the work");
     }
@@ -418,10 +417,8 @@ void PizzaWidget::drawCutter(QPainter& painter) const {
 }
 
 PizzaWidget::LegendLayout PizzaWidget::layoutLegend(double top) const {
-    QFont font = this->font();
-    font.setPixelSize(12);
-    font.setBold(false);
-    const QFontMetrics fm(font);
+    QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
+        const QFontMetrics fm(font);
     const double maxRowWidth = width() - 2 * kMargin;
 
     std::vector<double> widths;
@@ -453,10 +450,8 @@ PizzaWidget::LegendLayout PizzaWidget::layoutLegend(double top) const {
 
 double PizzaWidget::drawLegend(QPainter& painter) const {
     auto& tm = ThemeManager::instance();
-    QFont font = painter.font();
-    font.setPixelSize(12);
-    font.setBold(false);
-    painter.setFont(font);
+    QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
+        painter.setFont(font);
 
     const LegendLayout layout = layoutLegend(legendTop());
     for (size_t i = 0; i < layout.rects.size(); ++i) {

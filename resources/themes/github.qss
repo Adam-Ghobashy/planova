@@ -36,7 +36,7 @@ QWidget#GitHubIntegrationPage QLabel#cardTitle {
 
 QWidget#GitHubIntegrationPage QLabel#cardSubtitle {
     color: @TextMuted;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
 }
 
 QWidget#GitHubIntegrationPage QPushButton#primaryButton,
@@ -130,7 +130,7 @@ QWidget#GitHubIntegrationPage QLineEdit#branchInput:focus {
 QWidget#GitHubIntegrationPage QFrame#card QLabel#connectionBadge {
     border-radius: 10px;
     padding: 4px 12px;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
 }
 
 QWidget#GitHubIntegrationPage QFrame#card QLabel#connectionBadge[state="connected"] {
@@ -188,13 +188,13 @@ QWidget#GitHubIntegrationPage QLabel#simulatedNotice {
     border: 1px solid @Border;
     border-radius: 8px;
     padding: 8px 12px;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
 }
 
 /* Why Connect is off. */
 QWidget#GitHubIntegrationPage QFrame#card QLabel#connectHint {
     color: @TextMuted;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
 }
 
 /* Disabled buttons: flat fill and a border instead of the accent fill, muted text. */

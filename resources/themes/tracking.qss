@@ -23,7 +23,7 @@ QLabel#statCardCaption {
     background: transparent;
     border: none;
     color: @TextMuted;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
 }
 
 /* Cards */

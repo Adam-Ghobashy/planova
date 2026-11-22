@@ -6,6 +6,7 @@
 #include "planova/common/EventTypes.h"
 #include "slicer/WeightSlidersPanel.h"
 #include "theme/ThemeManager.h"
+#include <QFontMetrics>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -16,6 +17,7 @@
 #include <QTableView>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <algorithm>
 #include <stdexcept>
 
 namespace planova::slicer {
@@ -145,7 +147,17 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
 
     auto* header = table_->horizontalHeader();
     header->setStretchLastSection(false);
-    header->setMinimumSectionSize(110);  // the two stretch columns stop shrinking here, then the table scrolls
+    // The two stretch columns stop shrinking at their header text (12 px semibold in slicer.qss, plus its
+    // 12 px side padding), then the table scrolls.
+    QFont headerFont = ThemeManager::instance().textFont(TextStyle::Caption);
+    headerFont.setWeight(QFont::DemiBold);
+    const QFontMetrics headerMetrics(headerFont);
+    int minimumSection = 110;
+    for (int column : {int(AssignmentTableModel::TaskComplexity), int(AssignmentTableModel::Rationale)}) {
+        const QString text = table_->model()->headerData(column, Qt::Horizontal).toString();
+        minimumSection = std::max(minimumSection, headerMetrics.horizontalAdvance(text) + 2 * 12 + 4);
+    }
+    header->setMinimumSectionSize(minimumSection);
     header->setSectionResizeMode(AssignmentTableModel::TaskComplexity, QHeaderView::Stretch);
     header->setSectionResizeMode(AssignmentTableModel::Skill, QHeaderView::ResizeToContents);
     header->setSectionResizeMode(AssignmentTableModel::Priority, QHeaderView::ResizeToContents);

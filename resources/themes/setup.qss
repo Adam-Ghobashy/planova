@@ -50,7 +50,7 @@ QWidget#SetupPage QLabel#stepDescription { font-size: 14px; color: @TextSecondar
 
 /* ---------- fields ---------- */
 QWidget#SetupPage QLabel#fieldLabel { font-size: 12px; font-weight: 600; color: @TextPrimary; }
-QWidget#SetupPage QLabel#fieldHint, QWidget#SetupPage QLabel#nameHint { font-size: 12px; color: @TextSecondary; }
+QWidget#SetupPage QLabel#fieldHint, QWidget#SetupPage QLabel#nameHint { font-size: 12px; font-weight: 500; color: @TextSecondary; }
 QWidget#SetupPage QLabel#fieldHint[error="true"], QWidget#SetupPage QLabel#nameHint[error="true"] {
     color: @DangerText; font-weight: 600;
 }
@@ -124,7 +124,7 @@ QWidget#SetupPage QPushButton[kind="modelCard"]:hover { border-color: @BorderStr
 QWidget#SetupPage QPushButton[kind="modelCard"]:checked { border-color: @Accent; background-color: @AccentSoft; }
 QWidget#SetupPage QPushButton[kind="modelCard"]:focus { border: 3px solid @TextPrimary; padding: 0; }
 QWidget#SetupPage QLabel#modelCardTitle { font-size: 14px; font-weight: 600; color: @TextPrimary; }
-QWidget#SetupPage QLabel#modelCardText { font-size: 12px; color: @TextSecondary; }
+QWidget#SetupPage QLabel#modelCardText { font-size: 12px; font-weight: 500; color: @TextSecondary; }
 QWidget#SetupPage QLabel#modelCardMark { font-size: 12px; font-weight: 600; color: @Accent; }
 
 /* ---------- team lead toggle: a chip that shows a check mark and a filled background when on ---------- */
@@ -151,7 +151,7 @@ QWidget#SetupPage QFrame#memberRow {
     background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 12px;
 }
 QWidget#SetupPage QLabel#memberTitle { font-size: 14px; font-weight: 600; color: @TextPrimary; }
-QWidget#SetupPage QLabel#skillLabel { font-size: 12px; color: @TextSecondary; min-width: 92px; }
+QWidget#SetupPage QLabel#skillLabel { font-size: 12px; font-weight: 500; color: @TextSecondary; min-width: 92px; }
 QWidget#SetupPage QLabel#skillValue { font-size: 12px; font-weight: 600; color: @TextPrimary; }
 
 QWidget#SetupPage QSlider::groove:horizontal { height: 6px; background: @Track; border-radius: 3px; }

@@ -312,7 +312,7 @@ QPushButton#SidebarSyncButton:disabled {
 /* ---------- popups and scroll bars (every window; page and dialog files may override) ---------- */
 QToolTip {
     background-color: @SurfaceDialog; color: @TextPrimary; border: 1px solid @BorderStrong;
-    border-radius: 6px; padding: 4px 8px; font-size: 12px;
+    border-radius: 6px; padding: 4px 8px; font-size: 12px; font-weight: 500;
 }
 
 QMenu {

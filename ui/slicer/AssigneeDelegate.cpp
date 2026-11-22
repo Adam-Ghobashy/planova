@@ -66,9 +66,8 @@ void AssigneeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     painter->drawRoundedRect(comboRect, 6, 6);
 
     QString text = index.data(Qt::DisplayRole).toString();
-    QFont font = painter->font();
-    font.setPixelSize(12);
-    painter->setFont(font);
+    QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
+        painter->setFont(font);
     painter->setPen(tm.color(Token::TextPrimary));
     painter->drawText(comboRect.adjusted(8, 0, -20, 0), Qt::AlignLeft | Qt::AlignVCenter, text);
 

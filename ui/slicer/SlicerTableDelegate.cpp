@@ -39,6 +39,21 @@ int pillWidth(const QStyleOptionViewItem& option, const QModelIndex& index, int 
     return fm.horizontalAdvance(index.data(role).toString()) + 16 + 16;
 }
 
+// Cell width for the assignee: avatar, name, the match or "Manual" badge, laid out as in paint(), plus an 8 px margin.
+int assigneeWidth(const QStyleOptionViewItem& option, const QModelIndex& index) {
+    QFont nameFont = option.font;
+    nameFont.setPixelSize(14);
+    const QString name = index.data(AssignmentTableModel::AssigneeNameRole).toString();
+    const int matchPct = index.data(AssignmentTableModel::MatchPctRole).toInt();
+    const bool manual = index.data(AssignmentTableModel::ManualOverrideRole).toBool();
+    int width = 16 + 22 + QFontMetrics(nameFont).horizontalAdvance(name);
+    if (manual || matchPct > 0) {
+        const QString badge = manual ? QString("Manual") : QString("%1%").arg(matchPct);
+        width += QFontMetrics(boldFont(option.font, 12)).horizontalAdvance(badge) + 12;
+    }
+    return width + 8;
+}
+
 // Wraps text to the width and keeps two lines at most; the second line is elided with "...".
 QString twoLines(const QString& text, const QFontMetrics& fm, int width) {
     const QStringList words = text.split(' ', Qt::SkipEmptyParts);
@@ -86,7 +101,7 @@ QSize SlicerTableDelegate::sizeHint(const QStyleOptionViewItem& option,
             return QSize(std::max(110, pillWidth(option, index, AssignmentTableModel::RequiredSkillRole)), 56);
         case AssignmentTableModel::Priority:
             return QSize(std::max(95, pillWidth(option, index, AssignmentTableModel::PriorityRole)), 56);
-        case AssignmentTableModel::Assignee: return QSize(180, 56);
+        case AssignmentTableModel::Assignee: return QSize(std::max(180, assigneeWidth(option, index)), 56);
         case AssignmentTableModel::Rationale: return QSize(240, 56);
         case AssignmentTableModel::Status: return QSize(135, 56);
         case AssignmentTableModel::ActionOverride: return QSize(140, 56);
@@ -145,10 +160,8 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
             painter->drawEllipse(QPointF(dotX + d * 10, dotY), 3, 3);
         }
 
-        QFont levelFont = painter->font();
-        levelFont.setPixelSize(12);
-        levelFont.setBold(false);
-        painter->setFont(levelFont);
+        QFont levelFont = ThemeManager::instance().textFont(TextStyle::Caption);
+                painter->setFont(levelFont);
         painter->setPen(tm.color(Token::TextMuted));
         painter->drawText(QRect(dotX + 54, dotY - 8, 40, 16), Qt::AlignLeft | Qt::AlignVCenter,
                           QString("C%1").arg(complexity));
@@ -215,9 +228,8 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         }
 
     } else if (col == AssignmentTableModel::Rationale) {
-        QFont font = painter->font();
-        font.setPixelSize(12);
-        painter->setFont(font);
+        QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
+                painter->setFont(font);
         painter->setPen(tm.color(Token::TextSecondary));
         // At most two lines; the full text is in the tooltip.
         const QString text = twoLines(index.data(AssignmentTableModel::RationaleRole).toString(),

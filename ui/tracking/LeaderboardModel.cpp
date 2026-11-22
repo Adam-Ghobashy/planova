@@ -272,9 +272,9 @@ void TextCellDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
         return;
     }
 
-    QFont font(option.font);
-    font.setPixelSize(12); // reference: 12px for Role and Done / Assigned
-    const QRect area = option.rect.adjusted(kCellPadding, 0, -kCellPadding, 0);
+    // Reference: 12 px for Role and Done / Assigned.
+    QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
+        const QRect area = option.rect.adjusted(kCellPadding, 0, -kCellPadding, 0);
 
     painter->save();
     painter->setFont(font);
@@ -288,9 +288,8 @@ void TextCellDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 QSize TextCellDelegate::sizeHint(const QStyleOptionViewItem& option,
                                  const QModelIndex& index) const
 {
-    QFont font(option.font);
-    font.setPixelSize(12);
-    return QSize(QFontMetrics(font).horizontalAdvance(index.data(Qt::DisplayRole).toString())
+    QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
+        return QSize(QFontMetrics(font).horizontalAdvance(index.data(Qt::DisplayRole).toString())
                      + 2 * kCellPadding,
                  kRowHeight);
 }

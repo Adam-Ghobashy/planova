@@ -79,7 +79,7 @@ QDialog#ModalDialog QPushButton#modalSecondaryButton:focus:pressed {
 
 /* ---------- form fields ---------- */
 QDialog#ModalDialog QLabel#modalFieldLabel { font-size: 12px; font-weight: 600; color: @TextSecondary; }
-QDialog#ModalDialog QLabel#modalHint { font-size: 12px; color: @TextTertiary; }
+QDialog#ModalDialog QLabel#modalHint { font-size: 12px; font-weight: 500; color: @TextTertiary; }
 QDialog#ModalDialog QLabel#modalError, QDialog#ModalDialog QLabel#editProjectError {
     background: @DangerSoft; color: @DangerText; border-radius: 10px; padding: 8px 12px; font-size: 14px;
 }

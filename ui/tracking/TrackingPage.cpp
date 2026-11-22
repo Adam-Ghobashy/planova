@@ -1,6 +1,7 @@
 #include "TrackingPage.h"
 
 #include "LeaderboardModel.h"
+#include "../theme/ThemeManager.h"
 #include "../widgets/EmptyHint.h"
 
 #include <QAbstractItemView>
@@ -179,9 +180,8 @@ protected:
             maxValue = std::max(maxValue, bar.value);
         }
 
-        QFont labelFont(font());
-        labelFont.setPixelSize(12);
-        QFont valueFont = monoFont();
+        QFont labelFont = ThemeManager::instance().textFont(TextStyle::Caption);
+                QFont valueFont = monoFont();
         valueFont.setWeight(QFont::DemiBold);
         valueFont.setPixelSize(12);
 

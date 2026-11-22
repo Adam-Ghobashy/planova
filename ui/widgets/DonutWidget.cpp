@@ -194,6 +194,7 @@ void DonutWidget::paintEvent(QPaintEvent* event)
 
     QFont captionFont = font();
     captionFont.setPixelSize(qMax(12, qRound(diameter * 0.077)));
+    captionFont.setWeight(QFont::Medium);   // the Caption weight of the type scale
 
     const QFontMetrics percentageMetrics(percentageFont);
     const QFontMetrics captionMetrics(captionFont);

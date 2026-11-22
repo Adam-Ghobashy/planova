@@ -4,7 +4,7 @@
 QWidget#PinsPage { background-color: transparent; }
 QLabel#PinsTitle { color: @TextPrimary; font-size: 24px; font-weight: 600; }
 QLabel#PinsSubtitle { color: @TextMuted; font-size: 14px; }
-QLabel#DialogHint { color: @TextMuted; font-size: 12px; }
+QLabel#DialogHint { color: @TextMuted; font-size: 12px; font-weight: 500; }
 
 QPushButton#LeavePinButton,
 QPushButton#PinPrimaryButton,
@@ -69,6 +69,11 @@ QLabel#PinColumnCount {
 }
 QLabel#PinColumnEmpty { color: @TextMuted; padding: 28px 8px; background: transparent; }
 QScrollArea#PinColumnScroll, QWidget#PinColumnBody { background: transparent; }
+QScrollArea#PinsScroll, QWidget#PinColumnsHost { background: transparent; border: none; }
+QScrollArea#PinsScroll QScrollBar:horizontal { height: 8px; background: transparent; margin: 0 4px; }
+QScrollArea#PinsScroll QScrollBar::handle:horizontal { background: @ScrollHandle; border-radius: 4px; min-width: 30px; }
+QScrollArea#PinsScroll QScrollBar::add-line:horizontal,
+QScrollArea#PinsScroll QScrollBar::sub-line:horizontal { width: 0; }
 
 /* ---------- cards ---------- */
 QFrame#PinCard { border: 1px solid @Border; border-radius: 10px; background-color: @GlassFillStrong; }
@@ -85,7 +90,7 @@ QFrame#PinCard QLabel { background: transparent; }
 QLabel#PinCardText { color: @TextPrimary; font-size: 14px; }
 QLabel#PinCardTime { color: @TextMuted; font-size: 12px; font-weight: 600; }
 QLabel#PinCardTag { color: @TextMuted; font-size: 12px; font-weight: 600; }
-QLabel#PinTaskLine { color: @TextMuted; font-size: 12px; }
+QLabel#PinTaskLine { color: @TextMuted; font-size: 12px; font-weight: 500; }
 QLabel#PinAuthorName { color: @TextPrimary; font-size: 12px; font-weight: 600; }
 /* Text on a sticky note uses the matching sticky text colour (contrast pairs are in tst_Contrast). */
 QFrame#PinCard[category="handoff"] QLabel#PinCardText,
@@ -142,7 +147,7 @@ QFrame#PinCommentsPanel {
 }
 QFrame#PinCommentsPanel QLabel { background: transparent; }
 QLabel#PinCommentMeta { color: @TextMuted; font-size: 12px; font-weight: 600; }
-QLabel#PinCommentText { color: @TextPrimary; font-size: 12px; }
+QLabel#PinCommentText { color: @TextPrimary; font-size: 12px; font-weight: 500; }
 QLineEdit#PinCommentInput {
     background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @Border;
     border-radius: 8px; padding: 5px 8px;

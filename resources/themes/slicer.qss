@@ -33,7 +33,7 @@ QWidget#ChaosSlicerPage QLabel#cardTitle {
 
 QWidget#ChaosSlicerPage QLabel#cardSubtitle {
     color: @TextMuted;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
 }
 
 QWidget#ChaosSlicerPage QPushButton#primaryButton, QWidget#ChaosSlicerPage QPushButton#applyButton, QWidget#ChaosSlicerPage QPushButton#sliceButton {
@@ -183,7 +183,7 @@ QWidget#ChaosSlicerPage QComboBox#overrideCombo {
     border: 1px solid @Border;
     border-radius: 6px;
     padding: 4px 10px;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
 }
 
 QWidget#ChaosSlicerPage QComboBox#overrideCombo:hover {

@@ -11,6 +11,8 @@
 #include <QScrollBar>
 #include <QVBoxLayout>
 
+#include <algorithm>
+
 #include "PinCardWidget.h"
 #include "PinUiHelpers.h"
 
@@ -72,11 +74,17 @@ void PinColumnWidget::setCards(const std::vector<PinCardWidget*>& cards, bool sh
         }
     }
     int index = 0;
+    int widestCard = 0;
     for (auto* card : cards) {
         card->setParent(scroll_->widget());
         cardsLayout_->insertWidget(index++, card);
         card->show();
+        widestCard = std::max(widestCard, card->minimumSizeHint().width());
     }
+    // A scroll area does not pass its content's minimum width on, so the column would get narrower than its
+    // cards and cut them off. Ask for the widest card plus room for the vertical scroll bar instead; the page
+    // scrolls sideways when the columns do not fit.
+    scroll_->setMinimumWidth(widestCard > 0 ? widestCard + scroll_->verticalScrollBar()->sizeHint().width() : 0);
     // The empty label is item 0 only while it is the first widget; keep it first, hide when cards exist.
     cardsLayout_->removeWidget(empty_);
     cardsLayout_->insertWidget(0, empty_);

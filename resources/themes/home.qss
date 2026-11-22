@@ -144,7 +144,7 @@ QPushButton#homePinsMore {
     border: 2px solid transparent;   /* room for the focus ring, so focus does not resize the button */
     border-radius: 6px;
     padding: 3px 6px;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
 }
 
 QPushButton#homePinsMore:hover {
@@ -154,7 +154,7 @@ QPushButton#homePinsMore:hover {
 
 QLabel#homePinsCount {
     color: @TextTertiary;                         /* text-tertiary */
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
     background: transparent;
     border: none;
 }
@@ -241,7 +241,7 @@ QLabel#quickLinkTitle {
 
 QLabel#quickLinkSubtitle {
     color: @TextTertiary;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
     background: transparent;
     border: none;
 }
@@ -279,7 +279,7 @@ QLabel#statCardValue {
 /* "+N in review" under the In Progress number */
 QWidget#homePage QLabel#statCardCaption {
     color: @TextMuted;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
     background: transparent;
     border: none;
 }
@@ -305,7 +305,7 @@ QLabel#statCardValue[valueRole="warning"] {
 QWidget#donutWidget {
     background: transparent;
     border: none;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
     qproperty-doneColor: @ChartDone;
     qproperty-activeColor: @Accent;
     qproperty-trackColor: @Track;
@@ -320,7 +320,7 @@ QWidget#donutWidget {
 QWidget#barChartWidget {
     background: transparent;
     border: none;
-    font-size: 12px;
+    font-size: 12px; font-weight: 500;
     qproperty-barColor: @Accent;
     qproperty-trackColor: @Track;
     qproperty-textColor: @TextPrimary;

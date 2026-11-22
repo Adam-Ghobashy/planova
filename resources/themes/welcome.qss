@@ -82,14 +82,14 @@ QWidget#WelcomePage QLineEdit#projectSearch:focus { border: 2px solid @Accent; p
 QWidget#WelcomePage QFrame#gitBanner {
     background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 12px;
 }
-QWidget#WelcomePage QLabel#gitBannerCaption { font-size: 12px; color: @TextSecondary; }
+QWidget#WelcomePage QLabel#gitBannerCaption { font-size: 12px; font-weight: 500; color: @TextSecondary; }
 QWidget#WelcomePage QLabel#gitBannerRepo { font-family: "JetBrains Mono", "Consolas"; font-size: 12px; font-weight: 500; color: @TextPrimary; }
 QWidget#WelcomePage QLabel#gitBannerRepo[connected="false"] { font-family: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI"; font-size: 14px; color: @TextSecondary; }
 
 QWidget#WelcomePage QLabel#workspacesTitle {
     font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI"; font-size: 16px; font-weight: 600; color: @TextPrimary;
 }
-QWidget#WelcomePage QLabel#workspacesCount { font-size: 12px; color: @TextSecondary; }
+QWidget#WelcomePage QLabel#workspacesCount { font-size: 12px; font-weight: 500; color: @TextSecondary; }
 QWidget#WelcomePage QLabel#workspaceState { font-size: 14px; color: @TextSecondary; }
 
 /* ---------- project card ---------- */
@@ -101,7 +101,7 @@ QWidget#WelcomePage QFrame#ProjectCard:hover { border: 1px solid @BorderStrong; 
 QWidget#WelcomePage QFrame#ProjectCard[current="true"] { border: 1px solid @Accent; background-color: @AccentSoft; }
 QWidget#WelcomePage QFrame#ProjectCard QLabel { background: transparent; border: none; }
 QWidget#WelcomePage QLabel#projectName { font-size: 14px; font-weight: 600; color: @TextPrimary; }
-QWidget#WelcomePage QLabel#projectTeam { font-size: 12px; color: @TextSecondary; }
+QWidget#WelcomePage QLabel#projectTeam { font-size: 12px; font-weight: 500; color: @TextSecondary; }
 QWidget#WelcomePage QLabel#projectModel {
     font-size: 12px; font-weight: 600; color: @TextSecondary; background-color: @SurfaceAlt;
     border-radius: 8px; padding: 3px 8px;
