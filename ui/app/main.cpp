@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
     parser.process(app);
     ThemeManager::instance().loadFonts();
     ThemeManager::instance().apply(ThemeManager::savedOrSystemMode());
-    QApplication::setFont(ThemeManager::instance().font(FontRole::Body, 10));
+    QApplication::setFont(ThemeManager::instance().textFont(TextStyle::Body));
 
     const QString documents = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     const std::filesystem::path workspace = std::filesystem::path(documents.toStdString()) / "Planova";

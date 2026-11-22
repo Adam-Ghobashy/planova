@@ -21,7 +21,7 @@ constexpr int kGap = 12;
 constexpr int kMinLabelWidth = 65;
 constexpr int kMinValueWidth = 32;
 constexpr int kMinHeight = 60;
-constexpr int kValuePixelSize = 11;
+constexpr int kValuePixelSize = 12;
 
 // Reference --font-mono: JetBrains Mono, Consolas, monospace.
 QFont monoFont()
@@ -161,7 +161,7 @@ void BarChartWidget::paintEvent(QPaintEvent* event)
 
     // Names: widget font, semi-bold. Values: fixed-pitch, small.
     QFont labelFont = font();
-    labelFont.setBold(true);
+    labelFont.setWeight(QFont::DemiBold);
 
     QFont valueFont = monoFont();
     valueFont.setPixelSize(kValuePixelSize);

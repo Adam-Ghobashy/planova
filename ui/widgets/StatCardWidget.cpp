@@ -1,5 +1,7 @@
 #include "StatCardWidget.h"
 
+#include "theme/ThemeManager.h"
+
 #include <QEasingCurve>
 #include <QFont>
 #include <QLabel>
@@ -9,19 +11,6 @@
 #include <QVariantAnimation>
 
 #include <cstdlib>
-
-namespace
-{
-// Reference --font-mono: JetBrains Mono, Consolas, monospace.
-QFont monoFont()
-{
-    QFont f;
-    f.setFamilies({QStringLiteral("JetBrains Mono"), QStringLiteral("Consolas"),
-                   QStringLiteral("Menlo"), QStringLiteral("DejaVu Sans Mono"),
-                   QStringLiteral("monospace")});
-    return f;
-}
-}
 
 StatCardWidget::StatCardWidget(
     const QString& label,
@@ -37,7 +26,8 @@ StatCardWidget::StatCardWidget(
         QSizePolicy::Preferred
         );
 
-    setMinimumHeight(86);
+    // No fixed minimum height: the layout's own minimum includes the caption, so a short window never
+    // squeezes the number.
 
     titleLabel = new QLabel(label, this);
     valueLabel = new QLabel(m_targetText, this);
@@ -45,9 +35,10 @@ StatCardWidget::StatCardWidget(
     titleLabel->setObjectName("statCardTitle");
     valueLabel->setObjectName("statCardValue");
 
-    // Family only: size and weight come from home.qss. A fixed-pitch face
-    // keeps digit width constant so the count-up does not jitter.
-    QFont valueFont = monoFont();
+    // Display family at the size home.qss gives it. Segoe UI digits all have the same width,
+    // so the count-up does not jitter.
+    QFont valueFont = ThemeManager::instance().font(FontRole::Display, 26);
+    valueFont.setWeight(QFont::DemiBold);
     valueLabel->setFont(valueFont);
 
     auto* layout = new QVBoxLayout(this);

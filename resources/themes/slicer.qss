@@ -2,7 +2,7 @@
 QWidget#ChaosSlicerPage {
     background-color: transparent;
     color: @TextPrimary;
-    font-family: "Inter", "Segoe UI", sans-serif;
+    font-family: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI";
 }
 
 QWidget#ChaosSlicerPage QScrollArea#slicerScrollArea {
@@ -42,7 +42,7 @@ QWidget#ChaosSlicerPage QPushButton#primaryButton, QWidget#ChaosSlicerPage QPush
     border: none;
     border-radius: 8px;
     padding: 8px 18px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
 }
 
@@ -60,7 +60,7 @@ QWidget#ChaosSlicerPage QPushButton#secondaryButton, QWidget#ChaosSlicerPage QPu
     border: 1px solid @Border;
     border-radius: 8px;
     padding: 8px 16px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
 }
 
@@ -83,7 +83,7 @@ QWidget#ChaosSlicerPage QLabel#statusLabel {
 
 QWidget#ChaosSlicerPage QLabel#emptyLabel {
     color: @TextMuted;
-    font-size: 13px;
+    font-size: 14px;
     padding: 28px;
 }
 
@@ -124,13 +124,13 @@ QWidget#ChaosSlicerPage QSlider::handle:horizontal:hover {
 
 QWidget#ChaosSlicerPage QLabel#sliderNameLabel {
     color: @TextPrimary;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
 }
 
 QWidget#ChaosSlicerPage QLabel#sliderValueLabel {
     color: @TextPrimary;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     min-width: 36px;
 }

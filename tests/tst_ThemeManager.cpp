@@ -1,4 +1,7 @@
+#include "TestAppSetup.h"
+
 #include <QApplication>
+#include <QDir>
 #include <QFile>
 #include <QFontDatabase>
 #include <QFrame>
@@ -97,19 +100,82 @@ private slots:
     void fontsRegistered() {
         ThemeManager::instance().loadFonts();
         const QStringList families = QFontDatabase::families();
-        QVERIFY(families.contains("Inter"));
-        QVERIFY(families.contains("Space Grotesk"));
+        QVERIFY(!families.contains("Inter"));
+        QVERIFY(!families.contains("Space Grotesk"));
         QVERIFY(families.contains("JetBrains Mono"));
         QVERIFY(families.contains("Macintosh Skeletal Filled"));
-        QCOMPARE(ThemeManager::instance().font(FontRole::Mono, 10).family(), QString("JetBrains Mono"));
-        QCOMPARE(ThemeManager::instance().font(FontRole::Display, 18).pointSize(), 18);
+        QCOMPARE(ThemeManager::instance().font(FontRole::Mono, 14).family(), QString("JetBrains Mono"));
+        QCOMPARE(ThemeManager::instance().font(FontRole::Display, 18).pixelSize(), 18);
+        QCOMPARE(ThemeManager::instance().font(FontRole::Body, 14).hintingPreference(),
+                 QFont::PreferDefaultHinting);
     }
     void fontFallback() {
+        QCOMPARE(ThemeManager::familyFor(FontRole::Body, {"Segoe UI Variable Text", "Segoe UI"}),
+                 QString("Segoe UI Variable Text"));
+        QCOMPARE(ThemeManager::familyFor(FontRole::Body, {"Segoe UI Variable"}), QString("Segoe UI Variable"));
+        QCOMPARE(ThemeManager::familyFor(FontRole::Display, {"Segoe UI Variable", "Segoe UI Variable Display"}),
+                 QString("Segoe UI Variable Display"));
+        QCOMPARE(ThemeManager::familyFor(FontRole::Display, {"Segoe UI"}), QString("Segoe UI"));
         QCOMPARE(ThemeManager::familyFor(FontRole::Body, {}), QString("Segoe UI"));
         QCOMPARE(ThemeManager::familyFor(FontRole::Display, {}), QString("Segoe UI"));
         QCOMPARE(ThemeManager::familyFor(FontRole::Script, {}), QString("Segoe UI"));
         QCOMPARE(ThemeManager::familyFor(FontRole::Mono, {}), QString("Consolas"));
-        QCOMPARE(ThemeManager::familyFor(FontRole::Body, {"Inter"}), QString("Inter"));
+        QCOMPARE(ThemeManager::familyFor(FontRole::Mono, {"Consolas", "JetBrains Mono"}), QString("JetBrains Mono"));
+        QCOMPARE(ThemeManager::familyFor(FontRole::Body, {"Inter"}), QString("Segoe UI"));
+    }
+    void typeScaleValues_data() {
+        QTest::addColumn<int>("style");
+        QTest::addColumn<int>("pixels");
+        QTest::addColumn<int>("weight");
+        QTest::newRow("Caption") << int(TextStyle::Caption) << 12 << int(QFont::Medium);
+        QTest::newRow("Body") << int(TextStyle::Body) << 14 << int(QFont::Normal);
+        QTest::newRow("Label") << int(TextStyle::Label) << 14 << int(QFont::Medium);
+        QTest::newRow("LabelActive") << int(TextStyle::LabelActive) << 14 << int(QFont::DemiBold);
+        QTest::newRow("Heading") << int(TextStyle::Heading) << 16 << int(QFont::DemiBold);
+        QTest::newRow("PageTitle") << int(TextStyle::PageTitle) << 24 << int(QFont::DemiBold);
+    }
+    void typeScaleValues() {
+        QFETCH(int, style);
+        QFETCH(int, pixels);
+        QFETCH(int, weight);
+        const QFont font = ThemeManager::instance().textFont(static_cast<TextStyle>(style));
+        QCOMPARE(font.pixelSize(), pixels);
+        QCOMPARE(int(font.weight()), weight);
+        QCOMPARE(font.hintingPreference(), QFont::PreferDefaultHinting);
+    }
+    void typeScaleRoles() {
+        // Caption, Body and Label read as body text; the rest are titles and use the Display family.
+        auto& t = ThemeManager::instance();
+        const QString body = t.font(FontRole::Body, 14).family();
+        const QString display = t.font(FontRole::Display, 14).family();
+        QCOMPARE(t.textFont(TextStyle::Caption).family(), body);
+        QCOMPARE(t.textFont(TextStyle::Body).family(), body);
+        QCOMPARE(t.textFont(TextStyle::Label).family(), body);
+        QCOMPARE(t.textFont(TextStyle::LabelActive).family(), display);
+        QCOMPARE(t.textFont(TextStyle::Heading).family(), display);
+        QCOMPARE(t.textFont(TextStyle::PageTitle).family(), display);
+    }
+    void qssHasNoSmallOrOldFonts() {
+        static const QRegularExpression size("font-size:\\s*(\\d+)px");
+        const QStringList files = QDir(":/themes").entryList({"*.qss"}, QDir::Files);
+        QVERIFY(!files.isEmpty());
+        for (const QString& name : files) {
+            QFile file(":/themes/" + name);
+            QVERIFY(file.open(QIODevice::ReadOnly | QIODevice::Text));
+            const QString css = QString::fromUtf8(file.readAll());
+            QVERIFY2(!css.contains("Inter"), qPrintable(name));
+            QVERIFY2(!css.contains("Space Grotesk"), qPrintable(name));
+            auto it = size.globalMatch(css);
+            while (it.hasNext()) {
+                const QRegularExpressionMatch m = it.next();
+                QVERIFY2(m.captured(1).toInt() >= 12, qPrintable(name + ": " + m.captured(0)));
+            }
+        }
+    }
+    void appFontIsBody14() {
+        installAppFonts();
+        QCOMPARE(QApplication::font().pixelSize(), 14);
+        QCOMPARE(QApplication::font().hintingPreference(), QFont::PreferDefaultHinting);
     }
 };
 

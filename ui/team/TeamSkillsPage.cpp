@@ -8,6 +8,7 @@
 #include <QScrollArea>
 #include <QSlider>
 #include <QStyle>
+#include "theme/ThemeManager.h"
 #include "widgets/ModalDialog.h"
 #include <exception>
 #include <numeric>
@@ -105,10 +106,7 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     titleLayout->setSpacing(4);
     auto* pageTitle = new QLabel("Team & Skills Directory", contentWidget);
     pageTitle->setObjectName("pageTitle");
-    QFont titleFont = pageTitle->font();
-    titleFont.setPointSize(16);
-    titleFont.setBold(true);
-    pageTitle->setFont(titleFont);
+    pageTitle->setFont(ThemeManager::instance().textFont(TextStyle::PageTitle));
 
     auto* pageSubtitle = new QLabel(
         "Manage team members, project understanding levels, 7-domain skill matrices, and velocity profiles.",
@@ -150,9 +148,9 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
         lbl->setObjectName("cardSubtitle");
         valueOut = new QLabel("0", summaryCard);
         valueOut->setObjectName("cardTitle");
-        QFont vf = valueOut->font();
-        vf.setPointSize(15);
-        vf.setBold(true);
+        // Big numbers keep their size (20 px) in the Display family.
+        QFont vf = ThemeManager::instance().font(FontRole::Display, 20);
+        vf.setWeight(QFont::DemiBold);
         valueOut->setFont(vf);
         col->addWidget(lbl);
         col->addWidget(valueOut);

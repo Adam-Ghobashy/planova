@@ -66,10 +66,7 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     titleLayout->setSpacing(4);
     auto* pageTitle = new QLabel("GitHub Integration & Peer Event Sync", contentWidget);
     pageTitle->setObjectName("pageTitle");
-    QFont titleFont = pageTitle->font();
-    titleFont.setPointSize(16);
-    titleFont.setBold(true);
-    pageTitle->setFont(titleFont);
+    pageTitle->setFont(ThemeManager::instance().textFont(TextStyle::PageTitle));
 
     auto* pageSubtitle = new QLabel(
         "Connect your repository, track team commits and issues, and detect merge conflicts across active members.",
@@ -177,9 +174,9 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
         lbl->setObjectName("cardSubtitle");
         valueOut = new QLabel("—", metricsCard);
         valueOut->setObjectName("cardTitle");
-        QFont vf = valueOut->font();
-        vf.setPointSize(15);
-        vf.setBold(true);
+        // Big numbers keep their size (20 px) in the Display family.
+        QFont vf = ThemeManager::instance().font(FontRole::Display, 20);
+        vf.setWeight(QFont::DemiBold);
         valueOut->setFont(vf);
         col->addWidget(lbl);
         col->addWidget(valueOut);

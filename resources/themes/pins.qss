@@ -2,8 +2,8 @@
 
 /* ---------- page ---------- */
 QWidget#PinsPage { background-color: transparent; }
-QLabel#PinsTitle { color: @TextPrimary; font-size: 22px; font-weight: 700; }
-QLabel#PinsSubtitle { color: @TextMuted; font-size: 13px; }
+QLabel#PinsTitle { color: @TextPrimary; font-size: 24px; font-weight: 600; }
+QLabel#PinsSubtitle { color: @TextMuted; font-size: 14px; }
 QLabel#DialogHint { color: @TextMuted; font-size: 12px; }
 
 QPushButton#LeavePinButton,
@@ -62,10 +62,10 @@ QFrame#PinColumn {
     background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 12px;
 }
 QFrame#PinColumn[dropActive="true"] { background-color: @AccentSoft; border: 2px solid @Accent; }
-QLabel#PinColumnTitle { color: @TextPrimary; font-size: 13px; font-weight: 700; background: transparent; }
+QLabel#PinColumnTitle { color: @TextPrimary; font-size: 14px; font-weight: 600; background: transparent; }
 QLabel#PinColumnCount {
     background-color: @Track; color: @TextSecondary; border-radius: 10px;
-    min-width: 20px; max-height: 20px; padding: 0 6px; font-size: 11px; font-weight: 700;
+    min-width: 20px; max-height: 20px; padding: 0 6px; font-size: 12px; font-weight: 600;
 }
 QLabel#PinColumnEmpty { color: @TextMuted; padding: 28px 8px; background: transparent; }
 QScrollArea#PinColumnScroll, QWidget#PinColumnBody { background: transparent; }
@@ -82,10 +82,10 @@ QFrame#PinCard:hover { border: 1px solid @Accent; }
 QFrame#PinCard[dragging="true"] { border: 1px dashed @Accent; background-color: @AccentSoft; }
 QFrame#PinCard QLabel { background: transparent; }
 
-QLabel#PinCardText { color: @TextPrimary; font-size: 13px; }
-QLabel#PinCardTime { color: @TextMuted; font-size: 11px; font-weight: 600; }
-QLabel#PinCardTag { color: @TextMuted; font-size: 11px; font-weight: 600; }
-QLabel#PinTaskLine { color: @TextMuted; font-size: 11px; }
+QLabel#PinCardText { color: @TextPrimary; font-size: 14px; }
+QLabel#PinCardTime { color: @TextMuted; font-size: 12px; font-weight: 600; }
+QLabel#PinCardTag { color: @TextMuted; font-size: 12px; font-weight: 600; }
+QLabel#PinTaskLine { color: @TextMuted; font-size: 12px; }
 QLabel#PinAuthorName { color: @TextPrimary; font-size: 12px; font-weight: 600; }
 /* Text on a sticky note uses the matching sticky text colour (contrast pairs are in tst_Contrast). */
 QFrame#PinCard[category="handoff"] QLabel#PinCardText,
@@ -110,7 +110,7 @@ QFrame#PinCard[category="architecture"] QLabel#PinTaskLine,
 QFrame#PinCard[category="architecture"] QLabel#PinAuthorName { color: @StickyBlueText; }
 
 QLabel#PinAvatar {
-    border-radius: 12px; color: @TextInverse; font-size: 10px; font-weight: 700;
+    border-radius: 12px; color: @TextInverse; font-size: 12px; font-weight: 600;
     background-color: @TextMuted;
 }
 QLabel#PinAvatar[member="1"] { background-color: @Member1; color: @MemberText; }
@@ -120,7 +120,7 @@ QLabel#PinAvatar[member="4"] { background-color: @Member4; color: @MemberText; }
 QLabel#PinAvatar[member="5"] { background-color: @Member5; color: @MemberText; }
 QLabel#PinAvatar[member="6"] { background-color: @Member6; color: @MemberText; }
 
-QToolButton#PinMenuButton { border: 2px solid transparent; border-radius: 6px; background: transparent; color: @TextMuted; font-weight: 700; padding: 0 4px; }
+QToolButton#PinMenuButton { border: 2px solid transparent; border-radius: 6px; background: transparent; color: @TextMuted; font-weight: 600; padding: 0 4px; }
 QToolButton#PinMenuButton:hover { color: @Accent; }
 QToolButton#PinMenuButton:focus { border-color: @Accent; color: @Accent; }
 QToolButton#PinMenuButton::menu-indicator { image: none; width: 0px; }
@@ -132,7 +132,7 @@ QPushButton#PinResolveButton {
 QPushButton#PinResolveButton:hover { border-color: @Accent; }
 QPushButton#PinResolveButton:focus { border: 2px solid @Accent; padding: 3px 11px; }
 
-QToolButton#PinCommentChip { border: 2px solid transparent; border-radius: 6px; background: transparent; color: @TextMuted; font-size: 11px; font-weight: 600; }
+QToolButton#PinCommentChip { border: 2px solid transparent; border-radius: 6px; background: transparent; color: @TextMuted; font-size: 12px; font-weight: 600; }
 QToolButton#PinCommentChip:hover { color: @Accent; }
 QToolButton#PinCommentChip:focus { border-color: @Accent; color: @Accent; }
 QToolButton#PinCommentChip:checked { color: @Accent; }
@@ -141,7 +141,7 @@ QFrame#PinCommentsPanel {
     background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 8px;
 }
 QFrame#PinCommentsPanel QLabel { background: transparent; }
-QLabel#PinCommentMeta { color: @TextMuted; font-size: 11px; font-weight: 600; }
+QLabel#PinCommentMeta { color: @TextMuted; font-size: 12px; font-weight: 600; }
 QLabel#PinCommentText { color: @TextPrimary; font-size: 12px; }
 QLineEdit#PinCommentInput {
     background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @Border;
@@ -152,7 +152,7 @@ QLineEdit#PinCommentInput:focus { border: 2px solid @Accent; padding: 4px 7px; }
 /* ---------- sidebar badge (open pins, from IPinQuery::openCount) ---------- */
 QLabel#NavBadge {
     background-color: @AccentSoft; color: @Accent; border-radius: 9px;
-    min-width: 18px; max-height: 18px; padding: 0 5px; font-size: 11px; font-weight: 700;
+    min-width: 18px; max-height: 18px; padding: 0 5px; font-size: 12px; font-weight: 600;
 }
 
 /* ---------- combo box (StyledComboBox, object name PinCombo) ----------

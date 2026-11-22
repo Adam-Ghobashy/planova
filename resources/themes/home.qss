@@ -10,7 +10,7 @@ QWidget#homePage {
 QLabel#homeEyebrow {
     color: @Accent;                         /* Accent */
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     background: transparent;
     border: none;
 }
@@ -18,7 +18,7 @@ QLabel#homeEyebrow {
 QLabel#homeTitle {
     color: @TextPrimary;                         /* text-1 */
     font-size: 24px;
-    font-weight: 800;
+    font-weight: 600;
     background: transparent;
     border: none;
 }
@@ -77,8 +77,8 @@ QFrame#homePanel:hover {
 
 QLabel#homePanelTitle {
     color: @TextPrimary;
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 16px;
+    font-weight: 600;
     background: transparent;
     border: none;
 }
@@ -91,14 +91,14 @@ QLabel#homeBadge {
     border: 1px solid @Accent;
     border-radius: 6px;
     padding: 3px 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
 }
 
 QLabel#homeSectionTitle {
     color: @TextSecondary;                         /* text-2 */
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     background: transparent;
     border: none;
 }
@@ -131,7 +131,7 @@ QFrame#homePinsPanel:hover {
 QLabel#homeStickyTitle {
     color: @TextPrimary;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     background: transparent;
     border: none;
 }
@@ -154,7 +154,7 @@ QPushButton#homePinsMore:hover {
 
 QLabel#homePinsCount {
     color: @TextTertiary;                         /* text-tertiary */
-    font-size: 11px;
+    font-size: 12px;
     background: transparent;
     border: none;
 }
@@ -162,7 +162,7 @@ QLabel#homePinsCount {
 QPushButton#homePinsLink {
     color: @Accent;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     background: transparent;
     border: 2px solid transparent;   /* room for the focus ring, so focus does not resize the link */
     border-radius: 6px;
@@ -233,15 +233,15 @@ QLabel#quickLinkIcon {
 
 QLabel#quickLinkTitle {
     color: @TextPrimary;
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 600;
     background: transparent;
     border: none;
 }
 
 QLabel#quickLinkSubtitle {
     color: @TextTertiary;
-    font-size: 11px;
+    font-size: 12px;
     background: transparent;
     border: none;
 }
@@ -261,17 +261,17 @@ QFrame#statCardWidget:hover {
 
 QLabel#statCardTitle {
     color: @TextTertiary;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     background: transparent;
     border: none;
 }
 
 QLabel#statCardValue {
-    font-family: "JetBrains Mono", "Consolas";
+    font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI";
     color: @TextPrimary;
     font-size: 26px;
-    font-weight: 800;
+    font-weight: 600;
     background: transparent;
     border: none;
 }
@@ -279,7 +279,7 @@ QLabel#statCardValue {
 /* "+N in review" under the In Progress number */
 QWidget#homePage QLabel#statCardCaption {
     color: @TextMuted;
-    font-size: 11px;
+    font-size: 12px;
     background: transparent;
     border: none;
 }
@@ -377,7 +377,7 @@ QToolButton#homeMoreButton {
     padding: 0 8px;
     font-family: "Segoe UI Symbol", "Segoe UI";
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 QToolButton#homeMoreButton:hover {

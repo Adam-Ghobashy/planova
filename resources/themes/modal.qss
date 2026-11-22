@@ -13,7 +13,7 @@ QDialog#ModalDialog QLabel { background: transparent; border: none; }
 
 /* ---------- header, footer ---------- */
 QFrame#modalHeader { border-bottom: 1px solid @BorderSubtle; }
-QLabel#modalTitle { font-size: 16px; font-weight: 700; color: @TextPrimary; }
+QLabel#modalTitle { font-size: 16px; font-weight: 600; color: @TextPrimary; }
 QFrame#modalFooter {
     background: @GlassFill;
     border-top: 1px solid @BorderSubtle;
@@ -36,7 +36,7 @@ QToolButton#modalClose:pressed { background: @Track; color: @TextPrimary; }
    the hovered Danger fill is a light pink, so a ring on those fills would vanish. The focus rules sit after the
    hover and pressed rules and repeat the combined states, so the ring survives hover and pressed. */
 QDialog#ModalDialog QPushButton {
-    border-radius: 10px; padding: 7px 15px; min-height: 20px; font-size: 13px; font-weight: 600;
+    border-radius: 10px; padding: 7px 15px; min-height: 20px; font-size: 14px; font-weight: 600;
     border: 1px solid transparent;
 }
 
@@ -79,14 +79,14 @@ QDialog#ModalDialog QPushButton#modalSecondaryButton:focus:pressed {
 
 /* ---------- form fields ---------- */
 QDialog#ModalDialog QLabel#modalFieldLabel { font-size: 12px; font-weight: 600; color: @TextSecondary; }
-QDialog#ModalDialog QLabel#modalHint { font-size: 11px; color: @TextTertiary; }
+QDialog#ModalDialog QLabel#modalHint { font-size: 12px; color: @TextTertiary; }
 QDialog#ModalDialog QLabel#modalError, QDialog#ModalDialog QLabel#editProjectError {
-    background: @DangerSoft; color: @DangerText; border-radius: 10px; padding: 8px 12px; font-size: 13px;
+    background: @DangerSoft; color: @DangerText; border-radius: 10px; padding: 8px 12px; font-size: 14px;
 }
 
 QDialog#ModalDialog QLineEdit, QDialog#ModalDialog QPlainTextEdit, QDialog#ModalDialog QSpinBox {
     background: @GlassFillStrong; color: @TextPrimary; border: 1px solid @BorderDefault; border-radius: 10px;
-    padding: 8px 11px; font-size: 13px;
+    padding: 8px 11px; font-size: 14px;
     selection-background-color: @Accent; selection-color: @AccentText;
 }
 QDialog#ModalDialog QLineEdit:focus, QDialog#ModalDialog QPlainTextEdit:focus, QDialog#ModalDialog QSpinBox:focus {
@@ -98,11 +98,11 @@ QDialog#ModalDialog QSpinBox:disabled {
 }
 
 QDialog#ModalDialog QSpinBox QLineEdit { background: transparent; border: none; padding: 0; }
-QDialog#ModalDialog QLabel#modalSubtitle { font-size: 13px; color: @TextSecondary; }
+QDialog#ModalDialog QLabel#modalSubtitle { font-size: 14px; color: @TextSecondary; }
 /* "Current" mark on the open project in the start dialog */
 QDialog#ModalDialog QLabel#startDialogCurrent {
     background: @AccentSoft; color: @Accent; border-radius: 8px; padding: 2px 8px;
-    font-size: 11px; font-weight: 700;
+    font-size: 12px; font-weight: 600;
 }
 QDialog#ModalDialog QPushButton#modalPrimaryButton:disabled,
 QDialog#ModalDialog QPushButton#modalSecondaryButton:disabled,
@@ -111,7 +111,7 @@ QDialog#ModalDialog QPushButton#modalDangerButton:disabled { background: @Track;
 /* task dependency list: check boxes in a small scrolling box.
    The box is hollow when off and filled when on (the fill is the difference, not only the hue); the focused one gets a thick ring. */
 QScrollArea#modalDeps { background: @GlassFillStrong; border: 1px solid @BorderDefault; border-radius: 10px; }
-QDialog#ModalDialog QCheckBox { spacing: 8px; font-size: 13px; color: @TextPrimary; background: transparent; }
+QDialog#ModalDialog QCheckBox { spacing: 8px; font-size: 14px; color: @TextPrimary; background: transparent; }
 QDialog#ModalDialog QCheckBox::indicator {
     width: 16px; height: 16px; border-radius: 4px; border: 1px solid @TextMuted; background: @Surface;
 }

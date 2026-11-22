@@ -50,10 +50,7 @@ ChaosSlicerPage::ChaosSlicerPage(planova::slicer::SlicerService& slicer,
     titleLayout->setSpacing(4);
     auto* pageTitle = new QLabel("Chaos Slicer Engine", contentWidget);
     pageTitle->setObjectName("pageTitle");
-    QFont titleFont = pageTitle->font();
-    titleFont.setPointSize(16);
-    titleFont.setBold(true);
-    pageTitle->setFont(titleFont);
+    pageTitle->setFont(ThemeManager::instance().textFont(TextStyle::PageTitle));
 
     auto* pageSubtitle = new QLabel(
         "Automated work division using weighted skill matching, workload leveling, and dependency ordering.",

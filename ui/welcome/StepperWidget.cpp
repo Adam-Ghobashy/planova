@@ -68,8 +68,8 @@ void StepperWidget::paintEvent(QPaintEvent*)
         painter.drawRect(QRectF(centerX(0), circleY - kLine / 2.0, centerX(current_) - centerX(0), kLine));
     }
 
-    QFont numberFont = theme.font(FontRole::Body, 10);
-    numberFont.setBold(true);
+    QFont numberFont = theme.font(FontRole::Body, 14);
+    numberFont.setWeight(QFont::DemiBold);
     for (int i = 0; i < count; ++i) {
         const bool done = i < current_;
         const bool active = i == current_;
@@ -107,9 +107,8 @@ void StepperWidget::paintEvent(QPaintEvent*)
         }
 
         // The current label is bold and accent coloured, so it is not marked by colour alone.
-        QFont labelFont = theme.font(FontRole::Body, 9);
-        labelFont.setBold(active);
-        labelFont.setWeight(active ? QFont::Bold : QFont::DemiBold);
+        QFont labelFont = theme.textFont(TextStyle::Caption);
+        labelFont.setWeight(active ? QFont::DemiBold : QFont::Medium);
         painter.setFont(labelFont);
         painter.setPen(active ? theme.color(Token::Accent)
                               : done ? theme.color(Token::TextSecondary) : theme.color(Token::TextMuted));

@@ -37,7 +37,7 @@
 QWidget {
     background-color: transparent;
     color: @TextPrimary;
-    font-family: "Inter", "Segoe UI";
+    font-family: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI";
 }
 
 /* The main window paints the end colour of the backdrop, so the status bar (outside the backdrop) matches it. */
@@ -63,13 +63,13 @@ QStatusBar QLabel {
     color: @TextSecondary;
 }
 
-/* Titles use the display face (Space Grotesk, falls back to the application font if it is missing). */
+/* Titles use the display face (Segoe UI Variable Display, falls back to Segoe UI). */
 QLabel#pageTitle,
 QLabel#PageTitle,
 QLabel#PinsTitle,
 QLabel#TrackingTitle,
 QLabel#homeTitle {
-    font-family: "Space Grotesk", "Segoe UI";
+    font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI";
 }
 
 QPushButton {
@@ -91,7 +91,7 @@ QWidget#Sidebar QLabel {
 }
 
 QLabel#brandName {
-    font-family: "Space Grotesk", "Segoe UI";
+    font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI";
     color: @TextPrimary;
 }
 
@@ -112,7 +112,7 @@ QPushButton#navItem {
 
 QPushButton#navItem QLabel#navLabel {
     color: @TextSecondary;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
 }
 
@@ -133,7 +133,7 @@ QPushButton#navItem[active="true"] {
 
 QPushButton#navItem[active="true"] QLabel#navLabel {
     color: @NavActiveText;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 QPushButton#navItem:focus {
@@ -151,8 +151,8 @@ QPushButton#navItem[active="true"]:focus {
 QPushButton#navItem QLabel#navBadge {
     background-color: @NavBadgeBg;
     color: @NavBadgeText;
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 600;
     border-radius: 9px;
     padding: 2px 6px;
     min-width: 18px;
@@ -211,14 +211,14 @@ QPushButton#projectSwitcher[active="true"]:focus {
 
 QPushButton#projectSwitcher QLabel#projectSwitcherCaption {
     color: @TextMuted;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 600;
 }
 
 QPushButton#projectSwitcher QLabel#projectSwitcherName {
     color: @TextPrimary;
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 600;
 }
 
 QPushButton#projectSwitcher[active="true"] QLabel#projectSwitcherCaption,
@@ -289,7 +289,7 @@ QPushButton#SidebarSyncButton {
     border-radius: 6px;
     padding: 0px;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 QPushButton#SidebarSyncButton:hover {

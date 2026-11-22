@@ -8,14 +8,14 @@
 #TrackingTitle {
     background: transparent;
     color: @TextPrimary;
-    font-size: 22px;
-    font-weight: 800;
+    font-size: 24px;
+    font-weight: 600;
 }
 
 #TrackingSubtitle {
     background: transparent;
     color: @TextMuted;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 /* Caption line under a stat-card number (reference: 11px, secondary text) */
@@ -23,7 +23,7 @@ QLabel#statCardCaption {
     background: transparent;
     border: none;
     color: @TextMuted;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 /* Cards */
@@ -52,7 +52,7 @@ QLabel#TrackingCardTitle {
     border: none;
     color: @TextPrimary;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 /* Reference .badge-primary: radius 6, padding 3px 8px, 11px / 600 */
@@ -61,7 +61,7 @@ QLabel#TrackingBadge {
     border: 1px solid @Accent;
     border-radius: 6px;
     color: @Accent;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     padding: 3px 8px;
 }
@@ -136,7 +136,7 @@ QTableView#LeaderboardTable {
     background: transparent;
     border: none;
     color: @TextMuted;
-    font-size: 13px;
+    font-size: 14px;
     outline: 0;
 }
 
@@ -157,7 +157,7 @@ QTableView#LeaderboardTable QHeaderView::section {
     border: none;
     border-bottom: 1px solid @GlassEdge;
     color: @TextMuted;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     padding: 10px 14px;
 }

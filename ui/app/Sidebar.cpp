@@ -118,8 +118,8 @@ void Sidebar::buildBrand(QVBoxLayout* layout)
 
     auto* name = new QLabel("Planova", this);
     name->setObjectName("brandName");
-    QFont font = ThemeManager::instance().font(FontRole::Display, 15);
-    font.setBold(true);
+    QFont font = ThemeManager::instance().font(FontRole::Display, 20);
+    font.setWeight(QFont::DemiBold);
     name->setFont(font);
     row->addWidget(name, 1);
 
@@ -173,9 +173,7 @@ void Sidebar::addHeading(QVBoxLayout* layout, const QString& title)
 {
     auto* heading = new QLabel(title, this);
     heading->setObjectName("sidebarLabel");
-    QFont font = heading->font();
-    font.setPixelSize(10);
-    font.setBold(true);
+    QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
     font.setCapitalization(QFont::AllUppercase);
     font.setLetterSpacing(QFont::AbsoluteSpacing, 0.8);
     heading->setFont(font);

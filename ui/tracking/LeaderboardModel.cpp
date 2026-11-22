@@ -53,15 +53,15 @@ QFont fixedFont(const QFont& base, bool bold)
 {
     QFont font = monoFont();
     font.setBold(bold);
-    font.setPixelSize(base.pixelSize() > 0 ? base.pixelSize() : 13);
+    font.setPixelSize(base.pixelSize() > 0 ? base.pixelSize() : 14);
     return font;
 }
 
 QFont chipFontFor(const QFont& base, bool high)
 {
     QFont font(base);
-    font.setPixelSize(11);
-    font.setWeight(high ? QFont::Bold : QFont::DemiBold);
+    font.setPixelSize(12);
+    font.setWeight(high ? QFont::DemiBold : QFont::Medium);
     return font;
 }
 
@@ -330,8 +330,8 @@ void MemberCellDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
     painter->drawEllipse(QRectF(badge).adjusted(0.5, 0.5, -0.5, -0.5));
 
     QFont initialsFont(option.font);
-    initialsFont.setBold(true);
-    initialsFont.setPixelSize(10);
+    initialsFont.setWeight(QFont::DemiBold);
+    initialsFont.setPixelSize(12);
     painter->setFont(initialsFont);
     painter->setPen(tinted ? table->memberTextColor() : table->textPrimaryColor());
     painter->drawText(badge, Qt::AlignCenter, index.data(LeaderboardModel::InitialsRole).toString());

@@ -664,6 +664,36 @@ private slots:
         QCOMPARE(caption->text(), QString("+1 in review"));
     }
 
+    // At the smallest supported window no stat card number is squeezed (the In Progress card also has a caption).
+    void homeStatCardsFitAtSmallWindow()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
+        demo::seedIfEmpty(core);   // the demo has tasks in Review, so the caption shows
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        window.resize(1125, 748);
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        window.findChild<QStackedWidget*>()->setCurrentIndex(static_cast<int>(Page::Home));
+        QApplication::processEvents();
+        auto* home = window.findChild<planova::s6::HomePage*>();
+        QVERIFY(home);
+        // The window keeps its size: Home scrolls instead of raising the window's minimum height.
+        QCOMPARE(window.size(), QSize(1125, 748));
+        int checked = 0;
+        for (StatCardWidget* card : home->findChildren<StatCardWidget*>()) {
+            auto* value = card->findChild<QLabel*>("statCardValue");
+            QVERIFY(value);
+            ++checked;
+            QVERIFY2(value->height() >= value->sizeHint().height(),
+                     qPrintable(QString("value is %1 px high but needs %2")
+                                    .arg(value->height()).arg(value->sizeHint().height())));
+        }
+        QCOMPARE(checked, 4);
+    }
+
     // A pin's text is the user's, so markup in it shows as typed in the Home tooltip.
     void homePinTooltipShowsMarkupLiterally()
     {

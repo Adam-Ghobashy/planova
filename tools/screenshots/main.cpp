@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
     const QStringList themes = options.theme == "both" ? QStringList{"light", "dark"} : QStringList{options.theme};
     ThemeManager::instance().loadFonts();
     ThemeManager::instance().apply(themes.first() == "dark" ? ThemeMode::Dark : ThemeMode::Light);
-    QApplication::setFont(ThemeManager::instance().font(FontRole::Body, 10));
+    QApplication::setFont(ThemeManager::instance().textFont(TextStyle::Body));
 
     QTemporaryDir workspace;
     if (!workspace.isValid())

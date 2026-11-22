@@ -24,8 +24,6 @@
     <file>icons/sun.svg</file>
     <file>icons/moon.svg</file>
     <file>icons/logo.png</file>
-    <file>fonts/Inter.ttf</file>
-    <file>fonts/SpaceGrotesk.ttf</file>
     <file>fonts/JetBrainsMono.ttf</file>
     <file>fonts/MacintoshSkeletalFilled.otf</file>
   </qresource>

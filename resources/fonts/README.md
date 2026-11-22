@@ -2,10 +2,11 @@
 
 | File | Family | Used for | Source | Licence |
 |------|--------|----------|--------|---------|
-| `Inter.ttf` | Inter (variable) | Body text | https://github.com/google/fonts/raw/main/ofl/inter/Inter%5Bopsz,wght%5D.ttf | SIL Open Font License 1.1, see `OFL-Inter.txt` |
-| `SpaceGrotesk.ttf` | Space Grotesk (variable) | Page titles | https://github.com/google/fonts/raw/main/ofl/spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf | SIL Open Font License 1.1, see `OFL-SpaceGrotesk.txt` |
 | `JetBrainsMono.ttf` | JetBrains Mono (variable) | Numbers in stat cards, charts | https://github.com/google/fonts/raw/main/ofl/jetbrainsmono/JetBrainsMono%5Bwght%5D.ttf | SIL Open Font License 1.1, see `OFL-JetBrainsMono.txt` |
 | `MacintoshSkeletalFilled.otf` | Macintosh Skeletal Filled | Decorative script (design reference only) | Copied from `GUI Reference (Figma)/assets/fonts/MacintoshSkeletalFilled.otf` | Not stated, see below |
+
+Body text and titles use the system font Segoe UI Variable (Windows 11), falling back to Segoe UI, so
+nothing is bundled for them.
 
 Each `OFL-*.txt` was downloaded from the same folder of the Google Fonts repository as its font (`.../ofl/<family>/OFL.txt`).
 

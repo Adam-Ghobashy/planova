@@ -139,13 +139,13 @@ void SplashWindow::paintEvent(QPaintEvent*)
     p.drawPath(shape);
 
     HandwritingPainter::paint(p, QRectF(0, kHeroTop, width(), kHeroHeight),
-                              theme.font(FontRole::Script, 44), theme.color(Token::TextPrimary),
+                              theme.font(FontRole::Script, 59), theme.color(Token::TextPrimary),
                               frame.wordReveal, frame.markReveal);
 
     QColor subtitleColor = theme.color(Token::TextSecondary);
     subtitleColor.setAlphaF(subtitleColor.alphaF() * frame.subtitleOpacity);
     p.setPen(subtitleColor);
-    p.setFont(theme.font(FontRole::Body, 11));
+    p.setFont(theme.textFont(TextStyle::Body));
     p.drawText(QRectF(0, kSubtitleTop + frame.subtitleRise, width(), 30), Qt::AlignHCenter | Qt::AlignTop,
                QStringLiteral("Plan the work \u00B7 Match the team \u00B7 Measure actual progress"));
 }

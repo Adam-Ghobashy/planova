@@ -5,7 +5,7 @@
 QWidget#TeamSkillsPage {
     background-color: transparent;
     color: @TextPrimary;
-    font-family: "Inter", "Segoe UI", sans-serif;
+    font-family: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI";
 }
 
 QWidget#TeamSkillsPage QScrollArea#slicerScrollArea {
@@ -45,7 +45,7 @@ QWidget#TeamSkillsPage QPushButton#primaryButton {
     border: none;
     border-radius: 8px;
     padding: 8px 18px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
 }
 
@@ -63,7 +63,7 @@ QWidget#TeamSkillsPage QPushButton#secondaryButton {
     border: 1px solid @Border;
     border-radius: 8px;
     padding: 8px 16px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
 }
 
@@ -86,13 +86,13 @@ QWidget#TeamSkillsPage QLabel#statusLabel {
 
 QWidget#TeamSkillsPage QLabel#emptyLabel {
     color: @TextMuted;
-    font-size: 13px;
+    font-size: 14px;
     padding: 28px;
 }
 
 QWidget#TeamSkillsPage QLabel#sliderValueLabel {
     color: @TextPrimary;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     min-width: 36px;
 }
@@ -128,7 +128,7 @@ QWidget#TeamSkillsPage QLineEdit#lightInput {
     border: 1px solid @Border;
     border-radius: 8px;
     padding: 7px 12px;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 QWidget#TeamSkillsPage QLineEdit#lightInput:focus {
@@ -138,7 +138,7 @@ QWidget#TeamSkillsPage QLineEdit#lightInput:focus {
 
 QWidget#TeamSkillsPage QCheckBox#leadCheck {
     color: @TextPrimary;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     spacing: 6px;
     background: transparent;
@@ -150,7 +150,7 @@ QWidget#TeamSkillsPage QComboBox#roleCombo {
     border: 1px solid @Border;
     border-radius: 8px;
     padding: 6px 12px;
-    font-size: 13px;
+    font-size: 14px;
     min-width: 160px;
 }
 
@@ -184,7 +184,7 @@ QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar {
     color: @MemberText;
     border-radius: 20px;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar[memberColor="1"] { background-color: @Member1; }
@@ -199,8 +199,8 @@ QWidget#TeamSkillsPage QFrame#card QLabel#leadBadge {
     color: @Accent;
     border-radius: 8px;
     padding: 2px 8px;
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 
@@ -210,7 +210,7 @@ QWidget#TeamSkillsPage QPushButton#editRoleButton {
     border: 1px solid @Border;
     border-radius: 6px;
     padding: 2px 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
 }
 
@@ -225,7 +225,7 @@ QWidget#TeamSkillsPage QPushButton#removeMemberButton {
     border: 1px solid @DangerSoft;
     border-radius: 6px;
     padding: 2px 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
 }
 
@@ -241,7 +241,7 @@ QWidget#TeamSkillsPage QPushButton#saveRoleButton {
     border: none;
     border-radius: 6px;
     padding: 2px 10px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
 }
 
@@ -255,7 +255,7 @@ QWidget#TeamSkillsPage QPushButton#cancelRoleButton {
     border: 1px solid @Border;
     border-radius: 6px;
     padding: 2px 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
 }
 
@@ -271,7 +271,7 @@ QWidget#TeamSkillsPage QWidget#skillCell {
 
 QWidget#TeamSkillsPage QFrame#card QLabel#skillLabel {
     color: @TextMuted;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
 }
 
@@ -282,7 +282,7 @@ QWidget#TeamSkillsPage QPushButton#ratingButton {
     border: 1px solid @Border;
     border-radius: 6px;
     padding: 0px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
 }
 
@@ -296,7 +296,7 @@ QWidget#TeamSkillsPage QPushButton#ratingButton[active="true"] {
     background-color: @Accent;
     color: @AccentText;
     border: none;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 QWidget#TeamSkillsPage QPushButton#ratingButton[active="true"]:hover {
@@ -364,7 +364,7 @@ QWidget#TeamSkillsPage QPushButton#smartAssignSwitch {
     border: 1px solid @Border;
     border-radius: 8px;
     padding: 6px 16px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
 }
 
@@ -422,8 +422,8 @@ QWidget#TeamSkillsPage QFrame#card QLabel#clashBadge {
     border: 1px solid @DangerBorder;
     border-radius: 8px;
     padding: 2px 8px;
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 QWidget#TeamSkillsPage QFrame#card QLabel#conflictText {
@@ -503,20 +503,20 @@ QWidget#TeamSkillsPage QWidget#teamTableHeader {
 
 QWidget#TeamSkillsPage QLabel#tableHeaderCell {
     color: @TextTertiary;
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 600;
     background: transparent;
 }
 
 QWidget#TeamSkillsPage QFrame#card QLabel#meterLabel {
     color: @TextSecondary;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
 }
 
 QWidget#TeamSkillsPage QFrame#card QLabel#velocityValue {
     color: @TextPrimary;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
 }
 

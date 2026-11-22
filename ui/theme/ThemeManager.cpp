@@ -180,27 +180,71 @@ void ThemeManager::loadFonts()
 
 QString ThemeManager::familyFor(FontRole role, const QStringList& available)
 {
-    QString wanted;
+    // Candidates in order of preference. Windows 11 ships Segoe UI Variable; depending on the Qt version its
+    // optical sizes are reported as separate families ("... Text", "... Display") or as one family.
+    QStringList candidates;
     QString fallback = "Segoe UI";
     switch (role) {
     case FontRole::Body:
-        wanted = "Inter";
+        candidates = {"Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI"};
         break;
     case FontRole::Display:
-        wanted = "Space Grotesk";
+        candidates = {"Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI"};
         break;
     case FontRole::Mono:
-        wanted = "JetBrains Mono";
+        candidates = {"JetBrains Mono", "Consolas"};
         fallback = "Consolas";
         break;
     case FontRole::Script:
-        wanted = "Macintosh Skeletal Filled";
+        candidates = {"Macintosh Skeletal Filled"};
         break;
     }
-    return available.contains(wanted) ? wanted : fallback;
+    for (const QString& family : candidates) {
+        if (available.contains(family))
+            return family;
+    }
+    return fallback;
 }
 
-QFont ThemeManager::font(FontRole role, int pointSize) const
+QFont ThemeManager::font(FontRole role, int pixelSize) const
 {
-    return QFont(familyFor(role, QFontDatabase::families()), pointSize);
+    QFont result(familyFor(role, QFontDatabase::families()));
+    result.setPixelSize(pixelSize);
+    result.setHintingPreference(QFont::PreferDefaultHinting);
+    return result;
+}
+
+QFont ThemeManager::textFont(TextStyle style) const
+{
+    FontRole role = FontRole::Body;
+    int pixels = 14;
+    QFont::Weight weight = QFont::Normal;
+    switch (style) {
+    case TextStyle::Caption:
+        pixels = 12;
+        weight = QFont::Medium;
+        break;
+    case TextStyle::Body:
+        break;
+    case TextStyle::Label:
+        weight = QFont::Medium;
+        break;
+    case TextStyle::LabelActive:
+        role = FontRole::Display;
+        weight = QFont::DemiBold;
+        break;
+    case TextStyle::Heading:
+        role = FontRole::Display;
+        pixels = 16;
+        weight = QFont::DemiBold;
+        break;
+    case TextStyle::PageTitle:
+        role = FontRole::Display;
+        pixels = 24;
+        weight = QFont::DemiBold;
+        break;
+    }
+    QFont result = font(role, pixels);
+    result.setWeight(weight);
+    return result;
 }

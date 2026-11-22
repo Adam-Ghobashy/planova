@@ -3,6 +3,7 @@
 #include "../widgets/BarChartWidget.h"
 #include "../widgets/DonutWidget.h"
 #include "../widgets/StatCardWidget.h"
+#include "../theme/ThemeManager.h"
 
 #include <QColor>
 #include <QDateTime>
@@ -22,6 +23,7 @@
 #include <QPalette>
 #include <QPen>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QSizePolicy>
 #include <QStringList>
 #include <QTextLayout>
@@ -95,7 +97,8 @@ namespace {
 
 constexpr int kInset = 6;
 constexpr int kPadding = 12;
-constexpr int kNoteHeight = 98;
+// Fits the tag, three 12 px body lines and the footer inside the padding.
+constexpr int kNoteHeight = 110;
 
 constexpr qreal kHoverScale = 0.04;
 
@@ -271,9 +274,8 @@ void PinNote::paintEvent(QPaintEvent* event)
     painter.setPen(m_textColor);
 
     // Tag
-    QFont tagFont = font();
-    tagFont.setPixelSize(10);
-    tagFont.setBold(true);
+    QFont tagFont = ThemeManager::instance().textFont(TextStyle::Caption);
+    tagFont.setWeight(QFont::DemiBold);
     tagFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.5);
     const QFontMetricsF tagMetrics(tagFont);
     painter.setFont(tagFont);
@@ -281,8 +283,7 @@ void PinNote::paintEvent(QPaintEvent* event)
         Qt::AlignLeft | Qt::AlignVCenter, m_tag);
 
     // Footer
-    QFont footFont = font();
-    footFont.setPixelSize(10);
+    QFont footFont = ThemeManager::instance().textFont(TextStyle::Caption);
     const QFontMetricsF footMetrics(footFont);
     const QRectF footRect(content.left(), content.bottom() - footMetrics.height(), content.width(),
         footMetrics.height());
@@ -291,17 +292,15 @@ void PinNote::paintEvent(QPaintEvent* event)
     painter.setFont(footFont);
     painter.drawText(footRect, Qt::AlignLeft | Qt::AlignVCenter, m_author);
     QFont statusFont = footFont;
-    statusFont.setBold(m_emphasiseStatus);
+    statusFont.setWeight(m_emphasiseStatus ? QFont::DemiBold : QFont::Medium);
     painter.setFont(statusFont);
     painter.drawText(footRect, Qt::AlignRight | Qt::AlignVCenter, m_status);
     painter.restore();
 
     // Body
-    QFont bodyFont = font();
-    bodyFont.setPixelSize(11);
-    bodyFont.setWeight(QFont::Medium);
+    const QFont bodyFont = ThemeManager::instance().textFont(TextStyle::Caption);
     const QFontMetricsF bodyMetrics(bodyFont);
-    const qreal lineStep = 11.0 * kBodyLineHeight;
+    const qreal lineStep = bodyFont.pixelSize() * kBodyLineHeight;
     painter.setFont(bodyFont);
     const QStringList lines = wrapLines(m_body, bodyFont, content.width(), kMaxBodyLines);
     qreal y = content.top() + tagMetrics.height() + 4.0;
@@ -459,7 +458,20 @@ HomePage::HomePage(HomeService& homeService, IMemberQuery& memberQuery, QWidget*
 
 void HomePage::buildUi()
 {
-    auto* pageLayout = new QVBoxLayout(this);
+    // The page scrolls when the window is shorter than its content, so the window can still go down to
+    // 1125 x 748 and nothing on the page gets squeezed.
+    auto* outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
+    auto* scrollArea = new QScrollArea(this);
+    scrollArea->setObjectName(QStringLiteral("homeScrollArea"));
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFocusPolicy(Qt::NoFocus);   // the controls inside take focus; the area itself would be a Tab stop with no ring
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    auto* content = new QWidget(scrollArea);
+    content->setObjectName(QStringLiteral("homeScrollContent"));
+    outerLayout->addWidget(scrollArea);
+
+    auto* pageLayout = new QVBoxLayout(content);
     pageLayout->setContentsMargins(32, 24, 32, 24);
     pageLayout->setSpacing(20);
 
@@ -592,6 +604,7 @@ void HomePage::buildUi()
         quickLinksLayout->setColumnStretch(column, 1);
     pageLayout->addLayout(quickLinksLayout);
     pageLayout->addStretch(1);
+    scrollArea->setWidget(content);
 }
 
 

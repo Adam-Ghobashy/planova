@@ -29,12 +29,12 @@ QWidget#SetupPage QLabel, QWidget#SetupPage QSlider { background: transparent; }
 
 /* ---------- header ---------- */
 QWidget#SetupPage QLabel#setupTitle {
-    font-family: "Space Grotesk", "Segoe UI"; font-size: 22px; font-weight: 800; color: @TextPrimary;
+    font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI"; font-size: 24px; font-weight: 600; color: @TextPrimary;
 }
-QWidget#SetupPage QLabel#setupSubtitle { font-size: 13px; color: @TextSecondary; }
+QWidget#SetupPage QLabel#setupSubtitle { font-size: 14px; color: @TextSecondary; }
 QWidget#SetupPage QLabel#stepBadge {
     background-color: @AccentSoft; color: @Accent; border-radius: 12px; padding: 5px 12px;
-    font-size: 12px; font-weight: 700;
+    font-size: 12px; font-weight: 600;
 }
 
 QWidget#SetupPage QWidget#setupFooter { background-color: @GlassFill; border-top: 1px solid @GlassEdge; }
@@ -44,9 +44,9 @@ QWidget#SetupPage QFrame#stepCard {
     background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 16px;
 }
 QWidget#SetupPage QLabel#stepTitle {
-    font-family: "Space Grotesk", "Segoe UI"; font-size: 20px; font-weight: 800; color: @TextPrimary;
+    font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI"; font-size: 16px; font-weight: 600; color: @TextPrimary;
 }
-QWidget#SetupPage QLabel#stepDescription { font-size: 13px; color: @TextSecondary; }
+QWidget#SetupPage QLabel#stepDescription { font-size: 14px; color: @TextSecondary; }
 
 /* ---------- fields ---------- */
 QWidget#SetupPage QLabel#fieldLabel { font-size: 12px; font-weight: 600; color: @TextPrimary; }
@@ -57,7 +57,7 @@ QWidget#SetupPage QLabel#fieldHint[error="true"], QWidget#SetupPage QLabel#nameH
 
 QWidget#SetupPage QLineEdit, QWidget#SetupPage QPlainTextEdit {
     background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @BorderStrong; border-radius: 10px;
-    padding: 9px 12px; font-size: 13px; min-height: 20px;
+    padding: 9px 12px; font-size: 14px; min-height: 20px;
     selection-background-color: @Accent; selection-color: @AccentText;
 }
 QWidget#SetupPage QLineEdit:hover, QWidget#SetupPage QPlainTextEdit:hover { border-color: @TextTertiary; }
@@ -70,7 +70,7 @@ QWidget#SetupPage QLineEdit:focus, QWidget#SetupPage QPlainTextEdit:focus {
 /* ---------- role combo box (StyledComboBox paints the chevron from the two qproperty colours) ---------- */
 QWidget#SetupPage QComboBox {
     background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @BorderStrong; border-radius: 10px;
-    padding: 9px 30px 9px 12px; font-size: 13px; min-height: 20px; combobox-popup: 0;
+    padding: 9px 30px 9px 12px; font-size: 14px; min-height: 20px; combobox-popup: 0;
     qproperty-arrowColor: @TextSecondary; qproperty-arrowActiveColor: @Accent;
 }
 QWidget#SetupPage QComboBox:hover { border-color: @TextTertiary; }
@@ -94,7 +94,7 @@ QWidget#SetupPage QPushButton[kind="primary"],
 QWidget#SetupPage QPushButton[kind="secondary"],
 QWidget#SetupPage QPushButton[kind="ghost"] {
     border: 1px solid transparent; border-radius: 10px; padding: 7px 14px; min-height: 20px;
-    font-size: 13px; font-weight: 600;
+    font-size: 14px; font-weight: 600;
 }
 
 QWidget#SetupPage QPushButton[kind="primary"] { background-color: @Accent; color: @AccentText; border-color: @Accent; }
@@ -123,14 +123,14 @@ QWidget#SetupPage QPushButton[kind="modelCard"] {
 QWidget#SetupPage QPushButton[kind="modelCard"]:hover { border-color: @BorderStrong; background-color: @GlassFillStrong; }
 QWidget#SetupPage QPushButton[kind="modelCard"]:checked { border-color: @Accent; background-color: @AccentSoft; }
 QWidget#SetupPage QPushButton[kind="modelCard"]:focus { border: 3px solid @TextPrimary; padding: 0; }
-QWidget#SetupPage QLabel#modelCardTitle { font-size: 14px; font-weight: 700; color: @TextPrimary; }
+QWidget#SetupPage QLabel#modelCardTitle { font-size: 14px; font-weight: 600; color: @TextPrimary; }
 QWidget#SetupPage QLabel#modelCardText { font-size: 12px; color: @TextSecondary; }
-QWidget#SetupPage QLabel#modelCardMark { font-size: 11px; font-weight: 700; color: @Accent; }
+QWidget#SetupPage QLabel#modelCardMark { font-size: 12px; font-weight: 600; color: @Accent; }
 
 /* ---------- team lead toggle: a chip that shows a check mark and a filled background when on ---------- */
 QWidget#SetupPage QPushButton[kind="chip"] {
     background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @ControlBorder; border-radius: 10px;
-    padding: 4px 12px; min-height: 20px; font-size: 13px; font-weight: 600;
+    padding: 4px 12px; min-height: 20px; font-size: 14px; font-weight: 600;
 }
 QWidget#SetupPage QPushButton[kind="chip"]:hover { background-color: @SurfaceHover; border-color: @TextTertiary; }
 QWidget#SetupPage QPushButton[kind="chip"]:checked { background-color: @AccentSoft; border-color: @Accent; }
@@ -146,11 +146,11 @@ QWidget#SetupPage QPushButton[kind="chip"]:focus { border: 2px solid @TextPrimar
 QWidget#SetupPage QPushButton[kind="ghost"]:focus { border: 2px solid @TextPrimary; padding: 3px 9px; }
 
 /* ---------- team step ---------- */
-QWidget#SetupPage QLabel#noMembers { font-size: 13px; color: @TextSecondary; padding: 20px 0; }
+QWidget#SetupPage QLabel#noMembers { font-size: 14px; color: @TextSecondary; padding: 20px 0; }
 QWidget#SetupPage QFrame#memberRow {
     background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 12px;
 }
-QWidget#SetupPage QLabel#memberTitle { font-size: 13px; font-weight: 700; color: @TextPrimary; }
+QWidget#SetupPage QLabel#memberTitle { font-size: 14px; font-weight: 600; color: @TextPrimary; }
 QWidget#SetupPage QLabel#skillLabel { font-size: 12px; color: @TextSecondary; min-width: 92px; }
 QWidget#SetupPage QLabel#skillValue { font-size: 12px; font-weight: 600; color: @TextPrimary; }
 
@@ -170,8 +170,8 @@ QWidget#SetupPage QWidget#WeightSlidersPanel {
 }
 QWidget#SetupPage QWidget#WeightSlidersPanel QLabel { background: transparent; }
 QWidget#SetupPage QLabel#cardTitle { color: @TextPrimary; font-size: 14px; font-weight: 600; }
-QWidget#SetupPage QLabel#sliderNameLabel { color: @TextPrimary; font-size: 13px; font-weight: 500; }
-QWidget#SetupPage QLabel#sliderValueLabel { color: @TextPrimary; font-size: 13px; font-weight: 600; min-width: 36px; }
+QWidget#SetupPage QLabel#sliderNameLabel { color: @TextPrimary; font-size: 14px; font-weight: 500; }
+QWidget#SetupPage QLabel#sliderValueLabel { color: @TextPrimary; font-size: 14px; font-weight: 600; min-width: 36px; }
 QWidget#SetupPage QWidget#WeightSlidersPanel QLabel#sumLabel {
     background-color: @AccentSoft; color: @Accent; border-radius: 10px; padding: 3px 10px;
     font-size: 12px; font-weight: 600;
@@ -180,10 +180,10 @@ QWidget#SetupPage QWidget#WeightSlidersPanel QLabel#sumLabel {
 /* ---------- review ---------- */
 QWidget#SetupPage QLabel#summaryName, QWidget#SetupPage QLabel#summaryTeam, QWidget#SetupPage QLabel#summaryModel,
 QWidget#SetupPage QLabel#summaryMembers, QWidget#SetupPage QLabel#summaryWeights, QWidget#SetupPage QLabel#summaryGit {
-    font-size: 13px; color: @TextPrimary;
+    font-size: 14px; color: @TextPrimary;
 }
 QWidget#SetupPage QLabel#createProblem {
     background-color: @DangerSoft; color: @DangerText; border-radius: 10px; padding: 10px 14px;
-    font-size: 13px; font-weight: 600;
+    font-size: 14px; font-weight: 600;
 }
 

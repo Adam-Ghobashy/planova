@@ -11,6 +11,11 @@ enum class ThemeMode { Light, Dark };
 
 enum class FontRole { Body, Display, Mono, Script };
 
+// The one type scale (pixel size and weight):
+// Caption 12/Medium, Body 14/Normal, Label 14/Medium, LabelActive 14/DemiBold, Heading 16/DemiBold,
+// PageTitle 24/DemiBold. Caption, Body and Label use the Body family, the rest the Display family.
+enum class TextStyle { Caption, Body, Label, LabelActive, Heading, PageTitle };
+
 class ThemeManager : public QObject {
     Q_OBJECT
 public:
@@ -30,9 +35,12 @@ public:
 
     // Registers every bundled font from :/fonts. Call once, before apply().
     void loadFonts();
-    // Font for a role. Falls back to Segoe UI (Consolas for Mono) when the bundled family is missing.
-    QFont font(FontRole role, int pointSize) const;
-    // Pure helper behind font(): the wanted family if it is in `available`, otherwise the fallback.
+    // Font for a role at a size in pixels, with the system's default hinting.
+    QFont font(FontRole role, int pixelSize) const;
+    // Font for one step of the type scale (see TextStyle).
+    QFont textFont(TextStyle style) const;
+    // Pure helper behind font(): the first candidate family for the role that is in `available`, otherwise
+    // the fallback (Segoe UI, Consolas for Mono).
     static QString familyFor(FontRole role, const QStringList& available);
 
     // Replaces @TokenName with the token's hex value. Unknown names are left as they are and logged with qWarning.

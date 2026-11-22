@@ -27,7 +27,7 @@ QWidget#WelcomePage QFrame#welcomeCard QLabel { background: transparent; border:
 /* ---------- buttons ---------- */
 QWidget#WelcomePage QPushButton {
     border: 1px solid transparent; border-radius: 10px; padding: 7px 14px; min-height: 20px;
-    font-size: 13px; font-weight: 600;
+    font-size: 14px; font-weight: 600;
 }
 
 QWidget#WelcomePage QPushButton[kind="primary"] { background-color: @Accent; color: @AccentText; border-color: @Accent; }
@@ -67,13 +67,13 @@ QWidget#WelcomePage QPushButton[kind="ghost"]:focus { border: 2px solid @TextPri
 
 /* ---------- workspaces view ---------- */
 QWidget#WelcomePage QLabel#welcomeTitle {
-    font-family: "Space Grotesk", "Segoe UI"; font-size: 20px; font-weight: 800; color: @TextPrimary;
+    font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI"; font-size: 24px; font-weight: 600; color: @TextPrimary;
 }
 QWidget#WelcomePage QFrame#welcomeDivider { background-color: @BorderSubtle; border: none; }
 
 QWidget#WelcomePage QLineEdit#projectSearch {
     background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @BorderDefault; border-radius: 10px;
-    padding: 9px 14px; font-size: 13px; min-height: 20px;
+    padding: 9px 14px; font-size: 14px; min-height: 20px;
     selection-background-color: @Accent; selection-color: @AccentText;
 }
 QWidget#WelcomePage QLineEdit#projectSearch:hover { border-color: @BorderStrong; }
@@ -82,14 +82,14 @@ QWidget#WelcomePage QLineEdit#projectSearch:focus { border: 2px solid @Accent; p
 QWidget#WelcomePage QFrame#gitBanner {
     background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 12px;
 }
-QWidget#WelcomePage QLabel#gitBannerCaption { font-size: 11px; color: @TextSecondary; }
+QWidget#WelcomePage QLabel#gitBannerCaption { font-size: 12px; color: @TextSecondary; }
 QWidget#WelcomePage QLabel#gitBannerRepo { font-family: "JetBrains Mono", "Consolas"; font-size: 12px; font-weight: 500; color: @TextPrimary; }
-QWidget#WelcomePage QLabel#gitBannerRepo[connected="false"] { font-family: "Inter", "Segoe UI"; font-size: 13px; color: @TextSecondary; }
+QWidget#WelcomePage QLabel#gitBannerRepo[connected="false"] { font-family: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI"; font-size: 14px; color: @TextSecondary; }
 
 QWidget#WelcomePage QLabel#workspacesTitle {
-    font-family: "Space Grotesk", "Segoe UI"; font-size: 14px; font-weight: 700; color: @TextPrimary;
+    font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI"; font-size: 16px; font-weight: 600; color: @TextPrimary;
 }
-QWidget#WelcomePage QLabel#workspacesCount { font-size: 11px; color: @TextSecondary; }
+QWidget#WelcomePage QLabel#workspacesCount { font-size: 12px; color: @TextSecondary; }
 QWidget#WelcomePage QLabel#workspaceState { font-size: 14px; color: @TextSecondary; }
 
 /* ---------- project card ---------- */
@@ -100,22 +100,22 @@ QWidget#WelcomePage QFrame#ProjectCard {
 QWidget#WelcomePage QFrame#ProjectCard:hover { border: 1px solid @BorderStrong; background-color: @GlassFillStrong; }
 QWidget#WelcomePage QFrame#ProjectCard[current="true"] { border: 1px solid @Accent; background-color: @AccentSoft; }
 QWidget#WelcomePage QFrame#ProjectCard QLabel { background: transparent; border: none; }
-QWidget#WelcomePage QLabel#projectName { font-size: 14px; font-weight: 700; color: @TextPrimary; }
+QWidget#WelcomePage QLabel#projectName { font-size: 14px; font-weight: 600; color: @TextPrimary; }
 QWidget#WelcomePage QLabel#projectTeam { font-size: 12px; color: @TextSecondary; }
 QWidget#WelcomePage QLabel#projectModel {
-    font-size: 11px; font-weight: 600; color: @TextSecondary; background-color: @SurfaceAlt;
+    font-size: 12px; font-weight: 600; color: @TextSecondary; background-color: @SurfaceAlt;
     border-radius: 8px; padding: 3px 8px;
 }
 QWidget#WelcomePage QFrame#ProjectCard[current="true"] QLabel#projectModel { background-color: @SurfaceRaised; }
 QWidget#WelcomePage QLabel#projectCurrentChip {
-    font-size: 10px; font-weight: 700; color: @Accent; background-color: @Surface;
+    font-size: 12px; font-weight: 600; color: @Accent; background-color: @Surface;
     border: 1px solid @Accent; border-radius: 8px; padding: 2px 8px;
 }
 
 /* ---------- project card "..." menu button ---------- */
 QWidget#WelcomePage QToolButton#projectMoreButton {
     border: 2px solid transparent; border-radius: 6px; background: transparent;
-    color: @TextSecondary; font-family: "Segoe UI Symbol", "Segoe UI"; font-size: 18px; font-weight: 700; padding: 0 4px;
+    color: @TextSecondary; font-family: "Segoe UI Symbol", "Segoe UI"; font-size: 18px; font-weight: 600; padding: 0 4px;
 }
 QWidget#WelcomePage QToolButton#projectMoreButton:hover { background-color: @SurfaceHover; color: @TextPrimary; }
 QWidget#WelcomePage QToolButton#projectMoreButton:pressed { background-color: @Track; color: @TextPrimary; }

@@ -180,10 +180,10 @@ protected:
         }
 
         QFont labelFont(font());
-        labelFont.setPixelSize(11);
+        labelFont.setPixelSize(12);
         QFont valueFont = monoFont();
-        valueFont.setBold(true);
-        valueFont.setPixelSize(11);
+        valueFont.setWeight(QFont::DemiBold);
+        valueFont.setPixelSize(12);
 
         const double trackWidth = kCanvasWidth - 150.0;
         double y = kStartY;
