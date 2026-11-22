@@ -19,7 +19,7 @@
 }
 
 /* Caption line under a stat-card number (reference: 11px, secondary text) */
-QLabel#TrackingCardCaption {
+QLabel#statCardCaption {
     background: transparent;
     border: none;
     color: @TextMuted;

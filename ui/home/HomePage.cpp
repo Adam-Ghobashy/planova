@@ -733,6 +733,8 @@ void HomePage::refresh()
     m_totalCard->setValue(QString::number(data.total));
     m_completedCard->setValue(QString::number(data.completed));
     m_inProgressCard->setValue(QString::number(data.inProgress));
+    // Review is not counted in "In Progress", so it is named under the number. An empty caption hides the line.
+    m_inProgressCard->setCaption(data.review > 0 ? QStringLiteral("+%1 in review").arg(data.review) : QString());
     m_remainingCard->setValue(QString::number(data.remaining));
     // The donut's "Active" segment is everything being worked on, Review included.
     m_statusDonut->setValues(data.completed, data.inProgress + data.review, data.remaining);
@@ -768,11 +770,13 @@ QWidget* HomePage::createPinNote(const PinDto& pin, const QString& authorName, i
         statusText(pin.category), pin.category == PinCategory::FeedbackBlocker);
     note->setTiltDegrees(kTilts[index % kMaxPins]);
     const QString time = relativeTime(pin.ts);
-    // The note shows at most three lines, so the tooltip carries the whole text.
-    QString tip = toQString(pin.text);
+    // The note shows at most three lines, so the tooltip carries the whole text. Qt shows a tooltip with markup as
+    // rich text, so the tip is always HTML and the user's text is escaped: a "<b>" in a pin shows as typed.
+    QString tip = QStringLiteral("<p style=\"white-space:pre-wrap\">") + toQString(pin.text).toHtmlEscaped();
     if (!time.isEmpty()) {
-        tip += QStringLiteral("\n") + authorName + QStringLiteral(" \u00B7 ") + time;
+        tip += QStringLiteral("<br>") + authorName.toHtmlEscaped() + QStringLiteral(" \u00B7 ") + time;
     }
+    tip += QStringLiteral("</p>");
     note->setToolTip(tip);
     return note;
 }

@@ -276,6 +276,14 @@ QLabel#statCardValue {
     border: none;
 }
 
+/* "+N in review" under the In Progress number */
+QWidget#homePage QLabel#statCardCaption {
+    color: @TextMuted;
+    font-size: 11px;
+    background: transparent;
+    border: none;
+}
+
 QLabel#statCardValue[valueRole="default"] {
     color: @TextPrimary;
 }

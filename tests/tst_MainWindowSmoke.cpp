@@ -9,6 +9,7 @@
 #include "board/TaskColumnWidget.h"
 #include "git/GitHubIntegrationPage.h"
 #include "home/HomePage.h"
+#include "widgets/StatCardWidget.h"
 #include "pins/PinsPage.h"
 #include "welcome/WelcomePage.h"
 #include "planova/PlanovaCore.h"
@@ -27,6 +28,7 @@
 #include <QStatusBar>
 #include <QTableWidget>
 #include <QTemporaryDir>
+#include <QTextDocument>
 #include <QTest>
 #include <QTimer>
 
@@ -495,6 +497,54 @@ private slots:
         // Targets are at least 24 px high (the link and the "..." button).
         QVERIFY2(link->height() >= 24, qPrintable(QString::number(link->height())));
         QVERIFY2(home->findChild<QPushButton*>("homePinsMore")->height() >= 24, "homePinsMore too small");
+    }
+
+    // The In Progress number leaves out tasks in Review, so a caption under it counts them.
+    void homeInProgressCardCountsReview()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
+        const Id task = core.tasks().create(sampleTask("Build API"));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        auto* home = window.findChild<planova::s6::HomePage*>();
+        QVERIFY(home);
+        auto inProgressCaption = [home]() -> QLabel* {
+            for (StatCardWidget* card : home->findChildren<StatCardWidget*>()) {
+                auto* title = card->findChild<QLabel*>("statCardTitle");
+                if (title && title->text() == "In Progress") return card->findChild<QLabel*>("statCardCaption");
+            }
+            return nullptr;
+        };
+        QLabel* caption = inProgressCaption();
+        QVERIFY2(!caption || caption->isHidden(), "no task in review: no caption");
+
+        core.tasks().move(task, TaskStatus::InProgress);
+        core.tasks().move(task, TaskStatus::Review);
+        caption = inProgressCaption();
+        QVERIFY(caption);
+        QVERIFY(!caption->isHidden());
+        QCOMPARE(caption->text(), QString("+1 in review"));
+    }
+
+    // A pin's text is the user's, so markup in it shows as typed in the Home tooltip.
+    void homePinTooltipShowsMarkupLiterally()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
+        const Id member = core.members().add("Ana Lopez", "Backend Developer", false);
+        core.pins().create(PinCategory::HandoffNote, "<b>bold</b> & co", {}, member, {});
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        auto* home = window.findChild<planova::s6::HomePage*>();
+        QVERIFY(home);
+        QWidget* note = home->findChild<QWidget*>("stickyNoteWidget");
+        QVERIFY(note);
+        const QString tip = note->toolTip();
+        QVERIFY2(tip.contains("&lt;b&gt;bold&lt;/b&gt; &amp; co"), qPrintable(tip));
+        QVERIFY2(Qt::mightBeRichText(tip), "an escaped tip must be shown as rich text, or the entities show");
     }
 
     // "Open Pins & Collab" goes to the Pins page.

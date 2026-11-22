@@ -121,10 +121,10 @@ void StatCardWidget::setCaption(const QString& text)
 {
     if (!captionLabel)
     {
-        // Created on first use, so cards without a caption (Home) are unchanged.
+        // Created on first use, so cards that never get a caption are unchanged.
         // Appended after the layout's stretch, so it sits at the bottom of the card.
         captionLabel = new QLabel(this);
-        captionLabel->setObjectName("TrackingCardCaption"); // styled in tracking.qss
+        captionLabel->setObjectName("statCardCaption"); // styled in tracking.qss and home.qss
         layout()->addWidget(captionLabel);
     }
 
