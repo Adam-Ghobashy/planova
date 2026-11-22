@@ -10,11 +10,13 @@
 #include <QApplication>
 #include <QLabel>
 #include <QPlainTextEdit>
+#include <QPointer>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTest>
 #include <QTimer>
+#include <QToolButton>
 #include <algorithm>
 
 namespace {
@@ -97,6 +99,21 @@ QStringList actionTexts(const TaskCardWidget& card)
     QStringList texts;
     for (const QAction* a : card.actions()) texts << a->text();
     return texts;
+}
+
+// The live card for a task. A rebuild hides the old cards before it deletes them later.
+TaskCardWidget* cardOf(const PhaseBoardPage& page, const Id& taskId)
+{
+    for (TaskCardWidget* card : page.findChildren<TaskCardWidget*>()) {
+        if (card->taskId() == taskId && !card->isHidden()) return card;
+    }
+    return nullptr;
+}
+
+QToolButton* advanceButtonOf(const PhaseBoardPage& page, const Id& taskId)
+{
+    TaskCardWidget* card = cardOf(page, taskId);
+    return card ? card->findChild<QToolButton*>("AdvanceButton") : nullptr;
 }
 }
 
@@ -248,6 +265,103 @@ private slots:
         cards.first()->actions().first()->trigger();
         QTRY_VERIFY_WITH_TIMEOUT(opened, 1500);
         QCOMPARE(core.taskQuery().byId(task)->assignee, std::optional<Id>(member));
+    }
+
+    // A Done task keeps its assignee after the member leaves the team. The card must not show the raw id or
+    // borrow the first member's colour.
+    void removedMemberShowsFormerMember()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
+        CoreBridge bridge(core);
+        const Id member = core.members().add("Ana", "Backend Developer", false);
+        const Id task = core.tasks().create(sampleTask("Build API"));
+        core.tasks().assign(task, member, "board");
+        for (TaskStatus to : {TaskStatus::InProgress, TaskStatus::Review, TaskStatus::Done})
+            core.tasks().move(task, to);
+        core.members().remove(member);
+        QCOMPARE(core.taskQuery().byId(task)->assignee, std::optional<Id>(member));
+
+        PhaseBoardPage page(core, bridge);
+        const auto cards = page.findChildren<TaskCardWidget*>();
+        QCOMPARE(cards.size(), 1);
+        QStringList metas;
+        for (const QLabel* l : cards.first()->findChildren<QLabel*>("CardMeta")) metas << l->text();
+        QVERIFY2(metas.contains("Former member"), qPrintable(metas.join(", ")));
+        QVERIFY(!metas.contains(QString::fromStdString(member)));
+        auto* avatar = cards.first()->findChild<QLabel*>("CardAvatar");
+        QVERIFY(avatar);
+        QCOMPARE(avatar->text(), QString::fromUtf16(u"–"));
+        QVERIFY2(!avatar->property("memberColor").isValid(), "a former member gets the neutral avatar");
+    }
+
+    // The board rebuilds every card on each change. A keyboard user who pressed a card's advance button keeps the
+    // focus on that task's advance button in its new column.
+    void advanceKeepsFocusOnTheTask()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
+        CoreBridge bridge(core);
+        const Id member = core.members().add("Ana", "Backend Developer", false);
+        core.tasks().create(sampleTask("Other task"));
+        const Id task = core.tasks().create(sampleTask("Build API"));
+        core.tasks().assign(task, member, "board");
+
+        PhaseBoardPage page(core, bridge);
+        page.resize(1440, 900);
+        page.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&page));
+        page.activateWindow();
+        const bool active = QTest::qWaitForWindowActive(&page);   // activation is asynchronous
+        QPointer<QToolButton> old = advanceButtonOf(page, task);
+        QVERIFY(old);
+        old->setFocus(Qt::TabFocusReason);
+        if (!active || !old->hasFocus()) QSKIP("window not active in this environment, focus cannot be checked");
+
+        QTest::keyClick(old, Qt::Key_Space);
+        QTest::qWait(50);   // the old cards are deleted on the next event loop turn
+        QCOMPARE(core.taskQuery().byId(task)->status, TaskStatus::InProgress);
+        if (!page.isActiveWindow()) QSKIP("window lost activation during the test, focus cannot be checked");
+        QToolButton* now = advanceButtonOf(page, task);
+        QVERIFY(now);
+        QVERIFY2(old.isNull(), "the card was not rebuilt, the test proves nothing");
+        QVERIFY2(now->hasFocus(), "the keyboard user lost focus after advancing the task");
+    }
+
+    // The same for a focused card (its Menu key opens "Decline task..."): another change rebuilds the board.
+    void focusedCardKeepsFocusAfterRefresh()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
+        CoreBridge bridge(core);
+        const Id member = core.members().add("Ana", "Backend Developer", false);
+        const Id task = core.tasks().create(sampleTask("Build API"));
+        core.tasks().assign(task, member, "board");
+
+        PhaseBoardPage page(core, bridge);
+        page.resize(1440, 900);
+        page.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&page));
+        page.activateWindow();
+        const bool active = QTest::qWaitForWindowActive(&page);
+        QPointer<TaskCardWidget> old = cardOf(page, task);
+        QVERIFY(old);
+        old->setFocus(Qt::TabFocusReason);
+        if (!active || !old->hasFocus()) QSKIP("window not active in this environment, focus cannot be checked");
+
+        core.tasks().create(sampleTask("Another task"));   // any change rebuilds the cards
+        QTest::qWait(50);
+        if (!page.isActiveWindow()) QSKIP("window lost activation during the test, focus cannot be checked");
+        TaskCardWidget* now = cardOf(page, task);
+        QVERIFY(now);
+        QVERIFY2(old.isNull(), "the card was not rebuilt, the test proves nothing");
+        QVERIFY2(now->hasFocus(), "the keyboard user lost focus after the board refreshed");
     }
 
     void blankReasonChangesNothing()

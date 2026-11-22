@@ -1,5 +1,7 @@
 #include "PhaseBoardPage.h"
 #include <map>
+#include <optional>
+#include <QApplication>
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -8,6 +10,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSignalBlocker>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include "BoardUtil.h"
 #include "NewTaskDialog.h"
@@ -148,8 +151,23 @@ void PhaseBoardPage::refresh() {
     const QString query = search_->text().trimmed();
     const QString memberId = memberFilter_->currentData().toString();
 
+    // Every card is rebuilt below. If a card or its advance button has the keyboard focus, remember the task so the
+    // focus can go back to the same task's new card (it may sit in another column now).
+    Id focusedTask;
+    bool advanceHadFocus = false;
+    if (QWidget* focused = QApplication::focusWidget(); focused && isAncestorOf(focused)) {
+        for (QWidget* w = focused; w && w != this; w = w->parentWidget()) {
+            if (auto* card = qobject_cast<TaskCardWidget*>(w)) {
+                focusedTask = card->taskId();
+                advanceHadFocus = focused->objectName() == "AdvanceButton";
+                break;
+            }
+        }
+    }
+
     for (TaskColumnWidget* c : columns_) c->clear();
     int counts[4] = {0, 0, 0, 0};
+    TaskCardWidget* focusedCard = nullptr;
 
     for (const TaskDto& t : tasks) {
         if (!query.isEmpty() &&
@@ -160,7 +178,7 @@ void PhaseBoardPage::refresh() {
             continue;
 
         QString name, initials;
-        Token color = Token::Member1;
+        std::optional<Token> color;   // no colour: the neutral avatar
         if (t.assignee) {
             auto it = memberIndex.find(*t.assignee);
             if (it != memberIndex.end()) {
@@ -169,18 +187,29 @@ void PhaseBoardPage::refresh() {
                 initials = board::initialsOf(m.name);
                 color = board::memberToken(it->second);
             } else {
-                name = QString::fromStdString(*t.assignee);
-                initials = "?";
+                // A finished task keeps its assignee after that member left the team.
+                name = tr("Former member");
+                initials = QString::fromUtf16(u"–");
             }
         }
 
         const int col = static_cast<int>(t.status);
-        columns_[col]->addCard(
-            new TaskCardWidget(t, name, initials, color, core_.pinQuery().pinCountForTask(t.id)));
+        auto* card = new TaskCardWidget(t, name, initials, color, core_.pinQuery().pinCountForTask(t.id));
+        columns_[col]->addCard(card);
         ++counts[col];
+        if (!focusedTask.empty() && t.id == focusedTask) focusedCard = card;
     }
 
     for (int i = 0; i < 4; ++i) columns_[i]->setCount(counts[i]);
+
+    if (focusedCard) {
+        // The advance button is gone once the task is Done, and the card itself takes focus only when it has an
+        // assignee. Whatever of the two exists gets the focus back.
+        QWidget* advance = focusedCard->findChild<QToolButton*>("AdvanceButton");
+        QWidget* target = (advanceHadFocus && advance) ? advance : focusedCard;
+        if (target->focusPolicy() == Qt::NoFocus) target = advance;
+        if (target) target->setFocus(Qt::OtherFocusReason);
+    }
     taskCount_->setText(QString::fromUtf16(u"\u2022") +
                         tr("  %1 tasks").arg(static_cast<int>(tasks.size())));
 }
