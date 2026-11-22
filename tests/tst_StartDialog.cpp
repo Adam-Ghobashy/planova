@@ -59,6 +59,29 @@ private slots:
         QCOMPARE(dialog.projectId().toStdString(), beta);
     }
 
+    void currentProjectIsMarked()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("Alpha", "Team A", "Agile", ""));
+        core.createProject("Beta", "Team B", "Scrum", "");
+        QVERIFY(core.currentProject());
+        StartDialog dialog(core, nullptr);
+        dialog.show();
+
+        int marked = 0;
+        for (auto* label : dialog.findChildren<QLabel*>())
+            if (label->text() == "Current" && label->isVisible())
+                ++marked;
+        QCOMPARE(marked, 1);
+
+        auto* current = buttonWithText(dialog, QString("Alpha  ·  Team A"));
+        auto* other = buttonWithText(dialog, QString("Beta  ·  Team B"));
+        QVERIFY(current && other);
+        QCOMPARE(current->accessibleDescription(), QString("Current"));
+        QVERIFY(other->accessibleDescription().isEmpty());
+    }
+
     void noProjectsShowsAMessage()
     {
         QTemporaryDir dir;

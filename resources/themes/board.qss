@@ -98,6 +98,13 @@ QLabel#CardAvatar {
     background: @Surface; border: 1px solid @ControlBorder; border-radius: 14px;
     font-size: 12px; font-weight: 700; color: @TextPrimary;
 }
+QLabel#CardAvatar[memberColor] { color: @TextInverse; border: none; }
+QLabel#CardAvatar[memberColor="1"] { background: @Member1; }
+QLabel#CardAvatar[memberColor="2"] { background: @Member2; }
+QLabel#CardAvatar[memberColor="3"] { background: @Member3; }
+QLabel#CardAvatar[memberColor="4"] { background: @Member4; }
+QLabel#CardAvatar[memberColor="5"] { background: @Member5; }
+QLabel#CardAvatar[memberColor="6"] { background: @Member6; }
 QLabel#CardMeta  { font-size: 13px; color: @TextMuted; background: transparent; }
 QLabel#DoneMark  { font-size: 20px; font-weight: 700; color: @TextPrimary; background: transparent; }
 QToolButton#AdvanceButton {

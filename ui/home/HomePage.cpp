@@ -734,7 +734,8 @@ void HomePage::refresh()
     m_completedCard->setValue(QString::number(data.completed));
     m_inProgressCard->setValue(QString::number(data.inProgress));
     m_remainingCard->setValue(QString::number(data.remaining));
-    m_statusDonut->setValues(data.completed, data.inProgress, data.remaining);
+    // The donut's "Active" segment is everything being worked on, Review included.
+    m_statusDonut->setValues(data.completed, data.inProgress + data.review, data.remaining);
     updateContributionChart(data);
     updatePins(data.pins);
 }
@@ -767,10 +768,12 @@ QWidget* HomePage::createPinNote(const PinDto& pin, const QString& authorName, i
         statusText(pin.category), pin.category == PinCategory::FeedbackBlocker);
     note->setTiltDegrees(kTilts[index % kMaxPins]);
     const QString time = relativeTime(pin.ts);
+    // The note shows at most three lines, so the tooltip carries the whole text.
+    QString tip = toQString(pin.text);
     if (!time.isEmpty()) {
-        note->setToolTip(authorName + QStringLiteral(" \u00B7 ") + time);
+        tip += QStringLiteral("\n") + authorName + QStringLiteral(" \u00B7 ") + time;
     }
-
+    note->setToolTip(tip);
     return note;
 }
 

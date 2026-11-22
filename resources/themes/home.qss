@@ -292,7 +292,7 @@ QWidget#donutWidget {
     background: transparent;
     border: none;
     font-size: 12px;
-    qproperty-doneColor: @SuccessSoft;
+    qproperty-doneColor: @ChartDone;
     qproperty-activeColor: @Accent;
     qproperty-trackColor: @Track;
     qproperty-textColor: @TextPrimary;

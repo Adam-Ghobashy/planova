@@ -34,7 +34,7 @@ private:
 }
 
 TaskCardWidget::TaskCardWidget(const TaskDto& task, const QString& assigneeName,
-                               const QString& initials, Token /*avatarColor*/,
+                               const QString& initials, Token avatarColor,
                                int pinCount, QWidget* parent)
     : QFrame(parent), taskId_(task.id) {
     setObjectName("TaskCard");
@@ -120,6 +120,9 @@ TaskCardWidget::TaskCardWidget(const TaskDto& task, const QString& assigneeName,
     avatar->setObjectName("CardAvatar");
     avatar->setFixedSize(28, 28);
     avatar->setAlignment(Qt::AlignCenter);
+    // board.qss maps memberColor 1..6 to the Member1..Member6 colours; an unassigned card keeps the plain look.
+    if (task.assignee)
+        avatar->setProperty("memberColor", static_cast<int>(avatarColor) - static_cast<int>(Token::Member1) + 1);
     bottom->addWidget(avatar);
 
     auto* name = new ElidedLabel(who);

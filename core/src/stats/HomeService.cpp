@@ -22,8 +22,10 @@ DashboardData HomeService::dashboard() const
             ++d.completed;
             break;
         case TaskStatus::InProgress:
-        case TaskStatus::Review:
             ++d.inProgress;
+            break;
+        case TaskStatus::Review:
+            ++d.review;
             break;
         case TaskStatus::ToDo:
             ++d.remaining;

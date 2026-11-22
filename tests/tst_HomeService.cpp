@@ -109,8 +109,23 @@ private slots:
         const DashboardData d = HomeService(tasks, members, pins).dashboard();
         QCOMPARE(d.total, 8);
         QCOMPARE(d.completed, 3);
-        QCOMPARE(d.inProgress, 2); // InProgress + Review
+        QCOMPARE(d.inProgress, 1); // InProgress only, like the Board column
+        QCOMPARE(d.review, 1);
         QCOMPARE(d.remaining, 3);  // ToDo only
+    }
+
+    void inProgressCountMatchesBoard()
+    {
+        FakeTasks tasks;
+        FakeMembers members;
+        FakePins pins;
+        tasks.tasks = {
+            makeTask("a", 1, 1, TaskStatus::InProgress), makeTask("b", 1, 1, TaskStatus::InProgress),
+            makeTask("c", 1, 1, TaskStatus::Review),     makeTask("d", 1, 1, TaskStatus::Review),
+        };
+        const DashboardData d = HomeService(tasks, members, pins).dashboard();
+        QCOMPARE(d.inProgress, 2);
+        QCOMPARE(d.review, 2); // Review is counted on its own
     }
 
     void contributionHoursSumDoneTasksPerMember()

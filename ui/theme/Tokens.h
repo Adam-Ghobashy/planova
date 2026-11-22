@@ -17,7 +17,8 @@ enum class Token {
     SurfaceDialog, AccentSoftStrong, DoneChipText, ReviewBorder,
     DangerAction, DangerBorder, StatusConnected, ShadowSoft,
     StickyGreenBorder, StickyGreenText, StickyPinkBorder, StickyPinkText,
-    StickyBlueBorder, StickyBlueText, StickyYellowBorder, StickyYellowText
+    StickyBlueBorder, StickyBlueText, StickyYellowBorder, StickyYellowText,
+    ChartDone
 };
 
 // Enum names as text, same order as Token. Used to resolve @TokenName in qss files.
@@ -38,7 +39,8 @@ inline constexpr const char* kTokenNames[] = {
     "SurfaceDialog", "AccentSoftStrong", "DoneChipText", "ReviewBorder",
     "DangerAction", "DangerBorder", "StatusConnected", "ShadowSoft",
     "StickyGreenBorder", "StickyGreenText", "StickyPinkBorder", "StickyPinkText",
-    "StickyBlueBorder", "StickyBlueText", "StickyYellowBorder", "StickyYellowText"
+    "StickyBlueBorder", "StickyBlueText", "StickyYellowBorder", "StickyYellowText",
+    "ChartDone"
 };
 
 // Eight-digit values are #AARRGGBB (alpha first), as QColor reads them.
@@ -59,7 +61,8 @@ inline constexpr const char* kLightHex[] = {
     "#EAE6DF", "#EAE5FF", "#3F6212", "#F7E3A1",
     "#DC2626", "#EF4444", "#10B981", "#0D18181B",
     "#86EFAC", "#14532D", "#F9A8D4", "#831843",
-    "#93C5FD", "#1E3A8A", "#FDE047", "#713F12"
+    "#93C5FD", "#1E3A8A", "#FDE047", "#713F12",
+    "#D4F981"
 };
 
 inline constexpr const char* kDarkHex[] = {
@@ -79,10 +82,11 @@ inline constexpr const char* kDarkHex[] = {
     "#1F1F24", "#34343B", "#F4F4F5", "#40F59E0B",
     "#FCA5A5", "#EF4444", "#34D399", "#99000000",
     "#4010B981", "#D1FAE5", "#40EC4899", "#FCE7F3",
-    "#403B82F6", "#DBEAFE", "#40F59E0B", "#FEF3C7"
+    "#403B82F6", "#DBEAFE", "#40F59E0B", "#FEF3C7",
+    "#34D399"
 };
 
-constexpr int kTokenCount = static_cast<int>(Token::StickyYellowText) + 1;
+constexpr int kTokenCount = static_cast<int>(Token::ChartDone) + 1;
 
 static_assert(sizeof(kLightHex) / sizeof(kLightHex[0]) == kTokenCount, "kLightHex must have one entry per Token");
 static_assert(sizeof(kDarkHex) / sizeof(kDarkHex[0]) == kTokenCount, "kDarkHex must have one entry per Token");

@@ -12,6 +12,7 @@ struct DashboardData {
     int total = 0;
     int completed = 0;
     int inProgress = 0;
+    int review = 0;
     int remaining = 0;
     std::vector<std::pair<Id, int>> contributionHours;
     std::vector<PinDto> pins;

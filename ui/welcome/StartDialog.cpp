@@ -1,6 +1,7 @@
 #include "StartDialog.h"
 
 #include <QDebug>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QPixmap>
 #include <QPushButton>
@@ -70,6 +71,17 @@ StartDialog::StartDialog(PlanovaCore& core, QWidget* parent) : ModalDialog(tr("W
         button->setAccessibleName(tr("Open project %1").arg(name));
         const QString id = QString::fromStdString(it->id);
         connect(button, &QPushButton::clicked, this, [this, id] { choose(Choice::OpenProject, id); });
+        if (core.currentProject() && *core.currentProject() == it->id) {
+            // The open project says so in words, not only by position or colour.
+            button->setAccessibleDescription(tr("Current"));
+            auto* mark = new QLabel(tr("Current"), button);
+            mark->setObjectName("startDialogCurrent");
+            mark->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+            auto* markLayout = new QHBoxLayout(button);
+            markLayout->setContentsMargins(0, 0, 14, 0);
+            markLayout->addStretch(1);
+            markLayout->addWidget(mark, 0, Qt::AlignVCenter);
+        }
         body->addWidget(button);
     }
 
