@@ -574,15 +574,15 @@ private slots:
         core.openProject(core.createProject("P", "team", "Agile", "idea"));
         CoreBridge bridge(core);
         MainWindow window(core, bridge);
-        auto* title = window.findChild<QLabel*>("SidebarGitTitle");
+        auto* title = window.findChild<QLabel*>("SidebarGitText");
         auto* sync = window.findChild<QPushButton*>("SidebarSyncButton");
         QVERIFY(title && sync);
-        QCOMPARE(title->text(), QString("No repository connected"));
+        QCOMPARE(title->text(), QString("No repository"));
         QVERIFY(!sync->isEnabled());
 
         core.git().connect("https://github.com/acme/portal.git", "main");
         QApplication::processEvents();
-        QVERIFY(title->text() != QString("No repository connected"));
+        QVERIFY(title->text() != QString("No repository"));
         QVERIFY(sync->isEnabled());
     }
 

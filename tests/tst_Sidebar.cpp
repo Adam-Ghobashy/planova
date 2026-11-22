@@ -61,9 +61,142 @@ private slots:
         core.openProject(core.createProject("A", "team", "Agile", "idea"));
         Sidebar sidebar(core);
 
-        QVERIFY(itemWithLabel(sidebar, "Pins & Collab"));
         QVERIFY(itemWithLabel(sidebar, "Team & Skills"));
-        QVERIFY(itemWithLabel(sidebar, "Fair Tracking & Charts"));
+    }
+
+    // The items follow the workflow, under three headings, in the order navOrder() gives.
+    void itemsInWorkflowOrder()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
+        Sidebar sidebar(core);
+        sidebar.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&sidebar));
+
+        const QStringList expected = {"Overview", "Phase Board", "Chaos Slicer", "Pins", "Team & Skills",
+                                      "Tracking", "GitHub"};
+        int lastY = -1;
+        for (const QString& text : expected) {
+            QPushButton* item = itemWithLabel(sidebar, text);
+            QVERIFY2(item, qPrintable(text));
+            QVERIFY2(item->y() > lastY, qPrintable(text + " is out of order"));
+            lastY = item->y();
+        }
+        QCOMPARE(sidebar.findChildren<QPushButton*>("navItem").size(), expected.size());
+
+        const auto headings = sidebar.findChildren<QLabel*>("sidebarLabel");
+        QCOMPARE(headings.size(), 3);
+        QCOMPARE(headings.at(0)->text().toUpper(), QString("PROJECT"));
+        QCOMPARE(headings.at(1)->text().toUpper(), QString("COLLABORATE"));
+        QCOMPARE(headings.at(2)->text().toUpper(), QString("INSIGHTS"));
+        QCOMPARE(headings.at(0)->font().capitalization(), QFont::AllUppercase);
+        // Each heading sits right above its first item.
+        QVERIFY(headings.at(0)->y() < itemWithLabel(sidebar, "Overview")->y());
+        QVERIFY(headings.at(1)->y() > itemWithLabel(sidebar, "Chaos Slicer")->y());
+        QVERIFY(headings.at(1)->y() < itemWithLabel(sidebar, "Pins")->y());
+        QVERIFY(headings.at(2)->y() > itemWithLabel(sidebar, "Team & Skills")->y());
+        QVERIFY(headings.at(2)->y() < itemWithLabel(sidebar, "Tracking")->y());
+
+        QCOMPARE(Sidebar::navOrder(), QList<Page>({Page::Home, Page::Board, Page::Slicer, Page::Pins, Page::Team,
+                                                   Page::Tracking, Page::GitHub}));
+    }
+
+    void switcherShowsProjectAndOpensHub()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        Sidebar sidebar(core);
+        auto* switcher = sidebar.findChild<QPushButton*>("projectSwitcher");
+        QVERIFY(switcher);
+        auto* name = switcher->findChild<QLabel*>("projectSwitcherName");
+        QVERIFY(name);
+        QCOMPARE(name->text(), QString("No project open"));
+        QCOMPARE(switcher->toolTip(), QString("Open Projects Hub"));
+
+        core.openProject(core.createProject("Atlas", "team", "Agile", "idea"));
+        sidebar.refresh();
+        QCOMPARE(name->text(), QString("Atlas"));
+        QCOMPARE(switcher->accessibleName(), QString("Projects: Atlas"));
+
+        // A long name is shortened on screen; the accessible name keeps all of it.
+        const QString longName = "A very long project name that cannot fit in the sidebar";
+        sidebar.setProjectName(longName);
+        QVERIFY(name->text() != longName);
+        QVERIFY(name->text().endsWith(QChar(0x2026)));
+        QCOMPARE(switcher->accessibleName(), "Projects: " + longName);
+
+        QSignalSpy spy(&sidebar, &Sidebar::pageRequested);
+        QTest::mouseClick(switcher, Qt::LeftButton);
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(spy.at(0).at(0).value<Page>(), Page::Hub);
+
+        sidebar.setActivePage(Page::Hub);
+        QVERIFY(switcher->property("active").toBool());
+        sidebar.setActivePage(Page::Board);
+        QVERIFY(!switcher->property("active").toBool());
+    }
+
+    void itemsNeedAnOpenProject()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        Sidebar sidebar(core);
+        const auto items = sidebar.findChildren<QPushButton*>("navItem");
+        QCOMPARE(items.size(), 7);
+        for (auto* item : items) {
+            QVERIFY(!item->isEnabled());
+            QCOMPARE(item->toolTip(), QString("Open a project first"));
+        }
+        // The switcher stays usable: it is the way to open a project.
+        QVERIFY(sidebar.findChild<QPushButton*>("projectSwitcher")->isEnabled());
+
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
+        sidebar.refresh();
+        for (auto* item : items) {
+            QVERIFY(item->isEnabled());
+            QCOMPARE(item->toolTip(), item->findChild<QLabel*>("navLabel")->text());
+        }
+
+        sidebar.setProjectOpen(false);
+        for (auto* item : items)
+            QVERIFY(!item->isEnabled());
+    }
+
+    // Disabled labels are muted; once a project opens, the active item shows the active text colour.
+    void itemColoursFollowProjectState()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        Sidebar sidebar(core);
+        sidebar.setActivePage(Page::Home);
+        sidebar.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&sidebar));
+        auto textColour = [&](const QString& text) {
+            auto* label = itemWithLabel(sidebar, text)->findChild<QLabel*>("navLabel");
+            return label->palette().color(label->foregroundRole());
+        };
+        QCOMPARE(textColour("Phase Board"), ThemeManager::instance().color(Token::TextMuted));
+
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
+        sidebar.refresh();
+        QCOMPARE(textColour("Overview"), ThemeManager::instance().color(Token::NavActiveText));
+        QVERIFY(textColour("Phase Board") != ThemeManager::instance().color(Token::TextMuted));
+    }
+
+    void gitFooterIsOneLine()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
+        Sidebar sidebar(core);
+        auto* text = sidebar.findChild<QLabel*>("SidebarGitText");
+        QVERIFY(text);
+        QCOMPARE(text->text(), QString("No repository"));
+
+        core.git().connect("https://github.com/acme/portal.git", "main");
+        sidebar.refresh();
+        QCOMPARE(text->text(), QString("Synced · main (0)"));
     }
 
     void badgesFollowCounts()
@@ -72,7 +205,7 @@ private slots:
         PlanovaCore core(dir.path().toStdString());
         core.openProject(core.createProject("A", "team", "Agile", "idea"));
         Sidebar sidebar(core);
-        QPushButton* pins = itemWithLabel(sidebar, "Pins & Collab");
+        QPushButton* pins = itemWithLabel(sidebar, "Pins");
         QPushButton* board = itemWithLabel(sidebar, "Phase Board");
         QVERIFY(pins && board);
         // Zero counts hide the badge.
@@ -108,7 +241,7 @@ private slots:
         QCOMPARE(spy.count(), 1);
         QCOMPARE(spy.at(0).at(0).value<Page>(), Page::Board);
 
-        QTest::mouseClick(itemWithLabel(sidebar, "Projects Hub"), Qt::LeftButton);
+        QTest::mouseClick(sidebar.findChild<QPushButton*>("projectSwitcher"), Qt::LeftButton);
         QCOMPARE(spy.at(1).at(0).value<Page>(), Page::Hub);
     }
 
@@ -135,6 +268,8 @@ private slots:
     {
         QTemporaryDir dir;
         PlanovaCore core(dir.path().toStdString());
+        // Items are disabled without a project, and a disabled item takes no focus.
+        core.openProject(core.createProject("A", "team", "Agile", "idea"));
         Sidebar sidebar(core);
         sidebar.setActivePage(Page::Team);
         sidebar.show();

@@ -138,6 +138,67 @@ QPushButton#navItem[active="true"] QLabel#navBadge {
     color: @Accent;
 }
 
+/* No project open: the item is muted and does not react to the mouse (the icon is tinted TextMuted in Sidebar.cpp).
+   The tooltip says why. Qt ignores a pseudo-state on a parent selector ("navItem:disabled QLabel" would match every
+   label), so the label uses its own disabled state, which it takes from the button. */
+QPushButton#navItem:disabled {
+    background-color: transparent;
+}
+
+QPushButton#navItem QLabel#navLabel:disabled {
+    color: @TextMuted;
+}
+
+/* Project switcher: a small card under the brand row. "active" is set while the Projects Hub is shown, and then it
+   looks like an active nav item. */
+QPushButton#projectSwitcher {
+    background-color: @Surface;
+    border: 1px solid @Border;
+    border-radius: 10px;
+    padding: 0px;
+    text-align: left;
+}
+
+QPushButton#projectSwitcher:hover {
+    background-color: @SurfaceHover;
+    border-color: @BorderStrong;
+}
+
+QPushButton#projectSwitcher:pressed {
+    background-color: @Track;
+}
+
+QPushButton#projectSwitcher[active="true"] {
+    background-color: @NavActiveBg;
+    border: 1px solid @NavActiveBg;
+}
+
+/* The ring is drawn over the edge; the content is placed by the inner layout, so nothing moves. */
+QPushButton#projectSwitcher:focus {
+    border: 2px solid @Accent;
+}
+
+QPushButton#projectSwitcher[active="true"]:focus {
+    border: 2px solid @TextPrimary;
+}
+
+QPushButton#projectSwitcher QLabel#projectSwitcherCaption {
+    color: @TextMuted;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+QPushButton#projectSwitcher QLabel#projectSwitcherName {
+    color: @TextPrimary;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+QPushButton#projectSwitcher[active="true"] QLabel#projectSwitcherCaption,
+QPushButton#projectSwitcher[active="true"] QLabel#projectSwitcherName {
+    color: @NavActiveText;
+}
+
 QPushButton#themeToggle {
     background-color: transparent;
     color: @TextSecondary;
@@ -185,17 +246,10 @@ QLabel#SidebarGitDot[state="disconnected"] {
     color: @TextMuted;
 }
 
-QLabel#SidebarGitTitle {
+QLabel#SidebarGitText {
     color: @TextPrimary;
     font-size: 12px;
-    font-weight: 700;
-    border: none;
-    background: transparent;
-}
-
-QLabel#SidebarGitSubtitle {
-    color: @TextMuted;
-    font-size: 11px;
+    font-weight: 600;
     border: none;
     background: transparent;
 }

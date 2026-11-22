@@ -275,6 +275,7 @@ private slots:
                                 .arg(label ? label->text() : "?", item->property("active").toString(), r.why);
             }
         }
+        sweepNamed(sidebar, "projectSwitcher", "Sidebar", true, failures, checked);
         sweepNamed(sidebar, "themeToggle", "Sidebar", true, failures, checked);
 
         // Board and Pins

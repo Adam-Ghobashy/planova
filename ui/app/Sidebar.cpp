@@ -1,5 +1,6 @@
 #include "Sidebar.h"
 #include "theme/ThemeManager.h"
+#include <QFontMetrics>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -11,8 +12,13 @@
 
 namespace {
 constexpr int kIconSize = 17;
+constexpr int kChevronSize = 14;
 constexpr int kLogoSize = 28;
 constexpr int kItemHeight = 36;
+constexpr int kSwitcherHeight = 52;
+// Room left for text once the icons, margins and spacing of the row are taken (sidebar width 230).
+constexpr int kSwitcherTextWidth = 128;
+constexpr int kGitTextWidth = 124;
 
 // The qss selects on dynamic properties, so a style that was already applied has to be re-evaluated.
 void repolish(QWidget* widget)
@@ -20,6 +26,43 @@ void repolish(QWidget* widget)
     widget->style()->unpolish(widget);
     widget->style()->polish(widget);
 }
+
+// Re-polishes a widget and the labels inside it (they take their look from the parent's property).
+void repolishWithLabels(QWidget* widget)
+{
+    repolish(widget);
+    for (QLabel* child : widget->findChildren<QLabel*>())
+        repolish(child);
+}
+
+// Shows `text` shortened with "..." when it is wider than `width`, with the full text as tooltip.
+// The font comes from the qss, so the label is polished first to measure with the font it really uses.
+void setElidedText(QLabel* label, const QString& text, int width)
+{
+    label->ensurePolished();
+    const QString shown = label->fontMetrics().elidedText(text, Qt::ElideRight, width);
+    label->setText(shown);
+    label->setToolTip(shown == text ? QString() : text);
+}
+}
+
+QList<Sidebar::Item> Sidebar::navItems()
+{
+    return {{"Project", Page::Home, "Overview", "home", Badge::None},
+            {"Project", Page::Board, "Phase Board", "board", Badge::Tasks},
+            {"Project", Page::Slicer, "Chaos Slicer", "slicer", Badge::None},
+            {"Collaborate", Page::Pins, "Pins", "pin", Badge::OpenPins},
+            {"Collaborate", Page::Team, "Team & Skills", "team", Badge::None},
+            {"Insights", Page::Tracking, "Tracking", "chart", Badge::None},
+            {"Insights", Page::GitHub, "GitHub", "git", Badge::None}};
+}
+
+QList<Page> Sidebar::navOrder()
+{
+    QList<Page> pages;
+    for (const Item& item : navItems())
+        pages.append(item.page);
+    return pages;
 }
 
 Sidebar::Sidebar(PlanovaCore& core, QWidget* parent)
@@ -34,16 +77,16 @@ Sidebar::Sidebar(PlanovaCore& core, QWidget* parent)
     layout->setSpacing(6);
 
     buildBrand(layout);
-    addSection(layout, "Main Navigation",
-               {{Page::Home, "Project Home", "home", Badge::None},
-                {Page::Hub, "Projects Hub", "hub", Badge::None},
-                {Page::Slicer, "Chaos Slicer (Pizza)", "slicer", Badge::None}});
-    addSection(layout, "Team & Collaboration",
-               {{Page::Pins, "Pins & Collab", "pin", Badge::OpenPins},
-                {Page::Team, "Team & Skills", "team", Badge::None},
-                {Page::Board, "Phase Board", "board", Badge::Tasks},
-                {Page::Tracking, "Fair Tracking & Charts", "chart", Badge::None},
-                {Page::GitHub, "GitHub Integration", "git", Badge::None}});
+    layout->addWidget(buildProjectSwitcher());
+    // A heading starts each group of items.
+    QString heading;
+    for (const Item& item : navItems()) {
+        if (item.heading != heading) {
+            heading = item.heading;
+            addHeading(layout, heading);
+        }
+        addItem(layout, item);
+    }
     layout->addStretch();
     layout->addWidget(buildGitCard());
     layout->addWidget(buildThemeToggle());
@@ -53,15 +96,15 @@ Sidebar::Sidebar(PlanovaCore& core, QWidget* parent)
         updateThemeToggle();
         updateGitCard();
     });
-    updateIcons();
     updateThemeToggle();
     refresh();
+    setActivePage(activePage_);
 }
 
 void Sidebar::buildBrand(QVBoxLayout* layout)
 {
     auto* row = new QHBoxLayout();
-    row->setContentsMargins(10, 0, 10, 12);
+    row->setContentsMargins(10, 0, 10, 8);
     row->setSpacing(10);
 
     auto* logo = new QLabel(this);
@@ -83,7 +126,49 @@ void Sidebar::buildBrand(QVBoxLayout* layout)
     layout->addLayout(row);
 }
 
-void Sidebar::addSection(QVBoxLayout* layout, const QString& title, const QList<Item>& items)
+QWidget* Sidebar::buildProjectSwitcher()
+{
+    switcher_ = new QPushButton(this);
+    switcher_->setObjectName("projectSwitcher");
+    switcher_->setProperty("active", false);
+    switcher_->setCursor(Qt::PointingHandCursor);
+    switcher_->setFocusPolicy(Qt::TabFocus);
+    switcher_->setToolTip("Open Projects Hub");
+    switcher_->setFixedHeight(kSwitcherHeight);
+
+    auto* row = new QHBoxLayout(switcher_);
+    row->setContentsMargins(10, 6, 10, 6);
+    row->setSpacing(10);
+
+    switcherIcon_ = new QLabel(switcher_);
+    switcherIcon_->setObjectName("projectSwitcherIcon");
+    switcherIcon_->setFixedSize(kIconSize, kIconSize);
+    row->addWidget(switcherIcon_);
+
+    auto* textCol = new QVBoxLayout();
+    textCol->setSpacing(0);
+    auto* caption = new QLabel("Project", switcher_);
+    caption->setObjectName("projectSwitcherCaption");
+    switcherName_ = new QLabel(switcher_);
+    switcherName_->setObjectName("projectSwitcherName");
+    textCol->addWidget(caption);
+    textCol->addWidget(switcherName_);
+    row->addLayout(textCol, 1);
+
+    switcherChevron_ = new QLabel(switcher_);
+    switcherChevron_->setObjectName("projectSwitcherChevron");
+    switcherChevron_->setFixedSize(kChevronSize, kChevronSize);
+    row->addWidget(switcherChevron_);
+
+    // Clicks on the labels must reach the button.
+    for (QLabel* label : switcher_->findChildren<QLabel*>())
+        label->setAttribute(Qt::WA_TransparentForMouseEvents);
+
+    connect(switcher_, &QPushButton::clicked, this, [this] { emit pageRequested(Page::Hub); });
+    return switcher_;
+}
+
+void Sidebar::addHeading(QVBoxLayout* layout, const QString& title)
 {
     auto* heading = new QLabel(title, this);
     heading->setObjectName("sidebarLabel");
@@ -93,50 +178,51 @@ void Sidebar::addSection(QVBoxLayout* layout, const QString& title, const QList<
     font.setCapitalization(QFont::AllUppercase);
     font.setLetterSpacing(QFont::AbsoluteSpacing, 0.8);
     heading->setFont(font);
-    heading->setContentsMargins(10, 4, 10, 0);
+    heading->setContentsMargins(10, 8, 10, 0);
     layout->addWidget(heading);
+}
 
-    for (Item item : items) {
-        auto* button = new QPushButton(this);
-        button->setObjectName("navItem");
-        button->setProperty("active", false);
-        button->setCursor(Qt::PointingHandCursor);
-        // Keyboard focus shows the ring; a mouse click does not leave one behind.
-        button->setFocusPolicy(Qt::TabFocus);
-        button->setAccessibleName(item.label);
-        button->setFixedHeight(kItemHeight);
+void Sidebar::addItem(QVBoxLayout* layout, Item item)
+{
+    auto* button = new QPushButton(this);
+    button->setObjectName("navItem");
+    button->setProperty("active", false);
+    button->setCursor(Qt::PointingHandCursor);
+    // Keyboard focus shows the ring; a mouse click does not leave one behind.
+    button->setFocusPolicy(Qt::TabFocus);
+    button->setAccessibleName(item.label);
+    button->setFixedHeight(kItemHeight);
 
-        // The text is a QLabel (not the button text) so "&" is shown as written and is no mnemonic.
-        auto* row = new QHBoxLayout(button);
-        row->setContentsMargins(10, 7, 10, 7);
-        row->setSpacing(10);
+    // The text is a QLabel (not the button text) so "&" is shown as written and is no mnemonic.
+    auto* row = new QHBoxLayout(button);
+    row->setContentsMargins(10, 7, 10, 7);
+    row->setSpacing(10);
 
-        item.icon = new QLabel(button);
-        item.icon->setObjectName("navIcon");
-        item.icon->setFixedSize(kIconSize, kIconSize);
-        row->addWidget(item.icon);
+    item.icon = new QLabel(button);
+    item.icon->setObjectName("navIcon");
+    item.icon->setFixedSize(kIconSize, kIconSize);
+    row->addWidget(item.icon);
 
-        auto* text = new QLabel(item.label, button);
-        text->setObjectName("navLabel");
-        row->addWidget(text, 1);
+    auto* text = new QLabel(item.label, button);
+    text->setObjectName("navLabel");
+    row->addWidget(text, 1);
 
-        item.badgeLabel = new QLabel(button);
-        item.badgeLabel->setObjectName("navBadge");
-        item.badgeLabel->setAlignment(Qt::AlignCenter);
-        item.badgeLabel->hide();
-        row->addWidget(item.badgeLabel);
+    item.badgeLabel = new QLabel(button);
+    item.badgeLabel->setObjectName("navBadge");
+    item.badgeLabel->setAlignment(Qt::AlignCenter);
+    item.badgeLabel->hide();
+    row->addWidget(item.badgeLabel);
 
-        // Clicks on the labels must reach the button.
-        for (QLabel* label : {item.icon, text, item.badgeLabel})
-            label->setAttribute(Qt::WA_TransparentForMouseEvents);
+    // Clicks on the labels must reach the button.
+    for (QLabel* label : {item.icon, text, item.badgeLabel})
+        label->setAttribute(Qt::WA_TransparentForMouseEvents);
 
-        const Page page = item.page;
-        connect(button, &QPushButton::clicked, this, [this, page] { emit pageRequested(page); });
+    const Page page = item.page;
+    connect(button, &QPushButton::clicked, this, [this, page] { emit pageRequested(page); });
 
-        item.button = button;
-        items_.append(item);
-        layout->addWidget(button);
-    }
+    item.button = button;
+    items_.append(item);
+    layout->addWidget(button);
 }
 
 QWidget* Sidebar::buildGitCard()
@@ -144,24 +230,16 @@ QWidget* Sidebar::buildGitCard()
     auto* gitCard = new QFrame(this);
     gitCard->setObjectName("SidebarGitCard");
     auto* gitLayout = new QHBoxLayout(gitCard);
-    gitLayout->setContentsMargins(12, 10, 12, 10);
+    gitLayout->setContentsMargins(12, 6, 8, 6);
     gitLayout->setSpacing(8);
 
-    gitDot_ = new QLabel("●", gitCard);
+    gitDot_ = new QLabel(QStringLiteral("●"), gitCard);
     gitDot_->setObjectName("SidebarGitDot");
     gitLayout->addWidget(gitDot_);
 
-    auto* textCol = new QVBoxLayout();
-    textCol->setSpacing(1);
-    gitTitle_ = new QLabel("Synced with Git", gitCard);
-    gitTitle_->setObjectName("SidebarGitTitle");
-    gitTitle_->setWordWrap(true);   // "No repository connected" is longer than the card
-    gitSubtitle_ = new QLabel("Peer Event Store", gitCard);
-    gitSubtitle_->setObjectName("SidebarGitSubtitle");
-    gitSubtitle_->setWordWrap(true);
-    textCol->addWidget(gitTitle_);
-    textCol->addWidget(gitSubtitle_);
-    gitLayout->addLayout(textCol, 1);
+    gitText_ = new QLabel(gitCard);
+    gitText_->setObjectName("SidebarGitText");
+    gitLayout->addWidget(gitText_, 1);
 
     gitSyncButton_ = new QPushButton(gitCard);
     gitSyncButton_->setFixedSize(28, 28);
@@ -207,11 +285,21 @@ void Sidebar::updateThemeToggle()
 
 void Sidebar::updateIcons()
 {
+    ThemeManager& theme = ThemeManager::instance();
     for (const Item& item : items_) {
-        const bool active = item.page == activePage_;
-        const Token tint = active ? Token::NavActiveText : Token::TextSecondary;
-        item.icon->setPixmap(ThemeManager::instance().icon(item.iconName, tint).pixmap(kIconSize, kIconSize));
+        Token tint = Token::TextSecondary;
+        if (!item.button->isEnabled())
+            tint = Token::TextMuted;
+        else if (item.page == activePage_)
+            tint = Token::NavActiveText;
+        item.icon->setPixmap(theme.icon(item.iconName, tint).pixmap(kIconSize, kIconSize));
     }
+
+    const bool hubActive = activePage_ == Page::Hub;
+    switcherIcon_->setPixmap(
+        theme.icon("hub", hubActive ? Token::NavActiveText : Token::TextSecondary).pixmap(kIconSize, kIconSize));
+    switcherChevron_->setPixmap(
+        theme.icon("chevron-right", hubActive ? Token::NavActiveText : Token::TextMuted).pixmap(kChevronSize, kChevronSize));
 }
 
 void Sidebar::setActivePage(Page page)
@@ -221,10 +309,29 @@ void Sidebar::setActivePage(Page page)
         const bool active = item.page == page;
         item.button->setProperty("active", active);
         item.button->setAccessibleDescription(active ? "Current page" : QString());
-        // The labels inside take their look from the button's property.
-        repolish(item.button);
-        for (QLabel* child : item.button->findChildren<QLabel*>())
-            repolish(child);
+        repolishWithLabels(item.button);
+    }
+    const bool hubActive = page == Page::Hub;
+    switcher_->setProperty("active", hubActive);
+    switcher_->setAccessibleDescription(hubActive ? "Current page" : QString());
+    repolishWithLabels(switcher_);
+    updateIcons();
+}
+
+void Sidebar::setProjectName(const QString& name)
+{
+    const QString shown = name.isEmpty() ? QStringLiteral("No project open") : name;
+    setElidedText(switcherName_, shown, kSwitcherTextWidth);
+    // The full name, even when the label shows it shortened.
+    switcher_->setAccessibleName("Projects: " + shown);
+}
+
+void Sidebar::setProjectOpen(bool open)
+{
+    for (const Item& item : items_) {
+        item.button->setEnabled(open);
+        item.button->setToolTip(open ? item.label : QStringLiteral("Open a project first"));
+        item.button->setCursor(open ? Qt::PointingHandCursor : Qt::ArrowCursor);
     }
     updateIcons();
 }
@@ -265,13 +372,11 @@ void Sidebar::updateGitCard()
     gitDot_->setProperty("state", connected ? "connected" : "disconnected");
     repolish(gitDot_);
     if (connected) {
-        gitTitle_->setText("Synced with Git");
-        gitSubtitle_->setText(QString::fromStdString(
-            "Branch: " + core_.gitProjection().branch() + " (" +
-            std::to_string(core_.gitProjection().commits().size()) + " commits)"));
+        const QString branch = QString::fromStdString(core_.gitProjection().branch());
+        const int commits = static_cast<int>(core_.gitProjection().commits().size());
+        setElidedText(gitText_, QString("Synced · %1 (%2)").arg(branch).arg(commits), kGitTextWidth);
     } else {
-        gitTitle_->setText("No repository connected");
-        gitSubtitle_->setText("Connect one on GitHub Integration");
+        setElidedText(gitText_, "No repository", kGitTextWidth);
     }
     gitSyncButton_->setEnabled(connected);
     gitSyncButton_->setToolTip(connected ? "Simulate Git Sync" : "Connect a repository first (GitHub Integration)");
@@ -281,6 +386,16 @@ void Sidebar::updateGitCard()
 
 void Sidebar::refresh()
 {
+    const auto current = core_.currentProject();
+    QString name;
+    if (current) {
+        for (const ProjectDto& project : core_.projects().list()) {
+            if (project.id == *current)
+                name = QString::fromStdString(project.name);
+        }
+    }
+    setProjectName(name);
+    setProjectOpen(current.has_value());
     updateBadges();
     updateGitCard();
 }
