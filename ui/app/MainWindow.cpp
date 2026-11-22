@@ -12,6 +12,7 @@
 #include "welcome/StartDialog.h"
 #include "welcome/WelcomePage.h"
 #include "widgets/ModalDialog.h"
+#include "theme/GlassBackdrop.h"
 #include "theme/ThemeManager.h"
 #include <QHBoxLayout>
 #include <QSettings>
@@ -26,7 +27,8 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     setWindowTitle("Planova");
     resize(1280, 820);
 
-    auto* central = new QWidget(this);
+    // The painted glass backdrop sits behind the sidebar and the pages.
+    auto* central = new GlassBackdrop(this);
     auto* layout = new QHBoxLayout(central);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);

@@ -7,6 +7,7 @@
 #include "tests/fakes/FakeEventStore.h"
 #include "tests/fakes/FakeMemberQuery.h"
 #include "tests/fakes/FakeTaskQuery.h"
+#include "theme/GlassBackdrop.h"
 #include "theme/ThemeManager.h"
 #include "tracking/LeaderboardModel.h"
 #include "widgets/BarChartWidget.h"
@@ -14,6 +15,7 @@
 #include <QApplication>
 #include <QHash>
 #include <QImage>
+#include <QPainter>
 #include <QTableView>
 #include <QTest>
 
@@ -37,6 +39,21 @@ struct Board {
                               std::nullopt, {}});
     }
 };
+
+// Sum of the channel differences between two colours: 0 means equal.
+int colourDistance(const QColor& a, const QColor& b) {
+    return qAbs(a.red() - b.red()) + qAbs(a.green() - b.green()) + qAbs(a.blue() - b.blue());
+}
+
+// What `over` looks like painted on top of the opaque colour `under`.
+QColor paintedOver(const QColor& over, const QColor& under) {
+    QImage pixel(1, 1, QImage::Format_ARGB32);
+    pixel.fill(under);
+    QPainter p(&pixel);
+    p.fillRect(0, 0, 1, 1, over);
+    p.end();
+    return pixel.pixelColor(0, 0);
+}
 }
 
 // Counts paint events per watched widget.
@@ -145,6 +162,35 @@ private slots:
         QApplication::processEvents();
         for (QWidget* w : painted)
             QVERIFY2(counter.paints.value(w) > 0, w->metaObject()->className());
+    }
+
+    // The backdrop behind the app: a cached picture that follows the theme and the widget size.
+    void glassBackdropFollowsThemeAndSize() {
+        auto& tm = ThemeManager::instance();
+        tm.apply(ThemeMode::Light);
+        GlassBackdrop backdrop;
+        backdrop.resize(400, 300);
+        backdrop.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&backdrop));
+        const QImage light = backdrop.cachedBackdrop().toImage();
+        QVERIFY(!light.isNull());
+
+        tm.apply(ThemeMode::Dark);
+        QApplication::processEvents();
+        const QImage dark = backdrop.cachedBackdrop().toImage();
+        QVERIFY(dark != light);
+
+        // Top left sits in the primary glow, at the top of the gradient.
+        const QColor topLeft = dark.pixelColor(0, 0);
+        const QColor glowOnTop = paintedOver(tm.color(Token::GlowPrimary), tm.color(Token::BackdropTop));
+        QVERIFY2(colourDistance(topLeft, glowOnTop) < colourDistance(topLeft, tm.color(Token::BackdropBottom)),
+                 qPrintable(topLeft.name()));
+
+        backdrop.resize(500, 350);
+        QApplication::processEvents();
+        QCOMPARE(backdrop.cachedBackdrop().size(), backdrop.size() * backdrop.devicePixelRatioF());
+
+        tm.apply(ThemeMode::Light);
     }
 };
 

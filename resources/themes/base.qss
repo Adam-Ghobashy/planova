@@ -35,6 +35,11 @@ QWidget {
     font-family: "Inter", "Segoe UI";
 }
 
+/* The page stack lets the glass backdrop (GlassBackdrop, painted behind the app) show through. */
+QStackedWidget {
+    background: transparent;
+}
+
 /* Titles use the display face (Space Grotesk, falls back to the application font if it is missing). */
 QLabel#pageTitle,
 QLabel#PageTitle,

@@ -1,5 +1,6 @@
 add_library(planova_ui STATIC
     theme/ThemeManager.cpp
+    theme/GlassBackdrop.cpp
     app/CoreBridge.cpp
     app/MainWindow.cpp
     app/Sidebar.cpp
