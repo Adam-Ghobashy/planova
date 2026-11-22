@@ -42,6 +42,10 @@ public:
     // Checks the whole setup first (std::invalid_argument, nothing written), then creates and opens the project,
     // adds and rates the members, saves the slicer weights and connects Git when a repository URL is given.
     Id setupProject(const ProjectSetup& setup);
+    void updateProject(const Id& id, const std::string& name, const std::string& team, const std::string& seModel);
+    // Removes the project from the list and deletes its folder, closing it first when it is open.
+    // Returns the project folder when it could not be fully removed (the project is gone from the list anyway).
+    std::optional<std::filesystem::path> deleteProject(const Id& id);
     bool hasProjectData(const Id& projectId) const;
     void openProject(const Id& projectId);
     std::optional<Id> currentProject() const;

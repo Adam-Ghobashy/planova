@@ -1,4 +1,5 @@
 #include <QtTest>
+#include <QFile>
 #include <QTemporaryDir>
 #include <filesystem>
 #include <stdexcept>
@@ -21,6 +22,12 @@ private slots:
     void hasProjectDataReflectsFolder();
     void openUnknownProjectThrows();
     void damagedRootFileCountedOnce();
+    void updateProjectNotifiesBus();
+    void deleteOpenProjectClosesIt();
+    void deleteOtherProjectKeepsOpenOne();
+    void deleteUnknownProjectThrows();
+    void deleteReportsFolderItCannotRemove();
+    void restartAfterDeleteStartsClean();
 };
 
 namespace {
@@ -202,6 +209,113 @@ void tst_PlanovaCoreProjects::damagedRootFileCountedOnce()
     const std::vector<std::string> broken = core.brokenEventFiles();
     QCOMPARE(broken.size(), size_t(1));
     QCOMPARE(QString::fromStdString(broken[0]), QString("damaged.json"));
+}
+
+void tst_PlanovaCoreProjects::updateProjectNotifiesBus()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    PlanovaCore core(dir.path().toStdString());
+    const Id a = makeProject(core, "A");
+
+    std::vector<std::string> seen;
+    core.bus().subscribe([&seen](const std::string& type) { seen.push_back(type); });
+
+    core.updateProject(a, "Renamed", "New team", "Scrum");
+    QVERIFY(contains(seen, "ProjectUpdated"));
+    QCOMPARE(core.projects().list().front().name, std::string("Renamed"));
+}
+
+void tst_PlanovaCoreProjects::deleteOpenProjectClosesIt()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const std::filesystem::path ws = dir.path().toStdString();
+    PlanovaCore core(ws);
+    const Id a = makeProject(core, "A");
+    core.openProject(a);
+    core.members().add("Ana", "Backend Developer", false);
+
+    std::vector<std::string> seen;
+    core.bus().subscribe([&seen](const std::string& type) { seen.push_back(type); });
+
+    QVERIFY(!core.deleteProject(a).has_value());
+    QVERIFY(!core.currentProject());
+    QVERIFY(core.memberQuery().all().empty());
+    QVERIFY(core.projects().list().empty());
+    QVERIFY(!std::filesystem::exists(ws / a));
+    QVERIFY(contains(seen, "ProjectDeleted"));
+}
+
+void tst_PlanovaCoreProjects::deleteOtherProjectKeepsOpenOne()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const std::filesystem::path ws = dir.path().toStdString();
+    PlanovaCore core(ws);
+    const Id a = core.createProject("A", "team", "Agile", "idea");
+    const Id b = core.createProject("B", "team", "Agile", "idea");
+    core.openProject(a);
+    core.members().add("Ana", "Backend Developer", false);
+
+    QVERIFY(!core.deleteProject(b).has_value());
+    QCOMPARE(core.currentProject().value_or(Id()), a);
+    QCOMPARE(core.memberQuery().all().size(), size_t(1));
+    QVERIFY(std::filesystem::exists(ws / a / "events"));
+    QVERIFY(!std::filesystem::exists(ws / b));
+}
+
+void tst_PlanovaCoreProjects::deleteUnknownProjectThrows()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    PlanovaCore core(dir.path().toStdString());
+    const Id a = makeProject(core, "A");
+    core.openProject(a);
+
+    QVERIFY_THROWS_EXCEPTION(std::invalid_argument, core.deleteProject("bogus"));
+    QCOMPARE(core.currentProject().value_or(Id()), a);
+}
+
+// A file held open blocks removal of its folder on Windows.
+void tst_PlanovaCoreProjects::deleteReportsFolderItCannotRemove()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const std::filesystem::path ws = dir.path().toStdString();
+    PlanovaCore core(ws);
+    const Id a = core.createProject("A", "team", "Agile", "idea");
+    core.openProject(a);
+
+    const std::filesystem::path folder = ws / a;
+    QFile held(QString::fromStdString((folder / "events" / "held.tmp").string()));
+    QVERIFY(held.open(QIODevice::WriteOnly));
+
+    const auto leftover = core.deleteProject(a);
+    if (!leftover.has_value())
+        QSKIP("folder removal did not fail on this platform");
+    QCOMPARE(*leftover, folder);
+    QVERIFY(core.projects().list().empty());
+    held.close();
+}
+
+void tst_PlanovaCoreProjects::restartAfterDeleteStartsClean()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const std::filesystem::path ws = dir.path().toStdString();
+    Id a;
+    {
+        PlanovaCore core(ws);
+        a = core.createProject("A", "team", "Agile", "idea");
+        core.openProject(a);
+        core.members().add("Ana", "Backend Developer", false);
+        QVERIFY(!core.deleteProject(a).has_value());
+    }
+
+    PlanovaCore again(ws);
+    QVERIFY(again.projects().list().empty());
+    QVERIFY(!again.hasProjectData(a));
 }
 
 QTEST_APPLESS_MAIN(tst_PlanovaCoreProjects)

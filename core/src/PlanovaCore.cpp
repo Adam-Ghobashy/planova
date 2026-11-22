@@ -131,10 +131,7 @@ bool PlanovaCore::hasProjectData(const Id& projectId) const
 
 void PlanovaCore::openProject(const Id& projectId)
 {
-    const auto known = projects_.list();
-    const bool exists = std::any_of(known.begin(), known.end(),
-                                    [&](const ProjectDto& project) { return project.id == projectId; });
-    if (!exists)
+    if (!projects_.exists(projectId))
         throw std::invalid_argument("Unknown project: " + projectId);
 
     const auto dir = projectEventsDir(projectId);
@@ -158,6 +155,36 @@ void PlanovaCore::openProject(const Id& projectId)
     currentProject_ = projectId;
     // Bus notification only, never stored: tells every page to refresh.
     log_.bus().publish(ProjectOpened);
+}
+
+void PlanovaCore::updateProject(const Id& id, const std::string& name, const std::string& team,
+                                const std::string& seModel)
+{
+    projects_.update(id, name, team, seModel);
+}
+
+std::optional<std::filesystem::path> PlanovaCore::deleteProject(const Id& id)
+{
+    if (!projects_.exists(id))
+        throw std::invalid_argument("Unknown project: " + id);
+
+    if (currentProject_ == id) {
+        // Close it first so nothing keeps reading the folder we are about to delete.
+        // The folder need not exist: the store reads nothing from a missing folder.
+        store_.setDirectory(workspaceDir_ / ".closed");
+        log_.rebuild();
+        currentProject_.reset();
+    }
+
+    projects_.remove(id); // publishes ProjectDeleted, so every page refreshes
+
+    // The project is already gone from the list, so a folder that cannot be removed is reported, not thrown.
+    const auto folder = workspaceDir_ / id;
+    std::error_code error;
+    std::filesystem::remove_all(folder, error);
+    if (error || std::filesystem::exists(folder, error))
+        return folder;
+    return std::nullopt;
 }
 
 std::optional<Id> PlanovaCore::currentProject() const
