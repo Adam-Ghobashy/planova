@@ -19,6 +19,7 @@ target_link_libraries(planova_ui PUBLIC Qt6::Widgets Qt6::Svg planova_core)
 # --- S1 ---
 target_sources(planova_ui PRIVATE
     app/DemoData.cpp
+    app/DamagedFilesMessage.cpp
 )
 # --- end S1 ---
 

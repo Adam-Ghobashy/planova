@@ -20,6 +20,7 @@ private slots:
     void newProjectStartsEmptyEvenWithLegacyRoot();
     void hasProjectDataReflectsFolder();
     void openUnknownProjectThrows();
+    void damagedRootFileCountedOnce();
 };
 
 namespace {
@@ -182,6 +183,25 @@ void tst_PlanovaCoreProjects::openUnknownProjectThrows()
     QVERIFY_THROWS_EXCEPTION(std::invalid_argument, core.openProject("bogus"));
     QVERIFY(!core.currentProject());
     QVERIFY(!std::filesystem::exists(std::filesystem::path(dir.path().toStdString()) / "bogus"));
+}
+
+// With no project open, the project-list store and the project store both read the workspace root, so a damaged
+// file there is seen twice. The user must hear about it once.
+void tst_PlanovaCoreProjects::damagedRootFileCountedOnce()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    {
+        QFile bad(dir.filePath("damaged.json"));
+        QVERIFY(bad.open(QIODevice::WriteOnly));
+        bad.write("{ not json");
+    }
+    PlanovaCore core(dir.path().toStdString());
+    QVERIFY(!core.currentProject());
+
+    const std::vector<std::string> broken = core.brokenEventFiles();
+    QCOMPARE(broken.size(), size_t(1));
+    QCOMPARE(QString::fromStdString(broken[0]), QString("damaged.json"));
 }
 
 QTEST_APPLESS_MAIN(tst_PlanovaCoreProjects)

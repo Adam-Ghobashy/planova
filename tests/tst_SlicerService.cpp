@@ -114,6 +114,7 @@ private slots:
         Fixture f;
         ScoringWeights w;
         const auto preview = f.svc.preview(w);
+        QVERIFY(!preview.empty());   // otherwise the skip below proves nothing
         f.tq.setStatus("t1", TaskStatus::InProgress);  // the task moved on after the preview
         QCOMPARE(f.svc.apply(preview, w), 0);
         for (const auto& e : f.store.events) QVERIFY(e.type != "TaskAssigned");

@@ -1,4 +1,5 @@
 #include "app/CoreBridge.h"
+#include "app/DamagedFilesMessage.h"
 #include "app/DemoData.h"
 #include "app/MainWindow.h"
 #include "app/SplashWindow.h"
@@ -46,11 +47,9 @@ int main(int argc, char* argv[])
 
     const auto damaged = core.brokenEventFiles();
     if (!damaged.empty()) {
-        const QString text = damaged.size() == 1
-            ? QObject::tr("1 file in the project folder is damaged and was skipped. Everything else loaded normally.")
-            : QObject::tr("%1 files in the project folder are damaged and were skipped. Everything else loaded normally.")
-                  .arg(damaged.size());
-        ModalDialog::info(nullptr, QObject::tr("Some saved changes could not be read"), text);
+        const QString folder = QString::fromStdString(workspace.string());
+        ModalDialog::info(nullptr, QObject::tr("Some saved changes could not be read"),
+                          damagedFilesMessage(damaged, folder));
     }
 
     // Sample data only on request; a normal start shows the real (possibly empty) project.
