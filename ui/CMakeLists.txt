@@ -11,6 +11,8 @@ add_library(planova_ui STATIC
     welcome/SetupMemberRow.cpp
     welcome/StepperWidget.cpp
     welcome/StartDialog.cpp
+    welcome/EditProjectDialog.cpp
+    welcome/DeleteProjectDialog.cpp
 
 )
 target_include_directories(planova_ui PUBLIC .)

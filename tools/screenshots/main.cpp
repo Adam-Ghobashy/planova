@@ -20,6 +20,8 @@
 #include "pins/LeavePinDialog.h"
 #include "planova/PlanovaCore.h"
 #include "theme/ThemeManager.h"
+#include "welcome/DeleteProjectDialog.h"
+#include "welcome/EditProjectDialog.h"
 #include "welcome/SetupPage.h"
 #include "welcome/StartDialog.h"
 #include "welcome/WelcomePage.h"
@@ -312,6 +314,8 @@ int main(int argc, char* argv[])
         const QList<QPair<QString, Factory>> dialogs = {
             {"start", [&] { return new StartDialog(core, &window); }},
             {"new-task", [&] { return new NewTaskDialog(tasks, members, &window); }},
+            {"edit-project", [&] { ProjectDto sample{"p1", "Orbit", "Platform Team", "Scrum"}; return new EditProjectDialog(sample, [](const QString&, const QString&, const QString&) {}, &window); }},
+            {"delete-project", [&] { return new DeleteProjectDialog("Orbit", &window); }},
             {"leave-pin", [&] { return new planova::s5::LeavePinDialog(tasks, members, members.empty() ? planova::Id{} : members.front().id, &window); }},
             {"decline", [&] { return new planova::s5::DeclineDialog(tasks.empty() ? planova::Id{} : tasks.front().id, members.empty() ? planova::Id{} : members.front().id, "Implement Strategy Pattern", "Alice", conflicts, &window); }},
             {"confirm-danger", [&] { return messageBox(&window, "Delete pin", "Delete this pin? This cannot be undone.", "Delete", ModalDialog::Role::Danger, true); }},
