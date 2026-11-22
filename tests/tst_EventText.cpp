@@ -11,7 +11,7 @@ private slots:
         QTest::addColumn<QString>("eventType");
         // Every name in EventTypes.h, listed explicitly so a forgotten one shows up here.
         const char* names[] = {
-            ProjectCreated, ProjectUpdated, ProjectOpened,
+            ProjectCreated, ProjectUpdated, ProjectDeleted, ProjectOpened,
             MemberAdded, MemberUpdated, MemberRemoved, SkillRated, SettingChanged,
             GitConnected, GitDisconnected, GitSynced,
             TaskCreated, TaskMoved, TaskAssigned, TaskUnassigned, DependencyAdded,

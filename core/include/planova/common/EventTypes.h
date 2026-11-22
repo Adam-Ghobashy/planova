@@ -3,6 +3,7 @@
 // S1 block
 inline constexpr const char* ProjectCreated = "ProjectCreated";
 inline constexpr const char* ProjectUpdated = "ProjectUpdated";
+inline constexpr const char* ProjectDeleted = "ProjectDeleted";
 // Bus notification only, never stored
 inline constexpr const char* ProjectOpened  = "ProjectOpened";
 // S2 block

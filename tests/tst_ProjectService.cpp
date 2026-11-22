@@ -11,6 +11,15 @@ public:
     int64_t nowMs() const override { return 1000; }
 };
 
+// Counts up on every call so later events replay after earlier ones.
+class CountingClock : public IClock {
+public:
+    int64_t nowMs() const override { return next_ += 10; }
+
+private:
+    mutable int64_t next_ = 1000;
+};
+
 }
 
 class tst_ProjectService : public QObject
@@ -23,6 +32,14 @@ private slots:
     void createRejectsBlankName();
     void createRejectsUnknownModel();
     void createTrimsName();
+    void updateReplacesFields();
+    void updateRejectsUnknownId();
+    void updateRejectsBlankName();
+    void updateRejectsUnknownModel();
+    void updateWithoutChangesAppendsNothing();
+    void removeDropsProject();
+    void removeRejectsUnknownId();
+    void reopenKeepsEditAndDelete();
 };
 
 void tst_ProjectService::createThenList()
@@ -103,6 +120,151 @@ void tst_ProjectService::createTrimsName()
     const auto projects = service.list();
     QCOMPARE(projects.size(), size_t(1));
     QCOMPARE(projects[0].name, std::string("App"));
+}
+
+void tst_ProjectService::updateReplacesFields()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FileEventStore store(std::filesystem::path(dir.path().toStdString()));
+    EventLog log(store);
+    CountingClock clock;
+    ProjectService service(log, clock);
+    const Id id = service.create("Planova", "Team Alpha", "Agile", "idea");
+
+    service.update(id, "  Orbit ", "Team Beta", "Waterfall");
+
+    const auto projects = service.list();
+    QCOMPARE(projects.size(), size_t(1));
+    QCOMPARE(projects[0].id, id);
+    QCOMPARE(projects[0].name, std::string("Orbit"));
+    QCOMPARE(projects[0].team, std::string("Team Beta"));
+    QCOMPARE(projects[0].seModel, std::string("Waterfall"));
+}
+
+void tst_ProjectService::updateRejectsUnknownId()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FileEventStore store(std::filesystem::path(dir.path().toStdString()));
+    EventLog log(store);
+    CountingClock clock;
+    ProjectService service(log, clock);
+    service.create("Planova", "Team Alpha", "Agile", "idea");
+    const size_t before = store.readAll().size();
+
+    QVERIFY_THROWS_EXCEPTION(std::invalid_argument, service.update("missing", "Orbit", "Team", "Agile"));
+    QCOMPARE(store.readAll().size(), before);
+}
+
+void tst_ProjectService::updateRejectsBlankName()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FileEventStore store(std::filesystem::path(dir.path().toStdString()));
+    EventLog log(store);
+    CountingClock clock;
+    ProjectService service(log, clock);
+    const Id id = service.create("Planova", "Team Alpha", "Agile", "idea");
+    const size_t before = store.readAll().size();
+
+    QVERIFY_THROWS_EXCEPTION(std::invalid_argument, service.update(id, "   ", "Team Alpha", "Agile"));
+    QCOMPARE(store.readAll().size(), before);
+}
+
+void tst_ProjectService::updateRejectsUnknownModel()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FileEventStore store(std::filesystem::path(dir.path().toStdString()));
+    EventLog log(store);
+    CountingClock clock;
+    ProjectService service(log, clock);
+    const Id id = service.create("Planova", "Team Alpha", "Agile", "idea");
+    const size_t before = store.readAll().size();
+
+    QVERIFY_THROWS_EXCEPTION(std::invalid_argument, service.update(id, "Planova", "Team Alpha", "Kanban"));
+    QCOMPARE(store.readAll().size(), before);
+}
+
+void tst_ProjectService::updateWithoutChangesAppendsNothing()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FileEventStore store(std::filesystem::path(dir.path().toStdString()));
+    EventLog log(store);
+    CountingClock clock;
+    ProjectService service(log, clock);
+    const Id id = service.create("Planova", "Team Alpha", "Agile", "idea");
+    const size_t before = store.readAll().size();
+
+    service.update(id, "Planova ", "Team Alpha", "Agile");
+
+    QCOMPARE(store.readAll().size(), before);
+}
+
+void tst_ProjectService::removeDropsProject()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FileEventStore store(std::filesystem::path(dir.path().toStdString()));
+    EventLog log(store);
+    CountingClock clock;
+    ProjectService service(log, clock);
+    const Id first = service.create("First", "Team A", "Agile", "");
+    const Id second = service.create("Second", "Team B", "Scrum", "");
+
+    service.remove(first);
+
+    const auto projects = service.list();
+    QCOMPARE(projects.size(), size_t(1));
+    QCOMPARE(projects[0].id, second);
+    QVERIFY(!service.exists(first));
+    QVERIFY(service.exists(second));
+}
+
+void tst_ProjectService::removeRejectsUnknownId()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FileEventStore store(std::filesystem::path(dir.path().toStdString()));
+    EventLog log(store);
+    CountingClock clock;
+    ProjectService service(log, clock);
+    service.create("Planova", "Team Alpha", "Agile", "idea");
+    const size_t before = store.readAll().size();
+
+    QVERIFY_THROWS_EXCEPTION(std::invalid_argument, service.remove("missing"));
+    QCOMPARE(store.readAll().size(), before);
+}
+
+void tst_ProjectService::reopenKeepsEditAndDelete()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const auto path = std::filesystem::path(dir.path().toStdString());
+    CountingClock clock;
+    Id a;
+
+    {
+        FileEventStore store(path);
+        EventLog log(store);
+        ProjectService service(log, clock);
+        a = service.create("A", "Team A", "Agile", "");
+        const Id b = service.create("B", "Team B", "Scrum", "");
+        service.update(a, "A2", "Team A", "Agile");
+        service.remove(b);
+    }
+
+    FileEventStore store(path);
+    EventLog log(store);
+    ProjectService service(log, clock);
+    log.rebuild();
+
+    const auto projects = service.list();
+    QCOMPARE(projects.size(), size_t(1));
+    QCOMPARE(projects[0].id, a);
+    QCOMPARE(projects[0].name, std::string("A2"));
 }
 
 QTEST_MAIN(tst_ProjectService)

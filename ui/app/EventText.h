@@ -12,6 +12,7 @@ inline QString friendlyEventText(const QString& eventType)
     static const Entry kEntries[] = {
         {ProjectCreated, "Project created"},
         {ProjectUpdated, "Project updated"},
+        {ProjectDeleted, "Project deleted"},
         {ProjectOpened, "Project opened"},
         {MemberAdded, "Member added"},
         {MemberUpdated, "Member updated"},

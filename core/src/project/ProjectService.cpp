@@ -15,6 +15,12 @@ std::string trimmed(const std::string& text)
     return QString::fromStdString(text).trimmed().toStdString();
 }
 
+bool isKnownModel(const std::string& model)
+{
+    static const char* const kModels[] = {"Agile", "Scrum", "Waterfall", "Spiral"};
+    return std::find(std::begin(kModels), std::end(kModels), model) != std::end(kModels);
+}
+
 } // namespace
 
 ProjectService::ProjectService(EventLog& log, IClock& clock)
@@ -30,8 +36,7 @@ Id ProjectService::create(const std::string& name, const std::string& team,
     if (cleanName.empty())
         throw std::invalid_argument("Project name cannot be empty");
 
-    static const char* const kModels[] = {"Agile", "Scrum", "Waterfall", "Spiral"};
-    if (std::find(std::begin(kModels), std::end(kModels), seModel) == std::end(kModels))
+    if (!isKnownModel(seModel))
         throw std::invalid_argument("Unknown process model: " + seModel);
 
     const int64_t ts = clock_.nowMs();
@@ -54,6 +59,64 @@ Id ProjectService::create(const std::string& name, const std::string& team,
     log_.append(event);
 
     return projectId;
+}
+
+void ProjectService::update(const Id& id, const std::string& name, const std::string& team,
+                            const std::string& seModel)
+{
+    const ProjectDto* current = projection_.find(id);
+    if (!current)
+        throw std::invalid_argument("Unknown project: " + id);
+
+    const std::string cleanName = trimmed(name);
+    const std::string cleanTeam = trimmed(team);
+    if (cleanName.empty())
+        throw std::invalid_argument("Project name cannot be empty");
+    if (!isKnownModel(seModel))
+        throw std::invalid_argument("Unknown process model: " + seModel);
+
+    if (cleanName == current->name && cleanTeam == current->team && seModel == current->seModel)
+        return;
+
+    const int64_t ts = clock_.nowMs();
+
+    QJsonObject payload;
+    payload["projectId"] = QString::fromStdString(id);
+    payload["name"] = QString::fromStdString(cleanName);
+    payload["teamName"] = QString::fromStdString(cleanTeam);
+    payload["seModel"] = QString::fromStdString(seModel);
+
+    Event event;
+    event.id = makeEventId(ts, cleanTeam, payload);
+    event.ts = ts;
+    event.author = cleanTeam;
+    event.type = ProjectUpdated;
+    event.payload = payload;
+    log_.append(event);
+}
+
+void ProjectService::remove(const Id& id)
+{
+    if (!projection_.find(id))
+        throw std::invalid_argument("Unknown project: " + id);
+
+    const int64_t ts = clock_.nowMs();
+
+    QJsonObject payload;
+    payload["projectId"] = QString::fromStdString(id);
+
+    Event event;
+    event.id = makeEventId(ts, id, payload);
+    event.ts = ts;
+    event.author = id;
+    event.type = ProjectDeleted;
+    event.payload = payload;
+    log_.append(event);
+}
+
+bool ProjectService::exists(const Id& id) const
+{
+    return projection_.find(id) != nullptr;
 }
 
 std::vector<ProjectDto> ProjectService::list() const
