@@ -214,6 +214,8 @@ void WelcomePage::refresh()
         for (const ProjectDto& project : core_.projects().list()) {
             auto* card = new ProjectCardWidget(project, current && *current == project.id, gridHost_);
             connect(card, &ProjectCardWidget::openRequested, this, &WelcomePage::openProject);
+            connect(card, &ProjectCardWidget::editRequested, this, &WelcomePage::editProjectRequested);
+            connect(card, &ProjectCardWidget::deleteRequested, this, &WelcomePage::deleteProjectRequested);
             cards_.append(card);
         }
 

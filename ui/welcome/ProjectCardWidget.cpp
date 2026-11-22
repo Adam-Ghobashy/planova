@@ -2,8 +2,10 @@
 
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QPushButton>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 ProjectCardWidget::ProjectCardWidget(const ProjectDto& project, bool isCurrent, QWidget* parent)
@@ -39,6 +41,23 @@ ProjectCardWidget::ProjectCardWidget(const ProjectDto& project, bool isCurrent, 
         chip->setObjectName("projectCurrentChip");
         top->addWidget(chip, 0, Qt::AlignTop);
     }
+    // The tool button takes its own mouse clicks, so using it never opens the project.
+    auto* more = new QToolButton(this);
+    more->setObjectName("projectMoreButton");
+    more->setText(QStringLiteral("⋯"));
+    more->setPopupMode(QToolButton::InstantPopup);
+    more->setCursor(Qt::PointingHandCursor);
+    more->setFocusPolicy(Qt::StrongFocus);
+    more->setToolTip(tr("More actions"));
+    more->setAccessibleName(tr("More actions for %1").arg(name_));   // the visible text is only dots
+    more->setMinimumSize(28, 24);
+    auto* menu = new QMenu(more);
+    QAction* editAction = menu->addAction(tr("Edit details"));
+    QAction* deleteAction = menu->addAction(tr("Delete project"));
+    more->setMenu(menu);
+    top->addWidget(more, 0, Qt::AlignTop);
+    connect(editAction, &QAction::triggered, this, [this] { emit editRequested(id_); });
+    connect(deleteAction, &QAction::triggered, this, [this] { emit deleteRequested(id_); });
     root->addLayout(top);
 
     if (!team_.isEmpty()) {

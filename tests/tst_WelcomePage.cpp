@@ -12,9 +12,12 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QMenu>
+#include <QSet>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTest>
+#include <QToolButton>
 
 namespace {
 // A workspace with the given project names (none is opened) and a shown page.
@@ -60,6 +63,57 @@ private slots:
     {
         Fixture f;
         QCOMPARE(f.visibleCards().size(), 2);
+    }
+
+    void cardMenuEmitsEditAndDelete()
+    {
+        Fixture f;
+        QSignalSpy opened(f.page.get(), &WelcomePage::projectOpened);
+        QSignalSpy edit(f.page.get(), &WelcomePage::editProjectRequested);
+        QSignalSpy del(f.page.get(), &WelcomePage::deleteProjectRequested);
+
+        const auto cards = f.visibleCards();
+        QCOMPARE(cards.size(), 2);
+        ProjectCardWidget* alpha = nullptr;
+        for (auto* card : cards)
+            if (card->projectName() == "Alpha")
+                alpha = card;
+        QVERIFY(alpha);
+        auto* more = alpha->findChild<QToolButton*>("projectMoreButton");
+        QVERIFY(more);
+        QCOMPARE(more->accessibleName(), QString("More actions for Alpha"));
+        QCOMPARE(more->toolTip(), QString("More actions"));
+        QVERIFY(more->width() >= 24 && more->height() >= 24);
+        QVERIFY(more->focusPolicy() & Qt::TabFocus);
+
+        QVERIFY(more->menu());
+        const auto actions = more->menu()->actions();
+        QCOMPARE(actions.size(), 2);
+        QCOMPARE(actions[0]->text(), QString("Edit details"));
+        QCOMPARE(actions[1]->text(), QString("Delete project"));
+
+        actions[0]->trigger();
+        QCOMPARE(edit.count(), 1);
+        QCOMPARE(edit.at(0).at(0).toString(), QString::fromStdString(f.ids[0]));
+        actions[1]->trigger();
+        QCOMPARE(del.count(), 1);
+        QCOMPARE(del.at(0).at(0).toString(), QString::fromStdString(f.ids[0]));
+        QCOMPARE(opened.count(), 0);
+    }
+
+    void cardMenuReachableByTab()
+    {
+        Fixture f;
+        auto* card = f.visibleCards().first();
+        auto* open = card->findChild<QPushButton*>("openProject");
+        auto* more = card->findChild<QToolButton*>("projectMoreButton");
+        QVERIFY(open && more);
+        // Walk the focus chain once around from the Open button; both buttons must be in it.
+        QSet<QWidget*> chain;
+        for (QWidget* w = open->nextInFocusChain(); w && w != open; w = w->nextInFocusChain())
+            if (w->focusPolicy() & Qt::TabFocus)
+                chain.insert(w);
+        QVERIFY(chain.contains(more));
     }
 
     void startNewProjectEmitsSignal()

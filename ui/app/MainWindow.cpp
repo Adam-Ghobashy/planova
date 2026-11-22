@@ -8,17 +8,22 @@
 #include "slicer/ChaosSlicerPage.h"
 #include "team/TeamSkillsPage.h"
 #include "tracking/TrackingPage.h"
+#include "welcome/DeleteProjectDialog.h"
+#include "welcome/EditProjectDialog.h"
 #include "welcome/SetupPage.h"
 #include "welcome/StartDialog.h"
 #include "welcome/WelcomePage.h"
 #include "widgets/ModalDialog.h"
 #include "theme/GlassBackdrop.h"
 #include "theme/ThemeManager.h"
+#include "planova/common/EventTypes.h"
+#include <QDir>
 #include <QHBoxLayout>
 #include <QSettings>
 #include <QShortcut>
 #include <QStatusBar>
 #include <exception>
+#include <filesystem>
 #include <functional>
 
 MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
@@ -120,6 +125,22 @@ void MainWindow::buildPages()
     });
     // openProject publishes ProjectOpened on the bridge, which also refreshes the sidebar badges.
     connect(welcome_, &WelcomePage::projectOpened, this, [this] { showHomeForCurrentProject(); });
+    connect(welcome_, &WelcomePage::editProjectRequested, this, &MainWindow::editProject);
+    connect(welcome_, &WelcomePage::deleteProjectRequested, this, &MainWindow::deleteProject);
+    // The Home menu always acts on the open project.
+    connect(homePage_, &planova::s6::HomePage::editProjectRequested, this, [this] {
+        if (const auto current = core_.currentProject())
+            editProject(QString::fromStdString(*current));
+    });
+    connect(homePage_, &planova::s6::HomePage::deleteProjectRequested, this, [this] {
+        if (const auto current = core_.currentProject())
+            deleteProject(QString::fromStdString(*current));
+    });
+    // An edit of the open project changes its name and model, which Home shows in the header and the badge.
+    connect(&bridge_, &CoreBridge::changed, this, [this](const QString& eventType) {
+        if (eventType == ProjectUpdated)
+            applyCurrentProjectToHome();
+    });
     connect(welcome_, &WelcomePage::manageGitRequested, this, [this] {
         if (core_.currentProject()) showPage(Page::GitHub);   // the GitHub page belongs to the open project
     });
@@ -202,13 +223,81 @@ void MainWindow::updateStatusBar(const QString& lastEvent)
     statusBar()->showMessage(message);
 }
 
-void MainWindow::showHomeForCurrentProject()
+void MainWindow::applyCurrentProjectToHome()
 {
     if (const auto project = currentProjectInfo()) {
         homePage_->setProjectName(QString::fromStdString(project->name));
         homePage_->setProcessModel(QString::fromStdString(project->seModel));
     }
+}
+
+void MainWindow::showHomeForCurrentProject()
+{
+    applyCurrentProjectToHome();
     showPage(Page::Home);
+}
+
+void MainWindow::editProject(const QString& projectId)
+{
+    try {
+        const std::string id = projectId.toStdString();
+        for (const ProjectDto& project : core_.projects().list()) {
+            if (project.id != id)
+                continue;
+            // The dialog calls this on Save and shows a bad-input message inside itself.
+            EditProjectDialog dialog(
+                project,
+                [this, id](const QString& name, const QString& team, const QString& model) {
+                    core_.updateProject(id, name.toStdString(), team.toStdString(), model.toStdString());
+                },
+                this);
+            dialog.exec();
+            return;
+        }
+    } catch (const std::exception& error) {
+        ModalDialog::info(this, tr("Could not edit project"), QString::fromUtf8(error.what()));
+    }
+}
+
+void MainWindow::deleteProject(const QString& projectId)
+{
+    try {
+        const std::string id = projectId.toStdString();
+        std::optional<ProjectDto> project;
+        for (const ProjectDto& candidate : core_.projects().list()) {
+            if (candidate.id == id)
+                project = candidate;
+        }
+        if (!project)
+            return;
+
+        DeleteProjectDialog dialog(QString::fromStdString(project->name), this);
+        if (dialog.exec() != QDialog::Accepted)
+            return;
+
+        const bool wasOpen = core_.currentProject() == id;
+        std::optional<std::filesystem::path> leftoverFolder;
+        try {
+            leftoverFolder = core_.deleteProject(id);
+        } catch (const std::exception& error) {
+            ModalDialog::info(this, tr("Could not delete project"), QString::fromUtf8(error.what()));
+            return;
+        }
+
+        if (wasOpen) {
+            // The saved page belongs to the project that is gone; the next start must not restore it.
+            QSettings().remove("ui/lastPage");
+            showPage(Page::Hub);
+        }
+        if (leftoverFolder) {
+            const QString folder = QDir::toNativeSeparators(QString::fromStdU16String(leftoverFolder->u16string()));
+            ModalDialog::info(this, tr("Project folder not removed"),
+                              tr("The project was deleted, but its folder could not be removed. "
+                                 "You can delete it yourself:\n%1").arg(folder));
+        }
+    } catch (const std::exception& error) {
+        ModalDialog::info(this, tr("Could not delete project"), QString::fromUtf8(error.what()));
+    }
 }
 
 void MainWindow::showStartDialog()

@@ -111,3 +111,14 @@ QWidget#WelcomePage QLabel#projectCurrentChip {
     font-size: 10px; font-weight: 700; color: @Accent; background-color: @Surface;
     border: 1px solid @Accent; border-radius: 8px; padding: 2px 8px;
 }
+
+/* ---------- project card "..." menu button ---------- */
+QWidget#WelcomePage QToolButton#projectMoreButton {
+    border: 2px solid transparent; border-radius: 6px; background: transparent;
+    color: @TextSecondary; font-family: "Segoe UI Symbol", "Segoe UI"; font-size: 18px; font-weight: 700; padding: 0 4px;
+}
+QWidget#WelcomePage QToolButton#projectMoreButton:hover { background-color: @SurfaceHover; color: @TextPrimary; }
+QWidget#WelcomePage QToolButton#projectMoreButton:pressed { background-color: @Track; color: @TextPrimary; }
+QWidget#WelcomePage QToolButton#projectMoreButton:focus,
+QWidget#WelcomePage QToolButton#projectMoreButton:focus:hover { border: 2px solid @TextPrimary; color: @TextPrimary; }
+QWidget#WelcomePage QToolButton#projectMoreButton::menu-indicator { image: none; width: 0px; }

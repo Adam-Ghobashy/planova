@@ -3,7 +3,7 @@
 #include <QFrame>
 
 // One workspace in the projects list: name, team, SE model and an Open button.
-// The whole card is clickable with the mouse; keyboard users reach the Open button with Tab.
+// The whole card is clickable with the mouse; keyboard users reach the Open button and the "..." menu with Tab.
 class ProjectCardWidget : public QFrame {
     Q_OBJECT
 public:
@@ -17,6 +17,8 @@ public:
 
 signals:
     void openRequested(const QString& projectId);
+    void editRequested(const QString& projectId);
+    void deleteRequested(const QString& projectId);
 
 protected:
     void mouseReleaseEvent(QMouseEvent* event) override;

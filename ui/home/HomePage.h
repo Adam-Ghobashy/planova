@@ -17,6 +17,7 @@ class QGridLayout;
 class QLabel;
 class QObject;
 class QPushButton;
+class QToolButton;
 class StatCardWidget;
 
 namespace planova::s6 {
@@ -47,6 +48,8 @@ signals:
     void teamSkillsRequested();
     void githubRequested();
     void pinsRequested();
+    void editProjectRequested();
+    void deleteProjectRequested();
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
@@ -79,6 +82,7 @@ private:
 
     QLabel* m_projectTitle = nullptr;
     QLabel* m_sprintBadge = nullptr;
+    QToolButton* m_moreButton = nullptr;
 
     StatCardWidget* m_totalCard = nullptr;
     StatCardWidget* m_completedCard = nullptr;

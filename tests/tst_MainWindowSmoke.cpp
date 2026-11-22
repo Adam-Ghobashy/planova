@@ -11,11 +11,20 @@
 #include "home/HomePage.h"
 #include "widgets/StatCardWidget.h"
 #include "pins/PinsPage.h"
+#include "welcome/ProjectCardWidget.h"
 #include "welcome/WelcomePage.h"
+#include "widgets/ModalDialog.h"
 #include "planova/PlanovaCore.h"
 #include "theme/ThemeManager.h"
 #include <QApplication>
+#include <QComboBox>
+#include <QDir>
+#include <QFile>
+#include <QMenu>
+#include <QToolButton>
 #include <cmath>
+#include <filesystem>
+#include <functional>
 #include <QFrame>
 #include <QLabel>
 #include <QLineEdit>
@@ -51,6 +60,22 @@ void showActive(QWidget& window)
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     window.activateWindow();
     static_cast<void>(QTest::qWaitForWindowActive(&window));   // activation is asynchronous
+}
+
+// Modal dialogs block, so the test code that fills one in runs from a timer inside the dialog's event loop.
+// `drive` gets the top visible ModalDialog; if there is none, the test fails when the timer fires.
+void driveTopDialog(std::function<void(ModalDialog*)> drive, int delayMs = 50)
+{
+    QTimer::singleShot(delayMs, [drive] {
+        for (QWidget* widget : QApplication::topLevelWidgets()) {
+            auto* dialog = qobject_cast<ModalDialog*>(widget);
+            if (dialog && dialog->isVisible()) {
+                drive(dialog);
+                return;
+            }
+        }
+        QFAIL("no modal dialog is open");
+    });
 }
 
 // Presses a key combination in the window. If the environment cannot activate the window, the shortcut that
@@ -261,6 +286,117 @@ private slots:
         clickInDialog("Start new project");
         window.showStartDialog();
         QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Setup));
+    }
+
+    // ---- Edit and delete from the Home menu ----
+    void editOpenProjectUpdatesEverywhere()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("Alpha", "Team A", "Agile", ""));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        window.show();
+        auto* badge = window.findChild<QLabel*>("homeBadge");
+        QVERIFY(badge);
+        QVERIFY(badge->isVisibleTo(&window));   // Agile shows the Active Sprint badge
+
+        auto* more = window.findChild<QToolButton*>("homeMoreButton");
+        QVERIFY(more);
+        QCOMPARE(more->accessibleName(), QString("More actions for Alpha"));
+        driveTopDialog([](ModalDialog* dialog) {
+            dialog->findChild<QLineEdit*>("editProjectName")->setText("Orbit");
+            dialog->findChild<QComboBox*>()->setCurrentText("Waterfall");
+            dialog->findChild<QPushButton*>("modalPrimaryButton")->click();
+        });
+        more->menu()->actions().at(0)->trigger();
+
+        QCOMPARE(window.findChild<QLabel*>("homeTitle")->text(), QString("Orbit"));
+        QVERIFY(!badge->isVisibleTo(&window));
+        QVERIFY(window.findChild<QLabel*>("projectSwitcherName")->text().contains("Orbit"));
+        QVERIFY(window.statusBar()->currentMessage().startsWith("Orbit"));
+        QCOMPARE(more->accessibleName(), QString("More actions for Orbit"));
+    }
+
+    void deleteOpenProjectReturnsToHub()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("Alpha", "Team A", "Agile", ""));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        showActive(window);
+        auto* pages = window.findChild<QStackedWidget*>();
+        pressShortcut(window, Qt::Key_2, Qt::ControlModifier);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Board));
+        QVERIFY(QSettings().contains("ui/lastPage"));
+
+        // The Hub card of the open project has the same menu.
+        auto* more = window.findChild<WelcomePage*>()->findChild<QToolButton*>("projectMoreButton");
+        QVERIFY(more);
+        driveTopDialog([](ModalDialog* dialog) {
+            dialog->findChild<QLineEdit*>("deleteProjectConfirm")->setText("Alpha");
+            dialog->findChild<QPushButton*>("modalDangerButton")->click();
+        });
+        more->menu()->actions().at(1)->trigger();
+
+        QVERIFY(!core.currentProject().has_value());
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Hub));
+        pressShortcut(window, Qt::Key_2, Qt::ControlModifier);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Hub));
+        const auto navItems = window.findChild<Sidebar*>()->findChildren<QPushButton*>("navItem");
+        QVERIFY(!navItems.isEmpty());
+        for (auto* item : navItems)
+            QVERIFY(!item->isEnabled());
+        QVERIFY(!QSettings().contains("ui/lastPage"));
+        // Cards are replaced with deleteLater(), so let the old ones go before looking at the Hub.
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        for (auto* card : window.findChild<WelcomePage*>()->findChildren<ProjectCardWidget*>())
+            QVERIFY(card->projectName() != "Alpha");
+    }
+
+    void deleteReportsLeftoverFolder()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        const std::filesystem::path workspace = dir.path().toStdString();
+        PlanovaCore core(workspace);
+        const Id id = core.createProject("Alpha", "Team A", "Agile", "");
+        core.openProject(id);
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        window.show();
+
+        const std::filesystem::path folder = workspace / id;
+        QFile held(QString::fromStdString((folder / "events" / "held.tmp").string()));
+        QVERIFY(held.open(QIODevice::WriteOnly));
+
+        auto* more = window.findChild<QToolButton*>("homeMoreButton");
+        QVERIFY(more);
+        QString infoText;
+        bool sawInfo = false;
+        // First dialog: the confirmation. After it closes, the info dialog about the leftover folder follows.
+        driveTopDialog([&](ModalDialog* dialog) {
+            dialog->findChild<QLineEdit*>("deleteProjectConfirm")->setText("Alpha");
+            dialog->findChild<QPushButton*>("modalDangerButton")->click();
+            driveTopDialog([&](ModalDialog* info) {
+                sawInfo = true;
+                for (auto* label : info->findChildren<QLabel*>())
+                    infoText += label->text() + "\n";
+                info->accept();
+            }, 100);
+        });
+        more->menu()->actions().at(1)->trigger();
+        held.close();
+        if (!sawInfo)
+            QSKIP("folder removal did not fail on this platform");
+        QVERIFY2(infoText.contains(QString::fromStdString(folder.string())) ||
+                 infoText.contains(QDir::toNativeSeparators(QString::fromStdString(folder.string()))),
+                 qPrintable(infoText));
+        QVERIFY(!core.currentProject().has_value());
+        QVERIFY(core.projects().list().empty());
     }
 
     // A new project with no data must render every page without crashing, in both themes.

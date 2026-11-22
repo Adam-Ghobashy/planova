@@ -19,6 +19,8 @@ public:
 signals:
     void startNewProject();
     void projectOpened();           // the core has opened the chosen project
+    void editProjectRequested(const QString& projectId);
+    void deleteProjectRequested(const QString& projectId);
     void manageGitRequested();
 
 protected:

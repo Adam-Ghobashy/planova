@@ -29,6 +29,9 @@ private:
     // The page saved by the last session, if it is one of the sidebar pages.
     std::optional<Page> savedPage() const;
     void showHomeForCurrentProject();
+    void applyCurrentProjectToHome();   // name and process model of the open project, to the Home header
+    void editProject(const QString& projectId);
+    void deleteProject(const QString& projectId);
     std::optional<ProjectDto> currentProjectInfo() const;
     void updateStatusBar(const QString& lastEvent = QString());
 

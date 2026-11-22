@@ -16,6 +16,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLayoutItem>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPalette>
@@ -26,6 +27,7 @@
 #include <QTextLayout>
 #include <QTextLine>
 #include <QTextOption>
+#include <QToolButton>
 #include <QVariantAnimation>
 #include <QVBoxLayout>
 
@@ -481,6 +483,22 @@ void HomePage::buildUi()
     brandLayout->addWidget(m_projectTitle);
     headerLayout->addLayout(brandLayout);
     headerLayout->addStretch(1);
+    m_moreButton = new QToolButton(this);
+    m_moreButton->setObjectName(QStringLiteral("homeMoreButton"));
+    m_moreButton->setText(QStringLiteral("\u22ef"));
+    m_moreButton->setPopupMode(QToolButton::InstantPopup);
+    m_moreButton->setCursor(Qt::PointingHandCursor);
+    m_moreButton->setFocusPolicy(Qt::StrongFocus);
+    m_moreButton->setToolTip(tr("More actions"));
+    m_moreButton->setAccessibleName(tr("More actions for %1").arg(m_projectTitle->text()));   // visible text is only dots
+    m_moreButton->setMinimumSize(32, 28);
+    auto* moreMenu = new QMenu(m_moreButton);
+    QAction* editAction = moreMenu->addAction(tr("Edit details"));
+    QAction* deleteAction = moreMenu->addAction(tr("Delete project"));
+    m_moreButton->setMenu(moreMenu);
+    connect(editAction, &QAction::triggered, this, &HomePage::editProjectRequested);
+    connect(deleteAction, &QAction::triggered, this, &HomePage::deleteProjectRequested);
+    headerLayout->addWidget(m_moreButton, 0, Qt::AlignBottom);
     auto* hubButton = new QPushButton(QStringLiteral("\u2302  Projects Hub"), this);
     hubButton->setObjectName(QStringLiteral("homeHubButton"));
     hubButton->setToolTip(QStringLiteral("Switch workspace"));
@@ -718,6 +736,7 @@ void HomePage::setProjectName(const QString& name)
 {
     const QString trimmed = name.simplified();
     m_projectTitle->setText(trimmed.isEmpty() ? placeholderProjectName() : trimmed);
+    m_moreButton->setAccessibleName(tr("More actions for %1").arg(m_projectTitle->text()));
 }
 
 

@@ -367,3 +367,32 @@ QPushButton#quickLinkCard:focus:hover,
 QPushButton#quickLinkCard:focus:pressed {
     border: 2px solid @TextPrimary;
 }
+
+/* "..." menu button next to the Projects Hub button: same look as the secondary button */
+QToolButton#homeMoreButton {
+    background-color: @GlassFillStrong;
+    color: @TextPrimary;
+    border: 1px solid @BorderDefault;
+    border-radius: 6px;
+    padding: 0 8px;
+    font-family: "Segoe UI Symbol", "Segoe UI";
+    font-size: 16px;
+    font-weight: 700;
+}
+
+QToolButton#homeMoreButton:hover {
+    background-color: @SurfaceAlt;
+    border-color: @BorderStrong;
+}
+
+QToolButton#homeMoreButton:pressed {
+    background-color: @Track;
+}
+
+QToolButton#homeMoreButton:focus,
+QToolButton#homeMoreButton:focus:hover {
+    border: 2px solid @TextPrimary;
+    padding: 0 7px;
+}
+
+QToolButton#homeMoreButton::menu-indicator { image: none; width: 0px; }
