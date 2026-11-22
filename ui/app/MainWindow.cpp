@@ -12,9 +12,12 @@
 #include "welcome/StartDialog.h"
 #include "welcome/WelcomePage.h"
 #include "widgets/ModalDialog.h"
+#include "theme/ThemeManager.h"
 #include <QHBoxLayout>
+#include <QShortcut>
 #include <QStatusBar>
 #include <exception>
+#include <functional>
 
 MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     : QMainWindow(parent), core_(core), bridge_(bridge), sidebar_(new Sidebar(core, this)), pages_(new QStackedWidget(this))
@@ -34,6 +37,7 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     central->setFocus();
 
     buildPages();
+    addShortcuts();
     // A project that was auto-opened at start-up shows its Home; otherwise the Projects Hub is behind the start popup.
     if (core_.currentProject())
         showHomeForCurrentProject();
@@ -109,6 +113,38 @@ void MainWindow::buildPages()
     // openProject publishes ProjectOpened on the bridge, which also refreshes the sidebar badges.
     connect(welcome_, &WelcomePage::projectOpened, this, [this] { showHomeForCurrentProject(); });
     connect(welcome_, &WelcomePage::manageGitRequested, this, [this] { showPage(Page::GitHub); });
+}
+
+void MainWindow::addShortcuts()
+{
+    auto add = [this](QKeySequence keys, std::function<void()> action) {
+        auto* shortcut = new QShortcut(keys, this);
+        shortcut->setContext(Qt::WindowShortcut);
+        connect(shortcut, &QShortcut::activated, this, std::move(action));
+    };
+
+    add(QKeySequence(Qt::CTRL | Qt::Key_0), [this] { showPage(Page::Hub); });
+
+    // Ctrl+1 to Ctrl+7 follow the sidebar order. Project pages need an open project, like the disabled items.
+    const QList<Page> order = Sidebar::navOrder();
+    for (int i = 0; i < order.size(); ++i) {
+        const Page page = order[i];
+        const QKeyCombination keys(Qt::ControlModifier, static_cast<Qt::Key>(Qt::Key_1 + i));
+        add(QKeySequence(keys), [this, page] {
+            if (core_.currentProject())
+                showPage(page);
+        });
+    }
+
+    // A Setup page that is already open may be half filled, so Ctrl+N leaves it alone.
+    add(QKeySequence(Qt::CTRL | Qt::Key_N), [this] {
+        if (pages_->currentIndex() == static_cast<int>(Page::Setup))
+            return;
+        setupPage_->reset();
+        showPage(Page::Setup);
+    });
+
+    add(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_L), [] { ThemeManager::instance().toggle(); });
 }
 
 void MainWindow::showPage(Page page)

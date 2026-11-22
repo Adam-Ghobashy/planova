@@ -133,7 +133,7 @@ QWidget* Sidebar::buildProjectSwitcher()
     switcher_->setProperty("active", false);
     switcher_->setCursor(Qt::PointingHandCursor);
     switcher_->setFocusPolicy(Qt::TabFocus);
-    switcher_->setToolTip("Open Projects Hub");
+    switcher_->setToolTip("Open Projects Hub (Ctrl+0)");
     switcher_->setFixedHeight(kSwitcherHeight);
 
     auto* row = new QHBoxLayout(switcher_);
@@ -279,7 +279,7 @@ void Sidebar::updateThemeToggle()
     themeToggle_->setIcon(ThemeManager::instance().icon(dark ? "sun" : "moon", Token::TextSecondary));
     themeToggle_->setText(dark ? "Light mode" : "Dark mode");
     const QString action = dark ? "Switch to light mode" : "Switch to dark mode";
-    themeToggle_->setToolTip(action);
+    themeToggle_->setToolTip(action + " (Ctrl+Shift+L)");
     themeToggle_->setAccessibleName(action);
 }
 
@@ -328,9 +328,12 @@ void Sidebar::setProjectName(const QString& name)
 
 void Sidebar::setProjectOpen(bool open)
 {
-    for (const Item& item : items_) {
+    for (int i = 0; i < items_.size(); ++i) {
+        const Item& item = items_[i];
         item.button->setEnabled(open);
-        item.button->setToolTip(open ? item.label : QStringLiteral("Open a project first"));
+        // Ctrl+1 to Ctrl+7 follow the order of the items (see MainWindow).
+        item.button->setToolTip(open ? QString("%1 (Ctrl+%2)").arg(item.label).arg(i + 1)
+                                     : QStringLiteral("Open a project first"));
         item.button->setCursor(open ? Qt::PointingHandCursor : Qt::ArrowCursor);
     }
     updateIcons();
@@ -379,7 +382,7 @@ void Sidebar::updateGitCard()
         setElidedText(gitText_, "No repository", kGitTextWidth);
     }
     gitSyncButton_->setEnabled(connected);
-    gitSyncButton_->setToolTip(connected ? "Simulate Git Sync" : "Connect a repository first (GitHub Integration)");
+    gitSyncButton_->setToolTip(connected ? "Simulate Git Sync" : "Connect a repository first (GitHub page)");
     // The glyph is tinted for the state, so a disabled button is muted and the icon follows the theme.
     gitSyncButton_->setIcon(ThemeManager::instance().icon("refresh", connected ? Token::Accent : Token::TextMuted));
 }

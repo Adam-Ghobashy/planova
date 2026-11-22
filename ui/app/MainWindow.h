@@ -24,6 +24,7 @@ public:
 
 private:
     void buildPages();
+    void addShortcuts();
     void showPage(Page page);
     void showHomeForCurrentProject();
     std::optional<ProjectDto> currentProjectInfo() const;

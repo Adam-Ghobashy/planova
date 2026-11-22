@@ -3,6 +3,7 @@
 #include "app/DemoData.h"
 #include "app/MainWindow.h"
 #include "app/Page.h"
+#include "app/Sidebar.h"
 #include "board/PhaseBoardPage.h"
 #include "board/TaskCardWidget.h"
 #include "board/TaskColumnWidget.h"
@@ -20,6 +21,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QShortcut>
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QTableWidget>
@@ -38,6 +40,33 @@ NewTask sampleTask(const char* title)
     t.estHours = 4;
     return t;
 }
+
+// Shortcuts only fire in the active window.
+void showActive(QWidget& window)
+{
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    window.activateWindow();
+    static_cast<void>(QTest::qWaitForWindowActive(&window));   // activation is asynchronous
+}
+
+// Presses a key combination in the window. If the environment cannot activate the window, the shortcut that
+// owns the key is triggered directly, so the test still checks what the shortcut does.
+void pressShortcut(MainWindow& window, Qt::Key key, Qt::KeyboardModifiers modifiers)
+{
+    if (window.isActiveWindow()) {
+        QTest::keyClick(&window, key, modifiers);
+        return;
+    }
+    const QKeySequence wanted(QKeyCombination(modifiers, key));
+    for (QShortcut* shortcut : window.findChildren<QShortcut*>()) {
+        if (shortcut->key() == wanted) {
+            emit shortcut->activated();
+            return;
+        }
+    }
+    QFAIL("no shortcut for this key");
+}
 }
 
 class tst_MainWindowSmoke : public QObject {
@@ -51,6 +80,83 @@ private slots:
     }
     void init() { ThemeManager::instance().apply(ThemeMode::Light); }
     void cleanupTestCase() { ThemeManager::instance().apply(ThemeMode::Light); }
+
+    // ---- Keyboard shortcuts ----
+    // Ctrl+0 is the Projects Hub, Ctrl+1..7 the sidebar pages in order, Ctrl+N a new project, Ctrl+Shift+L the theme.
+    void shortcutsSwitchPages()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        auto* pages = window.findChild<QStackedWidget*>();
+        showActive(window);
+
+        pressShortcut(window, Qt::Key_2, Qt::ControlModifier);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Board));
+        const auto order = Sidebar::navOrder();
+        for (int i = 0; i < order.size(); ++i) {
+            pressShortcut(window, static_cast<Qt::Key>(Qt::Key_1 + i), Qt::ControlModifier);
+            QCOMPARE(pages->currentIndex(), static_cast<int>(order[i]));
+        }
+        pressShortcut(window, Qt::Key_0, Qt::ControlModifier);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Hub));
+    }
+
+    void shortcutThemeToggle()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        showActive(window);
+
+        pressShortcut(window, Qt::Key_L, Qt::ControlModifier | Qt::ShiftModifier);
+        QCOMPARE(ThemeManager::instance().mode(), ThemeMode::Dark);
+        pressShortcut(window, Qt::Key_L, Qt::ControlModifier | Qt::ShiftModifier);
+        QCOMPARE(ThemeManager::instance().mode(), ThemeMode::Light);
+    }
+
+    // Without an open project the page shortcuts do nothing (the sidebar items are disabled too).
+    void pageShortcutsNeedAnOpenProject()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        auto* pages = window.findChild<QStackedWidget*>();
+        showActive(window);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Hub));
+
+        pressShortcut(window, Qt::Key_2, Qt::ControlModifier);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Hub));
+    }
+
+    // Ctrl+N opens an empty Setup page, but never wipes a Setup page the user is already filling in.
+    void newProjectShortcutKeepsHalfFilledSetup()
+    {
+        QTemporaryDir dir;
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("P", "team", "Agile", "idea"));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        auto* pages = window.findChild<QStackedWidget*>();
+        showActive(window);
+
+        pressShortcut(window, Qt::Key_N, Qt::ControlModifier);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Setup));
+        window.findChild<QLineEdit*>("projectNameEdit")->setText("Half typed");
+        pressShortcut(window, Qt::Key_N, Qt::ControlModifier);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Setup));
+        QCOMPARE(window.findChild<QLineEdit*>("projectNameEdit")->text(), QString("Half typed"));
+
+        // From another page the visit starts empty again.
+        pressShortcut(window, Qt::Key_0, Qt::ControlModifier);
+        pressShortcut(window, Qt::Key_N, Qt::ControlModifier);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Setup));
+        QVERIFY(window.findChild<QLineEdit*>("projectNameEdit")->text().isEmpty());
+    }
 
     // The start popup: pick a project opens its Home, Start new project opens Setup, "Not now" changes nothing.
     void startDialogRoutesChoices()
@@ -579,6 +685,7 @@ private slots:
         QVERIFY(title && sync);
         QCOMPARE(title->text(), QString("No repository"));
         QVERIFY(!sync->isEnabled());
+        QCOMPARE(sync->toolTip(), QString("Connect a repository first (GitHub page)"));
 
         core.git().connect("https://github.com/acme/portal.git", "main");
         QApplication::processEvents();

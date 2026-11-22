@@ -112,7 +112,7 @@ private slots:
         auto* name = switcher->findChild<QLabel*>("projectSwitcherName");
         QVERIFY(name);
         QCOMPARE(name->text(), QString("No project open"));
-        QCOMPARE(switcher->toolTip(), QString("Open Projects Hub"));
+        QCOMPARE(switcher->toolTip(), QString("Open Projects Hub (Ctrl+0)"));
 
         core.openProject(core.createProject("Atlas", "team", "Agile", "idea"));
         sidebar.refresh();
@@ -153,9 +153,10 @@ private slots:
 
         core.openProject(core.createProject("A", "team", "Agile", "idea"));
         sidebar.refresh();
-        for (auto* item : items) {
-            QVERIFY(item->isEnabled());
-            QCOMPARE(item->toolTip(), item->findChild<QLabel*>("navLabel")->text());
+        for (int i = 0; i < items.size(); ++i) {
+            QVERIFY(items[i]->isEnabled());
+            QCOMPARE(items[i]->toolTip(),
+                     QString("%1 (Ctrl+%2)").arg(items[i]->findChild<QLabel*>("navLabel")->text()).arg(i + 1));
         }
 
         sidebar.setProjectOpen(false);
@@ -297,15 +298,15 @@ private slots:
         Sidebar sidebar(core);
         auto* toggle = sidebar.findChild<QPushButton*>("themeToggle");
         QVERIFY(toggle);
-        QCOMPARE(toggle->toolTip(), QString("Switch to dark mode"));
+        QCOMPARE(toggle->toolTip(), QString("Switch to dark mode (Ctrl+Shift+L)"));
 
         QTest::mouseClick(toggle, Qt::LeftButton);
         QCOMPARE(ThemeManager::instance().mode(), ThemeMode::Dark);
-        QCOMPARE(toggle->toolTip(), QString("Switch to light mode"));
+        QCOMPARE(toggle->toolTip(), QString("Switch to light mode (Ctrl+Shift+L)"));
 
         QTest::mouseClick(toggle, Qt::LeftButton);
         QCOMPARE(ThemeManager::instance().mode(), ThemeMode::Light);
-        QCOMPARE(toggle->toolTip(), QString("Switch to dark mode"));
+        QCOMPARE(toggle->toolTip(), QString("Switch to dark mode (Ctrl+Shift+L)"));
     }
 };
 
