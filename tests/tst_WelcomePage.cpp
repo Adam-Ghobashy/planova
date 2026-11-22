@@ -181,8 +181,28 @@ private slots:
     {
         Fixture f;
         QCOMPARE(f.page->findChild<QLabel*>("gitBannerRepo")->text(), QString("No repository connected"));
+        f.core.openProject(f.ids[0]);
         QSignalSpy spy(f.page.get(), &WelcomePage::manageGitRequested);
         f.button("manageGit")->click();
+        QCOMPARE(spy.count(), 1);
+    }
+
+    // The GitHub page belongs to a project, so "Manage Git" waits until one is open and says why.
+    void manageGitNeedsAnOpenProject()
+    {
+        Fixture f;
+        QPushButton* manage = f.button("manageGit");
+        QVERIFY(manage);
+        QVERIFY(!manage->isEnabled());
+        QCOMPARE(manage->toolTip(), QString("Open a project first"));
+        QSignalSpy spy(f.page.get(), &WelcomePage::manageGitRequested);
+        manage->click();
+        QCOMPARE(spy.count(), 0);
+
+        f.core.openProject(f.ids[1]);   // the page refreshes on CoreBridge::changed
+        QVERIFY(manage->isEnabled());
+        QVERIFY(manage->toolTip() != QString("Open a project first"));
+        manage->click();
         QCOMPARE(spy.count(), 1);
     }
 
@@ -202,6 +222,7 @@ private slots:
         QFETCH(bool, dark);
         ThemeManager::instance().apply(dark ? ThemeMode::Dark : ThemeMode::Light);
         Fixture f;
+        f.core.openProject(f.ids[0]);   // "Manage Git" is enabled only with an open project
         f.page->activateWindow();
         QVERIFY(QTest::qWaitForWindowExposed(f.page.get()));
 

@@ -120,7 +120,9 @@ void MainWindow::buildPages()
     });
     // openProject publishes ProjectOpened on the bridge, which also refreshes the sidebar badges.
     connect(welcome_, &WelcomePage::projectOpened, this, [this] { showHomeForCurrentProject(); });
-    connect(welcome_, &WelcomePage::manageGitRequested, this, [this] { showPage(Page::GitHub); });
+    connect(welcome_, &WelcomePage::manageGitRequested, this, [this] {
+        if (core_.currentProject()) showPage(Page::GitHub);   // the GitHub page belongs to the open project
+    });
 }
 
 void MainWindow::addShortcuts()

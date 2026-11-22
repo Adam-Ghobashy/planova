@@ -115,7 +115,7 @@ GitHubIntegrationPage::GitHubIntegrationPage(GitService& gitService,
     connTitleCol->setSpacing(2);
     auto* connTitle = new QLabel("Repository Connection", connCard);
     connTitle->setObjectName("cardTitle");
-    auto* connSub = new QLabel("Link a GitHub repository URL and target branch for event-log synchronization.", connCard);
+    auto* connSub = new QLabel("Link a GitHub repository URL and target branch to sync.", connCard);
     connSub->setObjectName("cardSubtitle");
     connTitleCol->addWidget(connTitle);
     connTitleCol->addWidget(connSub);

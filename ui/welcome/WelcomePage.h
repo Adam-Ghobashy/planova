@@ -41,6 +41,7 @@ private:
     QLabel* count_ = nullptr;
     QLabel* gitIcon_ = nullptr;
     QLabel* gitRepo_ = nullptr;
+    QPushButton* manageGit_ = nullptr;
     QWidget* gridHost_ = nullptr;
     QGridLayout* grid_ = nullptr;
     QList<ProjectCardWidget*> cards_;

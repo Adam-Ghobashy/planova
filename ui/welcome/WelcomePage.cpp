@@ -165,9 +165,9 @@ QWidget* WelcomePage::buildGitBanner()
     text->addWidget(gitRepo_);
     layout->addLayout(text, 1);
 
-    auto* manage = makeButton(tr("Manage Git →"), "manageGit", "ghost", banner);
-    connect(manage, &QPushButton::clicked, this, &WelcomePage::manageGitRequested);
-    layout->addWidget(manage);
+    manageGit_ = makeButton(tr("Manage Git →"), "manageGit", "ghost", banner);
+    connect(manageGit_, &QPushButton::clicked, this, &WelcomePage::manageGitRequested);
+    layout->addWidget(manageGit_);
 
     updateGitIcon();
     return banner;
@@ -223,6 +223,10 @@ void WelcomePage::refresh()
         gitRepo_->setProperty("connected", connected && !repo.isEmpty());
         gitRepo_->style()->unpolish(gitRepo_);
         gitRepo_->style()->polish(gitRepo_);
+
+        // The GitHub page shows the open project's repository, so there is nothing to manage without one.
+        manageGit_->setEnabled(current.has_value());
+        manageGit_->setToolTip(current ? tr("Open the GitHub page of the current project") : tr("Open a project first"));
 
         applyFilter();
     } catch (const std::exception& error) {
