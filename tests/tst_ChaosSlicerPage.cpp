@@ -145,6 +145,55 @@ private slots:
         QVERIFY(area);
         QVERIFY2(!area->horizontalScrollBar()->isVisible(), "the page scrolls sideways at 900 px");
     }
+    void overrideSurvivesPinEvent() {
+        Board b;
+        b.addAlice();
+        b.members.addMember(MemberDto{"2", "Bob", "Dev", false, {{SkillCategory::Backend, 5}}, 100, 1.0});
+        b.addTask("t1");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        auto* table = page.findChild<QTableView*>("assignmentsTable");
+        const QModelIndex row = table->model()->index(0, AssignmentTableModel::Assignee);
+        const bool aliceHasIt = row.data(AssignmentTableModel::AssigneeNameRole).toString() == "Alice";
+        const QString chosen = aliceHasIt ? "2" : "1";
+        QVERIFY(table->model()->setData(table->model()->index(0, AssignmentTableModel::ActionOverride), chosen,
+                                        Qt::EditRole));
+
+        page.refreshFromBoard("PinCreated");  // a pin has nothing to do with the slicer
+
+        QCOMPARE(table->model()->index(0, AssignmentTableModel::ActionOverride).data(Qt::EditRole).toString(),
+                 chosen);
+        QVERIFY(page.findChild<QLabel*>("statusLabel")->text().isEmpty());
+    }
+    void taskEventStillRecalculates() {
+        Board b;
+        b.addAlice();
+        b.addTask("t1");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        auto* table = page.findChild<QTableView*>("assignmentsTable");
+        b.addTask("t2");
+
+        page.refreshFromBoard("TaskCreated");
+
+        QCOMPARE(table->model()->rowCount(), 2);
+    }
+    void tableUpdatesAfterApply() {
+        Board b;
+        b.addAlice();
+        b.members.addMember(MemberDto{"2", "Bob", "Dev", false, {{SkillCategory::Backend, 5}}, 100, 1.0});
+        b.addTask("t1");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        auto* table = page.findChild<QTableView*>("assignmentsTable");
+        const QString pick = table->model()->index(0, AssignmentTableModel::Assignee)
+                                 .data(AssignmentTableModel::AssigneeNameRole).toString();
+
+        page.findChild<QPushButton*>("applyButton")->click();
+        b.tasks.setAssignee("t1", pick == "Alice" ? "1" : "2");  // the board now holds the applied assignee
+        page.refreshFromBoard("");
+
+        QCOMPARE(table->model()->rowCount(), 1);
+        QCOMPARE(table->model()->index(0, AssignmentTableModel::Assignee)
+                     .data(AssignmentTableModel::AssigneeNameRole).toString(), pick);
+    }
     void failedSaveIsShownNotThrown() {
         FakeTaskQuery tasks;
         FakeMemberQuery members;

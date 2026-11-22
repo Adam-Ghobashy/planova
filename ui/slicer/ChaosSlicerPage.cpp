@@ -237,10 +237,24 @@ void ChaosSlicerPage::fitTableHeight() {
     table_->setFixedHeight(table_->horizontalHeader()->height() + rows * rowHeight + 2 + barHeight);
 }
 
+namespace {
+// Only task and team changes can alter the suggested assignments. Other events (pins, git, settings)
+// must not recalculate, because that would wipe the manual choices in the table.
+bool changesTheSlicePlan(const QString& eventType) {
+    return eventType.isEmpty()  // empty means "just re-read the board"
+           || eventType == QString::fromUtf8(ProjectOpened)
+           || eventType.startsWith(QLatin1String("Task"))
+           || eventType.startsWith(QLatin1String("Member"))
+           || eventType.startsWith(QLatin1String("SkillRated"))
+           || eventType.startsWith(QLatin1String("Conflict"));
+}
+}
+
 void ChaosSlicerPage::refreshFromBoard(const QString& eventType) {
     if (applying_) return;
     if (eventType == QString::fromUtf8(ProjectOpened) || eventType == QString::fromUtf8(SlicerWeightsChanged))
         sliders_->setWeights(slicer_.savedWeights());
+    if (!changesTheSlicePlan(eventType)) return;
     if (recalculate()) showStatus("Board changed: assignments recalculated");
 }
 
