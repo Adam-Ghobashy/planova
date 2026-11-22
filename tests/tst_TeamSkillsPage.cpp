@@ -529,6 +529,48 @@ private slots:
         QVERIFY(!editor);   // the old card is gone
     }
 
+    // Two role editors are open and a rebuild waits. Closing one must not rebuild the cards (that would delete the
+    // other editor); closing the last one does.
+    void cancelKeepsTheOtherRoleEditor()
+    {
+        Fixture f;
+        const Id ana = f.core.members().add("Ana", "Backend Developer", false);
+        const Id ben = f.core.members().add("Ben", "Frontend Developer", false);
+        const int before = storedUnderstanding(f, ana);
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1440, 900);
+        page->show();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+
+        for (const Id& id : {ana, ben}) {
+            for (QPushButton* button : page->findChildren<QPushButton*>("editRoleButton")) {
+                if (button->property("focusKey").toString() == QString::fromStdString(id) + ":editRole")
+                    button->click();
+            }
+        }
+        const QList<QWidget*> editors = page->findChildren<QWidget*>("roleEditBox");
+        QCOMPARE(editors.size(), 2);
+        QPointer<QWidget> anaEditor = editors[0];   // cards are built in member order
+        QPointer<QWidget> benEditor = editors[1];
+        QVERIFY(anaEditor->isVisible() && benEditor->isVisible());
+
+        QSlider* slider = understandingSlider(page.get(), "Ana");
+        QVERIFY(slider);
+        QTest::keyClick(slider, Qt::Key_Right);
+        QTest::qWait(600);   // past the debounce: committed, the rebuild waits for the editors
+        QCOMPARE(storedUnderstanding(f, ana), before + 1);
+
+        anaEditor->findChild<QPushButton*>("cancelRoleButton")->click();
+        QTest::qWait(50);    // a rebuild would delete the old cards on this turn
+        QVERIFY2(benEditor, "closing one role editor deleted the other one");
+        QVERIFY(benEditor->isVisible());
+
+        benEditor->findChild<QPushButton*>("cancelRoleButton")->click();
+        QTest::qWait(50);
+        QVERIFY2(!benEditor, "the put-off rebuild did not run after the last editor closed");
+        QCOMPARE(understandingSlider(page.get(), "Ana")->value(), before + 1);
+    }
+
     // The role editor stays open while the understanding is committed; saving the role afterwards must keep that value.
     void roleSaveKeepsCommittedUnderstanding()
     {

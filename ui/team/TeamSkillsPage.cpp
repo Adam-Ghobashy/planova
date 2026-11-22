@@ -579,8 +579,8 @@ QWidget* TeamSkillsPage::buildProfileColumn(const MemberDto& member, int colorIn
         roleLbl->show();
         actions->show();
         editRoleBtn->setFocus();
-        // An understanding commit was put off while this editor was open.
-        if (pendingRefresh_) refresh();
+        // An understanding commit was put off while a role editor was open. Another open editor still holds it off.
+        if (pendingRefresh_ && !roleEditorOpen()) refresh();
     });
 
     auto doSaveRole = [this, id = member.id, name = member.name, editRoleCombo, editCustomRoleInput]() {
