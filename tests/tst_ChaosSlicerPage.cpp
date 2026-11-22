@@ -176,6 +176,18 @@ private slots:
 
         QCOMPARE(table->model()->rowCount(), 2);
     }
+    void dependencyEventRecalculates() {
+        Board b;
+        b.addAlice();
+        b.addTask("t1");
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        auto* table = page.findChild<QTableView*>("assignmentsTable");
+        b.addTask("t2");
+
+        page.refreshFromBoard("DependencyAdded");
+
+        QCOMPARE(table->model()->rowCount(), 2);
+    }
     void tableUpdatesAfterApply() {
         Board b;
         b.addAlice();

@@ -244,6 +244,7 @@ bool changesTheSlicePlan(const QString& eventType) {
     return eventType.isEmpty()  // empty means "just re-read the board"
            || eventType == QString::fromUtf8(ProjectOpened)
            || eventType.startsWith(QLatin1String("Task"))
+           || eventType == QString::fromUtf8(DependencyAdded)
            || eventType.startsWith(QLatin1String("Member"))
            || eventType.startsWith(QLatin1String("SkillRated"))
            || eventType.startsWith(QLatin1String("Conflict"));
