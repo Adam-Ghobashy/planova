@@ -292,6 +292,28 @@ private slots:
     }
 
     // ---- Edit and delete from the Home menu ----
+    void homeMoreButtonIsNotFocusedWhenHomeAppears()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("Alpha", "Team A", "Agile", ""));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        showActive(window);
+        auto* more = window.findChild<QToolButton*>("homeMoreButton");
+        QVERIFY(more);
+        QVERIFY(window.findChild<QStackedWidget*>()->currentWidget()->isAncestorOf(more));
+        QVERIFY(!more->hasFocus());
+        // Opening a project from the Hub shows Home again; it must not take the focus either.
+        pressShortcut(window, Qt::Key_0, Qt::ControlModifier);
+        pressShortcut(window, Qt::Key_1, Qt::ControlModifier);
+        QVERIFY(!more->hasFocus());
+        // Tab still reaches it.
+        more->setFocus(Qt::TabFocusReason);
+        QVERIFY(more->hasFocus());
+    }
+
     void editOpenProjectUpdatesEverywhere()
     {
         QTemporaryDir dir;

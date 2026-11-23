@@ -115,10 +115,10 @@ QWidget#WelcomePage QLabel#projectCurrentChip {
 /* ---------- project card "..." menu button ---------- */
 QWidget#WelcomePage QToolButton#projectMoreButton {
     border: 2px solid transparent; border-radius: 6px; background: transparent;
-    color: @TextSecondary; font-size: 18px; font-weight: 600; padding: 0 4px;
+    padding: 0 4px;
 }
-QWidget#WelcomePage QToolButton#projectMoreButton:hover { background-color: @SurfaceHover; color: @TextPrimary; }
-QWidget#WelcomePage QToolButton#projectMoreButton:pressed { background-color: @Track; color: @TextPrimary; }
+QWidget#WelcomePage QToolButton#projectMoreButton:hover { background-color: @SurfaceHover; }
+QWidget#WelcomePage QToolButton#projectMoreButton:pressed { background-color: @Track; }
 QWidget#WelcomePage QToolButton#projectMoreButton:focus,
-QWidget#WelcomePage QToolButton#projectMoreButton:focus:hover { border: 2px solid @TextPrimary; color: @TextPrimary; }
+QWidget#WelcomePage QToolButton#projectMoreButton:focus:hover { border: 2px solid @TextPrimary; }
 QWidget#WelcomePage QToolButton#projectMoreButton::menu-indicator { image: none; width: 0px; }

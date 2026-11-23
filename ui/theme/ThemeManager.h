@@ -49,6 +49,11 @@ public:
     // Replaces @TokenName with the token's hex value. Unknown names are left as they are and logged with qWarning.
     static QString resolveTokens(const QString& css, ThemeMode mode);
 
+    // Replaces @icon(name,Token) with url("<png path>"). The icon is tinted with the token of `mode` and written
+    // to <cache>/themed-icons/<mode>-<name>-<Token>.png (rewritten on every call), because a stylesheet can only
+    // point at a file. A missing icon or an unknown token is left as it is and logged with qWarning.
+    static QString resolveIcons(const QString& css, ThemeMode mode);
+
     // Saved choice ("ui/theme" in QSettings), otherwise the operating system colour scheme.
     static ThemeMode savedOrSystemMode();
     void saveMode() const;

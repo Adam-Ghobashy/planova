@@ -12,6 +12,7 @@
 #include <QRegularExpression>
 #include <QSet>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QStyleHints>
 #include <QSvgRenderer>
 
@@ -56,6 +57,36 @@ void applyPalette(ThemeMode mode)
         palette.setColor(QPalette::Disabled, role, muted);
     qApp->setPalette(palette);
 }
+
+// Loads :/icons/<name>.svg, replaces currentColor with `color` and renders it into a 48 px pixmap
+// (twice the nominal 24 px, so it stays sharp on high-density screens). Null when the icon is missing.
+QPixmap renderIcon(const QString& name, const QColor& color)
+{
+    QFile file(":/icons/" + name + ".svg");
+    if (!file.open(QIODevice::ReadOnly))
+        return QPixmap();
+    QString svg = QString::fromUtf8(file.readAll());
+    // Opaque RGB is enough: SVG does not read the #AARRGGBB form the tokens may use.
+    svg.replace("currentColor", color.name(QColor::HexRgb));
+
+    constexpr int kPixels = 48;
+    QPixmap pixmap(kPixels, kPixels);
+    pixmap.fill(Qt::transparent);
+    QSvgRenderer renderer(svg.toUtf8());
+    QPainter painter(&pixmap);
+    renderer.render(&painter);
+    return pixmap;
+}
+
+// Index of the token with this name, or -1.
+int tokenIndex(const QString& name)
+{
+    for (int i = 0; i < kTokenCount; ++i) {
+        if (name == QLatin1String(kTokenNames[i]))
+            return i;
+    }
+    return -1;
+}
 }
 
 ThemeManager& ThemeManager::instance()
@@ -79,7 +110,8 @@ void ThemeManager::apply(ThemeMode mode)
             continue;
         css += "\n" + readStyleSheet(dir + "/" + name);
     }
-    qApp->setStyleSheet(resolveTokens(css, mode));
+    // Icons first: the token pass would otherwise report "@icon" as an unknown token.
+    qApp->setStyleSheet(resolveTokens(resolveIcons(css, mode), mode));
 
     emit themeChanged(mode);
 }
@@ -102,22 +134,43 @@ QColor ThemeManager::color(Token token) const
 
 QIcon ThemeManager::icon(const QString& name, Token tint) const
 {
-    QFile file(":/icons/" + name + ".svg");
-    if (!file.open(QIODevice::ReadOnly)) {
+    const QPixmap pixmap = renderIcon(name, color(tint));
+    if (pixmap.isNull()) {
         qWarning().noquote() << "ThemeManager: icon not found" << name;
         return QIcon();
     }
-    QString svg = QString::fromUtf8(file.readAll());
-    // Opaque RGB is enough: SVG does not read the #AARRGGBB form the tokens may use.
-    svg.replace("currentColor", color(tint).name(QColor::HexRgb));
-
-    constexpr int kPixels = 48;
-    QPixmap pixmap(kPixels, kPixels);
-    pixmap.fill(Qt::transparent);
-    QSvgRenderer renderer(svg.toUtf8());
-    QPainter painter(&pixmap);
-    renderer.render(&painter);
     return QIcon(pixmap);
+}
+
+QString ThemeManager::resolveIcons(const QString& css, ThemeMode mode)
+{
+    static const QRegularExpression placeholder("@icon\\(([A-Za-z0-9_-]+),([A-Za-z0-9]+)\\)");
+
+    const QString folder = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/themed-icons";
+    QDir().mkpath(folder);
+
+    QString result;
+    qsizetype last = 0;
+    auto it = placeholder.globalMatch(css);
+    while (it.hasNext()) {
+        const QRegularExpressionMatch match = it.next();
+        const QString name = match.captured(1);
+        const QString tokenName = match.captured(2);
+        const int token = tokenIndex(tokenName);
+        const QPixmap pixmap = token < 0 ? QPixmap() : renderIcon(name, tokenColor(mode, static_cast<Token>(token)));
+        const QString path = folder + "/" + (mode == ThemeMode::Dark ? "dark" : "light") + "-" + name + "-" + tokenName
+                             + ".png";
+        if (pixmap.isNull() || !pixmap.save(path, "PNG")) {
+            qWarning().noquote() << "ThemeManager: cannot resolve" << match.captured(0);
+            continue;   // the placeholder stays in the text
+        }
+        result += css.mid(last, match.capturedStart() - last);
+        // Quoted, so a cache path with spaces is still one url(); qss wants forward slashes.
+        result += "url(\"" + QDir::fromNativeSeparators(path) + "\")";
+        last = match.capturedEnd();
+    }
+    result += css.mid(last);
+    return result;
 }
 
 QString ThemeManager::resolveTokens(const QString& css, ThemeMode mode)

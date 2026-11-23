@@ -113,6 +113,27 @@ private slots:
         QVERIFY(!f.core.currentProject().has_value());
     }
 
+    // The "Team lead" toggle gets wider with its check mark; it must not change the width of the other fields.
+    void fieldsKeepTheirWidthWhenTeamLeadIsToggled()
+    {
+        Fixture f;
+        f.edit("projectNameEdit")->setText("Portal");
+        f.clickNext(2);
+        f.addMember("Ana");
+        f.addMember("Ben");
+        auto* lead = f.button("memberLead_0");
+        auto* other = f.button("memberLead_1");
+        QVERIFY(lead && other);
+        lead->click();
+        QVERIFY(lead->isChecked());
+        QVERIFY(!other->isChecked());
+        QCoreApplication::processEvents();
+        QCOMPARE(lead->width(), other->width());
+        QCOMPARE(f.edit("memberNameEdit_0")->width(), f.edit("memberNameEdit_1")->width());
+        // The checked text fits the button.
+        QVERIFY(lead->fontMetrics().horizontalAdvance(lead->text()) < lead->width());
+    }
+
     void navigatingWritesNothing()
     {
         Fixture f;

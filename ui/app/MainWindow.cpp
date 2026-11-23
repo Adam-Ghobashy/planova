@@ -182,6 +182,10 @@ void MainWindow::showPage(Page page)
 {
     pages_->setCurrentIndex(static_cast<int>(page));
     sidebar_->setActivePage(page);
+    // Home starts with its first control ("..." menu) in the focus chain, which would show a focus ring right away.
+    // The page itself takes the focus instead; Tab still moves on to the menu button.
+    if (page == Page::Home)
+        homePage_->setFocus();
     // Only the pages with a sidebar item are remembered; Setup and the Hub are not.
     if (Sidebar::navOrder().contains(page))
         QSettings().setValue("ui/lastPage", static_cast<int>(page));
@@ -256,6 +260,8 @@ void MainWindow::editProject(const QString& projectId)
         }
     } catch (const std::exception& error) {
         ModalDialog::info(this, tr("Could not edit project"), QString::fromUtf8(error.what()));
+    } catch (...) {
+        ModalDialog::info(this, tr("Could not edit project"), tr("Something went wrong. Please try again."));
     }
 }
 
@@ -292,6 +298,8 @@ void MainWindow::deleteProject(const QString& projectId)
         }
     } catch (const std::exception& error) {
         ModalDialog::info(this, tr("Could not delete project"), QString::fromUtf8(error.what()));
+    } catch (...) {
+        ModalDialog::info(this, tr("Could not delete project"), tr("Something went wrong. Please try again."));
     }
 }
 

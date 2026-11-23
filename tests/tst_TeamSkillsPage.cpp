@@ -136,8 +136,12 @@ private slots:
         QStringList titles;
         for (const QLabel* l : page->findChildren<QLabel*>("tableHeaderCell"))
             titles << l->text();
-        QCOMPARE(titles, (QStringList{"Role / Teammate", "Technical Skills", "Project Understanding & Velocity",
+        QCOMPARE(titles, (QStringList{"Role / Teammate", "Technical Skills", "Understanding & Velocity",
                                       "Assignment / Clash"}));
+        // Every header is one line, so the four titles share one baseline (the cells are bottom aligned).
+        const auto cells = page->findChildren<QLabel*>("tableHeaderCell");
+        for (const QLabel* l : cells)
+            QVERIFY2(l->height() <= l->fontMetrics().lineSpacing() + 2, qPrintable(l->text()));
         for (const QLabel* l : page->findChildren<QLabel*>())
             QVERIFY2(l->text() != "Assignment / Clash" || l->objectName() == "tableHeaderCell", "heading repeated in a row");
 

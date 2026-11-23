@@ -109,12 +109,19 @@ QDialog#ModalDialog QPushButton#modalSecondaryButton:disabled,
 QDialog#ModalDialog QPushButton#modalDangerButton:disabled { background: @Track; color: @TextMuted; border-color: @Track; }
 
 /* task dependency list: check boxes in a small scrolling box.
-   The box is hollow when off and filled when on (the fill is the difference, not only the hue); the focused one gets a thick ring. */
+   Off: a hollow box. On: an Accent fill with a tick (the tick, not only the hue, says "checked"). */
 QScrollArea#modalDeps { background: @GlassFillStrong; border: 1px solid @BorderDefault; border-radius: 10px; }
 QDialog#ModalDialog QCheckBox { spacing: 8px; font-size: 14px; color: @TextPrimary; background: transparent; }
 QDialog#ModalDialog QCheckBox::indicator {
     width: 16px; height: 16px; border-radius: 4px; border: 1px solid @TextMuted; background: @Surface;
 }
-QDialog#ModalDialog QCheckBox::indicator:checked { background: @Accent; border-color: @Accent; }
-QDialog#ModalDialog QCheckBox::indicator:focus { border: 2px solid @TextPrimary; }
-QDialog#ModalDialog QCheckBox::indicator:checked:focus { background: @Surface; border: 5px solid @TextPrimary; }
+QDialog#ModalDialog QCheckBox::indicator:hover { border-color: @TextPrimary; }
+QDialog#ModalDialog QCheckBox::indicator:checked { background: @Accent; border-color: @Accent; image: @icon(check,AccentText); }
+/* 14 + 2 x 2 px border = the same 18 px as the 16 + 2 x 1 px resting box, so focus never moves the label. */
+QDialog#ModalDialog QCheckBox::indicator:focus { width: 14px; height: 14px; border: 2px solid @TextPrimary; }
+/* The fill is clipped to the content box, so a 1 px gap keeps the ring apart from it (dark Accent is near the ring colour). */
+QDialog#ModalDialog QCheckBox::indicator:checked:focus {
+    width: 12px; height: 12px; padding: 1px; background: @Accent; background-clip: content;
+    border: 2px solid @TextPrimary; image: @icon(check,AccentText);
+}
+QDialog#ModalDialog QCheckBox::indicator:disabled { background: @Track; border: 1px solid @TextMuted; }

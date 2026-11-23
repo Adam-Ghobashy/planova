@@ -1,6 +1,7 @@
 #include "welcome/SetupMemberRow.h"
 
 #include "pins/StyledComboBox.h"
+#include "theme/ThemeManager.h"
 #include <QComboBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -97,6 +98,10 @@ SetupMemberRow::SetupMemberRow(int id, QWidget* parent)
     leadCheck_->setProperty("kind", "chip");
     leadCheck_->setCursor(Qt::PointingHandCursor);
     leadCheck_->setObjectName("memberLead_" + suffix);
+    // One width for both texts: the "✓" prefix must not make the button wider and squeeze the fields beside it.
+    // Width = widest text + the chip padding (12 px each side) and border (1 px each side) from setup.qss.
+    const QFontMetrics chipMetrics(ThemeManager::instance().textFont(TextStyle::LabelActive));
+    leadCheck_->setFixedWidth(chipMetrics.horizontalAdvance(tr("✓ Team lead")) + 2 * 12 + 2 * 1 + 4);
 
     auto* fields = new QGridLayout;
     fields->setHorizontalSpacing(12);

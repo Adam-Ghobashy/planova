@@ -375,13 +375,12 @@ QWidget* TeamSkillsPage::buildTableHeader(QWidget* parent) {
     grid->setHorizontalSpacing(kColumnGap);
     applyColumnWidths(grid);
 
-    const char* titles[] = {"Role / Teammate", "Technical Skills", "Project Understanding & Velocity",
+    const char* titles[] = {"Role / Teammate", "Technical Skills", "Understanding & Velocity",
                             "Assignment / Clash"};
     const int fixedWidths[] = {kProfileWidth, 0, kUnderstandingWidth, kAssignmentWidth};
     for (int col = 0; col < 4; ++col) {
         auto* title = new QLabel(titles[col], header);
         title->setObjectName("tableHeaderCell");
-        title->setWordWrap(true);
         if (fixedWidths[col] > 0) title->setFixedWidth(fixedWidths[col]);
         grid->addWidget(title, 0, col, Qt::AlignBottom);
     }

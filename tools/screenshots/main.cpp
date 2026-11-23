@@ -28,6 +28,7 @@
 #include "widgets/ModalDialog.h"
 
 #include <QApplication>
+#include <QCheckBox>
 #include <QPushButton>
 #include <QPlainTextEdit>
 #include <QRegularExpression>
@@ -313,7 +314,17 @@ int main(int argc, char* argv[])
         using Factory = std::function<ModalDialog*()>;
         const QList<QPair<QString, Factory>> dialogs = {
             {"start", [&] { return new StartDialog(core, &window); }},
-            {"new-task", [&] { return new NewTaskDialog(tasks, members, &window); }},
+            {"new-task", [&] {
+                auto* dialog = new NewTaskDialog(tasks, members, &window);
+                // Two dependencies checked (one with the keyboard focus), so the tick and its focus state show.
+                const auto checks = dialog->findChildren<QCheckBox*>();
+                if (checks.size() > 1) {
+                    checks[0]->setChecked(true);
+                    checks[1]->setChecked(true);
+                    QTimer::singleShot(0, checks[1], [box = checks[1]] { box->setFocus(); });   // after open() moved focus to the title
+                }
+                return dialog;
+            }},
             {"edit-project", [&] { ProjectDto sample{"p1", "Orbit", "Platform Team", "Scrum"}; return new EditProjectDialog(sample, [](const QString&, const QString&, const QString&) {}, &window); }},
             {"delete-project", [&] { return new DeleteProjectDialog("Orbit", &window); }},
             {"leave-pin", [&] { return new planova::s5::LeavePinDialog(tasks, members, members.empty() ? planova::Id{} : members.front().id, &window); }},
@@ -426,6 +437,9 @@ int main(int argc, char* argv[])
         if (ThemeManager::instance().mode() != mode)
             ThemeManager::instance().apply(mode);
         pages->setCurrentIndex(job.second);
+        // MainWindow::showPage does the same: Home keeps the focus on the page, so no ring shows on its first control.
+        if (static_cast<Page>(job.second) == Page::Home)
+            pages->currentWidget()->setFocus();
         // The stack is switched directly, so tell the sidebar which item to highlight.
         window.findChild<Sidebar*>()->setActivePage(static_cast<Page>(job.second));
         QTimer::singleShot(250, [&, job]() {

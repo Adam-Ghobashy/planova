@@ -41,8 +41,7 @@ int pillWidth(const QStyleOptionViewItem& option, const QModelIndex& index, int 
 
 // Cell width for the assignee: avatar, name, the match or "Manual" badge, laid out as in paint(), plus an 8 px margin.
 int assigneeWidth(const QStyleOptionViewItem& option, const QModelIndex& index) {
-    QFont nameFont = option.font;
-    nameFont.setPixelSize(14);
+    const QFont nameFont = ThemeManager::instance().textFont(TextStyle::Body);
     const QString name = index.data(AssignmentTableModel::AssigneeNameRole).toString();
     const int matchPct = index.data(AssignmentTableModel::MatchPctRole).toInt();
     const bool manual = index.data(AssignmentTableModel::ManualOverrideRole).toBool();
@@ -202,9 +201,7 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         painter->setPen(tm.color(Token::TextPrimary));
         painter->drawText(QRectF(avatarX - 11, cy - 11, 22, 22), Qt::AlignCenter, initials);
 
-        QFont nameFont = painter->font();
-        nameFont.setPixelSize(14);
-        nameFont.setBold(false);
+        const QFont nameFont = ThemeManager::instance().textFont(TextStyle::Body);
         painter->setFont(nameFont);
         const int nameWidth = QFontMetrics(nameFont).horizontalAdvance(name);
         painter->setPen(tm.color(Token::TextPrimary));

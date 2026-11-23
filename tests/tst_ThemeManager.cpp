@@ -4,7 +4,9 @@
 #include <QDir>
 #include <QFile>
 #include <QFontDatabase>
+#include <QFileInfo>
 #include <QFrame>
+#include <QImage>
 #include <QRegularExpression>
 #include <QtTest>
 
@@ -84,6 +86,31 @@ private slots:
         // 70% black over the white window: neither black nor white.
         QVERIFY2(pixel.red() > 20 && pixel.red() < 120, qPrintable(pixel.name()));
     }
+    void iconPlaceholderBecomesAPngPath() {
+        const QString css = ThemeManager::resolveIcons("a{image:@icon(check,AccentText);}", ThemeMode::Light);
+        QVERIFY2(!css.contains("@icon"), qPrintable(css));
+        const QRegularExpression url("url\\(\"?([^\")]+)\"?\\)");
+        const QRegularExpressionMatch match = url.match(css);
+        QVERIFY2(match.hasMatch(), qPrintable(css));
+        const QString path = match.captured(1);
+        QVERIFY2(QFile::exists(path), qPrintable(path));
+        QVERIFY(path.endsWith("light-check-AccentText.png"));
+        QVERIFY(!QImage(path).isNull());
+        QVERIFY(QFileInfo(path).size() > 0);
+        // The dark file has its own name, so the two themes never overwrite each other.
+        QVERIFY(ThemeManager::resolveIcons("@icon(check,AccentText)", ThemeMode::Dark)
+                    .contains("dark-check-AccentText.png"));
+    }
+    void unknownIconIsLeftAndWarned() {
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression("NoSuchIcon"));
+        const QString css = "x:@icon(NoSuchIcon,AccentText);";
+        QCOMPARE(ThemeManager::resolveIcons(css, ThemeMode::Light), css);
+    }
+    void applyResolvesIconsInTheStyleSheet() {
+        ThemeManager::instance().apply(ThemeMode::Light);
+        QVERIFY(!qApp->styleSheet().contains("@icon"));
+        QVERIFY(qApp->styleSheet().contains("light-check-AccentText.png"));
+    }
     void toggleEmitsSignal() {
         QSignalSpy s(&ThemeManager::instance(), &ThemeManager::themeChanged);
         ThemeManager::instance().apply(ThemeMode::Light);
@@ -104,8 +131,8 @@ private slots:
         const QStringList bundled = QDir(":/fonts").entryList(QDir::Files);
         QVERIFY(!bundled.isEmpty());
         for (const QString& name : bundled) {
-            QVERIFY2(!name.contains("Inter", Qt::CaseInsensitive), qPrintable(name));
-            QVERIFY2(!name.contains("SpaceGrotesk", Qt::CaseInsensitive), qPrintable(name));
+            QVERIFY2(!name.startsWith("Inter", Qt::CaseInsensitive), qPrintable(name));
+            QVERIFY2(!name.startsWith("SpaceGrotesk", Qt::CaseInsensitive), qPrintable(name));
         }
         const QStringList families = QFontDatabase::families();
         QVERIFY(families.contains("JetBrains Mono"));

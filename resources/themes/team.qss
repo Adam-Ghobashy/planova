@@ -460,7 +460,8 @@ QWidget#TeamSkillsPage QPushButton#resolveConflict:focus:pressed {
     padding: 2px 11px;
 }
 
-/* Hollow box when off, filled when on (the fill is the difference, not only the hue); focus gets a thick ring. */
+/* Hollow box when off, Accent fill with a tick when on (the tick, not only the hue, says "checked").
+   Every state is 18 px wide and tall: 16 + 2 x 1 px border at rest, 14 + 2 x 2 px border with focus. */
 QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator {
     width: 16px;
     height: 16px;
@@ -469,20 +470,37 @@ QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator {
     background: @Surface;
 }
 
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:hover {
+    border-color: @TextPrimary;
+}
+
 QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:checked {
     background: @Accent;
     border-color: @Accent;
+    image: @icon(check,AccentText);
 }
 
 QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:focus {
+    width: 14px;
+    height: 14px;
     border: 2px solid @TextPrimary;
 }
 
-/* Checked and focused: a heavy 5 px ring round a small Surface hole (the unchecked box has a thin 2 px ring), so the
-   ring never merges with the Accent fill (Dark Accent equals TextPrimary). */
+/* The fill is clipped to the content box, so a 1 px gap keeps the ring apart from it (dark Accent is near the
+   ring colour). */
 QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:checked:focus {
-    background: @Surface;
-    border: 5px solid @TextPrimary;
+    width: 12px;
+    height: 12px;
+    padding: 1px;
+    background: @Accent;
+    background-clip: content;
+    border: 2px solid @TextPrimary;
+    image: @icon(check,AccentText);
+}
+
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:disabled {
+    background: @Track;
+    border: 1px solid @TextMuted;
 }
 
 /* Surface disc inside a thick ring, the same recipe as the setup page. */

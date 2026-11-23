@@ -5,9 +5,10 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPushButton>
-#include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
+
+#include "theme/ThemeManager.h"
 
 ProjectCardWidget::ProjectCardWidget(const ProjectDto& project, bool isCurrent, QWidget* parent)
     : QFrame(parent),
@@ -45,12 +46,12 @@ ProjectCardWidget::ProjectCardWidget(const ProjectDto& project, bool isCurrent, 
     // The tool button takes its own mouse clicks, so using it never opens the project.
     auto* more = new QToolButton(this);
     more->setObjectName("projectMoreButton");
-    more->setText(QStringLiteral("⋯"));
+    more->setIconSize(QSize(18, 18));
     more->setPopupMode(QToolButton::InstantPopup);
     more->setCursor(Qt::PointingHandCursor);
     more->setFocusPolicy(Qt::StrongFocus);
     more->setToolTip(tr("More actions"));
-    more->setAccessibleName(tr("More actions for %1").arg(name_));   // the visible text is only dots
+    more->setAccessibleName(tr("More actions for %1").arg(name_));   // the button has no visible text
     more->setMinimumSize(28, 24);
     auto* menu = new QMenu(more);
     QAction* editAction = menu->addAction(tr("Edit details"));
@@ -58,12 +59,12 @@ ProjectCardWidget::ProjectCardWidget(const ProjectDto& project, bool isCurrent, 
     more->setMenu(menu);
     top->addWidget(more, 0, Qt::AlignTop);
     // Queued: a refresh may delete this card, and the dialog must not open inside its own menu action.
-    connect(editAction, &QAction::triggered, this, [this] {
-        QTimer::singleShot(0, this, [this] { emit editRequested(id_); });
-    });
-    connect(deleteAction, &QAction::triggered, this, [this] {
-        QTimer::singleShot(0, this, [this] { emit deleteRequested(id_); });
-    });
+    connect(editAction, &QAction::triggered, this, [this] { emit editRequested(id_); }, Qt::QueuedConnection);
+    connect(deleteAction, &QAction::triggered, this, [this] { emit deleteRequested(id_); }, Qt::QueuedConnection);
+    // The icon is a picture in one colour, so it is drawn again when the theme changes.
+    auto tintIcon = [more] { more->setIcon(ThemeManager::instance().icon("more", Token::TextPrimary)); };
+    tintIcon();
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, more, tintIcon);
     root->addLayout(top);
 
     if (!team_.isEmpty()) {
