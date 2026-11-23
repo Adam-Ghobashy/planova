@@ -33,6 +33,7 @@ Id ProjectService::create(const std::string& name, const std::string& team,
                           const std::string& seModel, const std::string& idea)
 {
     const std::string cleanName = trimmed(name);
+    const std::string cleanTeam = trimmed(team);
     if (cleanName.empty())
         throw std::invalid_argument("Project name cannot be empty");
 
@@ -43,17 +44,17 @@ Id ProjectService::create(const std::string& name, const std::string& team,
 
     QJsonObject payload;
     payload["name"] = QString::fromStdString(cleanName);
-    payload["teamName"] = QString::fromStdString(team);
+    payload["teamName"] = QString::fromStdString(cleanTeam);
     payload["seModel"] = QString::fromStdString(seModel);
     payload["ideaText"] = QString::fromStdString(idea);
 
-    const Id projectId = makeEventId(ts, team, payload);
+    const Id projectId = makeEventId(ts, cleanTeam, payload);
     payload["projectId"] = QString::fromStdString(projectId);
 
     Event event;
-    event.id = makeEventId(ts, team, payload);
+    event.id = makeEventId(ts, cleanTeam, payload);
     event.ts = ts;
-    event.author = team;
+    event.author = cleanTeam;
     event.type = ProjectCreated;
     event.payload = payload;
     log_.append(event);
@@ -97,8 +98,10 @@ void ProjectService::update(const Id& id, const std::string& name, const std::st
 
 void ProjectService::remove(const Id& id)
 {
-    if (!projection_.find(id))
+    const ProjectDto* current = projection_.find(id);
+    if (!current)
         throw std::invalid_argument("Unknown project: " + id);
+    const std::string author = current->team;
 
     const int64_t ts = clock_.nowMs();
 
@@ -106,9 +109,9 @@ void ProjectService::remove(const Id& id)
     payload["projectId"] = QString::fromStdString(id);
 
     Event event;
-    event.id = makeEventId(ts, id, payload);
+    event.id = makeEventId(ts, author, payload);
     event.ts = ts;
-    event.author = id;
+    event.author = author;
     event.type = ProjectDeleted;
     event.payload = payload;
     log_.append(event);

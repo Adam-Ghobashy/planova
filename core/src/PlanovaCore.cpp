@@ -166,28 +166,47 @@ void PlanovaCore::updateProject(const Id& id, const std::string& name, const std
 std::optional<std::filesystem::path> PlanovaCore::deleteProject(const Id& id)
 {
     if (!projects_.exists(id))
-        throw std::invalid_argument("Unknown project: " + id);
+        throw std::invalid_argument("This project no longer exists.");
     // The folder below is removed for good, so the id must be one plain folder name. A damaged project file
     // could hold "", "." or ".." (the workspace or its parent) or a nested path.
     const std::filesystem::path name(id);
     if (id.empty() || id == "." || id == ".." || name.filename() != name)
         throw std::invalid_argument("This project's stored data is damaged, so it cannot be deleted here.");
 
-    if (currentProject_ == id) {
+    const bool wasOpen = (currentProject_ == id);
+    if (wasOpen) {
         // Close it first so nothing keeps reading the folder we are about to delete.
+        // Empty .closed too, so events written while no project was open do not come back.
         // The folder need not exist: the store reads nothing from a missing folder.
-        store_.setDirectory(workspaceDir_ / ".closed");
+        const auto closedDir = workspaceDir_ / ".closed";
+        std::error_code ignored;
+        std::filesystem::remove_all(closedDir, ignored);
+        store_.setDirectory(closedDir);
         log_.rebuild();
         currentProject_.reset();
     }
 
-    projects_.remove(id); // publishes ProjectDeleted, so every page refreshes
+    try {
+        projects_.remove(id); // publishes ProjectDeleted, so every page refreshes
+    } catch (...) {
+        // Nothing was deleted, so give the user their open project back.
+        if (wasOpen) {
+            store_.setDirectory(projectEventsDir(id));
+            log_.rebuild();
+            currentProject_ = id;
+        }
+        throw;
+    }
 
     // The project is already gone from the list, so a folder that cannot be removed is reported, not thrown.
     const auto folder = workspaceDir_ / id;
     std::error_code error;
     std::filesystem::remove_all(folder, error);
-    if (error || std::filesystem::exists(folder, error))
+    if (error)
+        return folder;
+    // If we cannot even tell whether the folder is still there, report it too.
+    const bool stillThere = std::filesystem::exists(folder, error);
+    if (error || stillThere)
         return folder;
     return std::nullopt;
 }

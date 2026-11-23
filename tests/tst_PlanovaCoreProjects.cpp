@@ -26,6 +26,9 @@ private slots:
     void deleteOpenProjectClosesIt();
     void deleteOtherProjectKeepsOpenOne();
     void deleteUnknownProjectThrows();
+    void deleteUnknownProjectMessageIsFriendly();
+    void deleteClearsEventsWrittenWhileClosed();
+    void deleteFailureKeepsProjectOpen();
     void deleteReportsFolderItCannotRemove();
     void restartAfterDeleteStartsClean();
     void deleteRejectsUnsafeIdAndKeepsWorkspace_data();
@@ -277,6 +280,65 @@ void tst_PlanovaCoreProjects::deleteUnknownProjectThrows()
 
     QVERIFY_THROWS_EXCEPTION(std::invalid_argument, core.deleteProject("bogus"));
     QCOMPARE(core.currentProject().value_or(Id()), a);
+}
+
+void tst_PlanovaCoreProjects::deleteUnknownProjectMessageIsFriendly()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    PlanovaCore core(dir.path().toStdString());
+
+    try {
+        core.deleteProject("bogus");
+        QFAIL("deleteProject should throw for an unknown id");
+    } catch (const std::invalid_argument& error) {
+        QCOMPARE(QString::fromStdString(error.what()), QString("This project no longer exists."));
+    }
+}
+
+// Events written while no project was open land in <ws>/.closed. Deleting the open project must not let them
+// reappear.
+void tst_PlanovaCoreProjects::deleteClearsEventsWrittenWhileClosed()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const std::filesystem::path ws = dir.path().toStdString();
+    PlanovaCore core(ws);
+    const Id a = makeProject(core, "A");
+    core.openProject(a);
+    core.members().add("Ana", "Backend Developer", false);
+
+    // Copy Ana's event file into .closed, as if it had been written while no project was open.
+    const std::filesystem::path closed = ws / ".closed";
+    std::filesystem::create_directories(closed);
+    for (const auto& entry : std::filesystem::directory_iterator(ws / a / "events"))
+        std::filesystem::copy_file(entry.path(), closed / entry.path().filename());
+
+    QVERIFY(!core.deleteProject(a).has_value());
+    QVERIFY(core.memberQuery().all().empty());
+    QVERIFY(!std::filesystem::exists(closed));
+}
+
+// Makes the workspace folder a plain file, so appending the ProjectDeleted event fails.
+void tst_PlanovaCoreProjects::deleteFailureKeepsProjectOpen()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const std::filesystem::path ws = std::filesystem::path(dir.path().toStdString()) / "ws";
+    PlanovaCore core(ws);
+    const Id a = makeProject(core, "A");
+    core.openProject(a);
+    core.members().add("Ana", "Backend Developer", false);
+
+    std::filesystem::remove_all(ws);
+    {
+        QFile blocker(QString::fromStdString(ws.string()));
+        QVERIFY(blocker.open(QIODevice::WriteOnly));
+    }
+
+    QVERIFY_THROWS_EXCEPTION(std::exception, core.deleteProject(a));
+    QCOMPARE(core.currentProject().value_or(Id()), a);
+    QVERIFY(core.projects().exists(a));
 }
 
 // A file held open blocks removal of its folder on Windows.

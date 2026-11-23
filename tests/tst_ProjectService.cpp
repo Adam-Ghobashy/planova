@@ -1,6 +1,7 @@
 #include <QtTest>
 #include <QTemporaryDir>
 #include <stdexcept>
+#include "planova/common/EventTypes.h"
 #include "planova/project/ProjectService.h"
 #include "planova/store/FileEventStore.h"
 
@@ -32,13 +33,16 @@ private slots:
     void createRejectsBlankName();
     void createRejectsUnknownModel();
     void createTrimsName();
+    void createTrimsTeam();
     void updateReplacesFields();
     void updateRejectsUnknownId();
     void updateRejectsBlankName();
     void updateRejectsUnknownModel();
     void updateWithoutChangesAppendsNothing();
+    void realUpdateAppendsExactlyOneEvent();
     void removeDropsProject();
     void removeRejectsUnknownId();
+    void removeIsAuthoredByProjectTeam();
     void reopenKeepsEditAndDelete();
 };
 
@@ -122,6 +126,22 @@ void tst_ProjectService::createTrimsName()
     QCOMPARE(projects[0].name, std::string("App"));
 }
 
+void tst_ProjectService::createTrimsTeam()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FileEventStore store(std::filesystem::path(dir.path().toStdString()));
+    EventLog log(store);
+    FixedClock clock;
+    ProjectService service(log, clock);
+
+    service.create("A", "  Team  ", "Agile", "");
+
+    const auto projects = service.list();
+    QCOMPARE(projects.size(), size_t(1));
+    QCOMPARE(projects[0].team, std::string("Team"));
+}
+
 void tst_ProjectService::updateReplacesFields()
 {
     QTemporaryDir dir;
@@ -203,6 +223,22 @@ void tst_ProjectService::updateWithoutChangesAppendsNothing()
     QCOMPARE(store.readAll().size(), before);
 }
 
+void tst_ProjectService::realUpdateAppendsExactlyOneEvent()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FileEventStore store(std::filesystem::path(dir.path().toStdString()));
+    EventLog log(store);
+    CountingClock clock;
+    ProjectService service(log, clock);
+    const Id id = service.create("Planova", "Team Alpha", "Agile", "idea");
+    const size_t before = store.readAll().size();
+
+    service.update(id, "Orbit", "Team Alpha", "Agile");
+
+    QCOMPARE(store.readAll().size(), before + 1);
+}
+
 void tst_ProjectService::removeDropsProject()
 {
     QTemporaryDir dir;
@@ -236,6 +272,28 @@ void tst_ProjectService::removeRejectsUnknownId()
 
     QVERIFY_THROWS_EXCEPTION(std::invalid_argument, service.remove("missing"));
     QCOMPARE(store.readAll().size(), before);
+}
+
+void tst_ProjectService::removeIsAuthoredByProjectTeam()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    FileEventStore store(std::filesystem::path(dir.path().toStdString()));
+    EventLog log(store);
+    CountingClock clock;
+    ProjectService service(log, clock);
+    const Id id = service.create("Planova", "Team Alpha", "Agile", "idea");
+
+    service.remove(id);
+
+    bool found = false;
+    for (const Event& event : store.readAll()) {
+        if (event.type != ProjectDeleted)
+            continue;
+        found = true;
+        QCOMPARE(event.author, std::string("Team Alpha"));
+    }
+    QVERIFY(found);
 }
 
 void tst_ProjectService::reopenKeepsEditAndDelete()
