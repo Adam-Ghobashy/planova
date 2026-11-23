@@ -1,14 +1,15 @@
 #include "team/TeamSkillsPage.h"
-#include "theme/ThemeManager.h"
-#include "theme/Tokens.h"
-#include <QFile>
+#include "planova/common/EventTypes.h"
+#include <QApplication>
 #include <QFont>
 #include <QGridLayout>
 #include <QHBoxLayout>
-#include <QMessageBox>
-#include <QPalette>
+#include <QProgressBar>
 #include <QScrollArea>
 #include <QSlider>
+#include <QStyle>
+#include "theme/ThemeManager.h"
+#include "widgets/ModalDialog.h"
 #include <exception>
 #include <numeric>
 
@@ -27,15 +28,10 @@ constexpr SkillMeta kAllSkills[] = {
     {SkillCategory::Backend, "Backend"},
     {SkillCategory::Frontend, "Frontend"},
     {SkillCategory::Storage, "Storage"},
-    {SkillCategory::UiUx, "UI / UX"},
+    {SkillCategory::UiUx, "UI/UX"},
     {SkillCategory::Integration, "Integration"},
     {SkillCategory::Testing, "Testing"},
     {SkillCategory::Documentation, "Documentation"}
-};
-
-constexpr Token kMemberTokens[] = {
-    Token::Member1, Token::Member2, Token::Member3,
-    Token::Member4, Token::Member5, Token::Member6
 };
 
 const QStringList kKnownRoles = {
@@ -51,6 +47,16 @@ const QStringList kKnownRoles = {
     "Other..."
 };
 
+// Table columns. Profile, Understanding and Assignment have fixed widths; Technical Skills takes the rest.
+// Three skill cells (five 24 px steps each) fit the skills column down to the default 1280 px window.
+constexpr int kProfileCol = 0, kSkillsCol = 1, kUnderstandingCol = 2, kAssignmentCol = 3;
+constexpr int kProfileWidth = 205;
+constexpr int kMinUnderstandingWidth = 140;
+constexpr int kHeaderTitleSlack = 4;   // a few pixels of air after the header title
+constexpr int kUnderstandingSaveDelayMs = 500;   // pause after the last key press before the value is saved
+constexpr int kAssignmentWidth = 160;
+constexpr int kColumnGap = 10;
+
 QString initialsFor(const string& name) {
     QString qname = QString::fromStdString(name).trimmed();
     if (qname.isEmpty()) return "?";
@@ -64,73 +70,19 @@ QString initialsFor(const string& name) {
 } // namespace
 
 TeamSkillsPage::TeamSkillsPage(MemberService& service,
-                               IMemberQuery& members,
+                               const MemberProjection& members,
+                               planova::ConflictService& conflicts,
+                               const planova::ConflictProjection& conflictView,
+                               ITaskQuery& tasks,
                                CoreBridge& bridge,
                                QWidget* parent)
-    : QWidget(parent), service_(service), members_(members), bridge_(bridge) {
-    setObjectName("ChaosSlicerPage");
+    : QWidget(parent), service_(service), members_(members), conflicts_(conflicts),
+      conflictView_(conflictView), tasks_(tasks), bridge_(bridge) {
+    setObjectName("TeamSkillsPage");
 
-    auto& tm = ThemeManager::instance();
-    QPalette pal = palette();
-    pal.setColor(QPalette::Window, tm.color(Token::Background));
-    pal.setColor(QPalette::WindowText, tm.color(Token::TextPrimary));
-    pal.setColor(QPalette::Base, tm.color(Token::Surface));
-    pal.setColor(QPalette::AlternateBase, tm.color(Token::SurfaceAlt));
-    pal.setColor(QPalette::Text, tm.color(Token::TextPrimary));
-    setPalette(pal);
     setAutoFillBackground(true);
 
-    QFile qss(":/themes/light/slicer.qss");
-    if (qss.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QString style = QString::fromUtf8(qss.readAll());
-        style += R"(
-            QLineEdit#lightInput {
-                background-color: #FAF8F5;
-                color: #1A1A1F;
-                border: 1px solid #E7E2D6;
-                border-radius: 8px;
-                padding: 7px 12px;
-                font-size: 13px;
-            }
-            QLineEdit#lightInput:focus {
-                border: 1px solid #5438DC;
-                background-color: #FFFFFF;
-            }
-            QCheckBox#leadCheck {
-                color: #1A1A1F;
-                font-size: 13px;
-                font-weight: 500;
-                spacing: 6px;
-                background: transparent;
-            }
-            QComboBox#roleCombo {
-                background-color: #FAF8F5;
-                color: #1A1A1F;
-                border: 1px solid #E7E2D6;
-                border-radius: 8px;
-                padding: 6px 12px;
-                font-size: 13px;
-                min-width: 160px;
-            }
-            QComboBox#roleCombo:hover, QComboBox#roleCombo:focus {
-                border: 1px solid #5438DC;
-                background-color: #FFFFFF;
-            }
-            QComboBox#roleCombo::drop-down {
-                border: none;
-                width: 24px;
-            }
-            QComboBox#roleCombo QAbstractItemView {
-                background-color: #FFFFFF;
-                color: #1A1A1F;
-                border: 1px solid #E7E2D6;
-                selection-background-color: #F3F0FF;
-                selection-color: #5438DC;
-                padding: 4px;
-            }
-        )";
-        setStyleSheet(style);
-    }
+    // Styles come from team.qss, loaded once by ThemeManager.
 
     auto* rootLayout = new QVBoxLayout(this);
     rootLayout->setContentsMargins(0, 0, 0, 0);
@@ -139,6 +91,7 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     auto* scrollArea = new QScrollArea(this);
     scrollArea->setObjectName("slicerScrollArea");
     scrollArea->setWidgetResizable(true);
+    scrollArea->setFocusPolicy(Qt::NoFocus);   // the controls inside take focus and the area follows them; the area itself would be a Tab stop with no ring
     scrollArea->setFrameShape(QFrame::NoFrame);
 
     auto* contentWidget = new QWidget(scrollArea);
@@ -147,7 +100,6 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     mainLayout->setContentsMargins(24, 20, 24, 24);
     mainLayout->setSpacing(16);
 
-    // --- Header Row ---
     auto* headerLayout = new QHBoxLayout();
     headerLayout->setContentsMargins(0, 0, 0, 4);
 
@@ -155,10 +107,7 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     titleLayout->setSpacing(4);
     auto* pageTitle = new QLabel("Team & Skills Directory", contentWidget);
     pageTitle->setObjectName("pageTitle");
-    QFont titleFont = pageTitle->font();
-    titleFont.setPointSize(16);
-    titleFont.setBold(true);
-    pageTitle->setFont(titleFont);
+    pageTitle->setFont(ThemeManager::instance().textFont(TextStyle::PageTitle));
 
     auto* pageSubtitle = new QLabel(
         "Manage team members, project understanding levels, 7-domain skill matrices, and velocity profiles.",
@@ -179,14 +128,14 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     statusTimer_->setInterval(4000);
     connect(statusTimer_, &QTimer::timeout, statusLabel_, &QLabel::hide);
 
-    auto* seedBtn = new QPushButton("Seed Demo Team", contentWidget);
-    seedBtn->setObjectName("secondaryButton");
-    connect(seedBtn, &QPushButton::clicked, this, &TeamSkillsPage::onSeedDemoTeam);
-    headerLayout->addWidget(seedBtn);
+    // Keyboard and wheel steps on an Understanding slider are saved once the user pauses.
+    understandingTimer_ = new QTimer(this);
+    understandingTimer_->setSingleShot(true);
+    understandingTimer_->setInterval(kUnderstandingSaveDelayMs);
+    connect(understandingTimer_, &QTimer::timeout, this, &TeamSkillsPage::commitUnderstanding);
 
     mainLayout->addLayout(headerLayout);
 
-    // --- Summary Telemetry Row ---
     auto* summaryCard = new QFrame(contentWidget);
     summaryCard->setObjectName("card");
     auto* summaryLayout = new QHBoxLayout(summaryCard);
@@ -200,9 +149,9 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
         lbl->setObjectName("cardSubtitle");
         valueOut = new QLabel("0", summaryCard);
         valueOut->setObjectName("cardTitle");
-        QFont vf = valueOut->font();
-        vf.setPointSize(15);
-        vf.setBold(true);
+        // Big numbers keep their size (20 px) in the Display family.
+        QFont vf = ThemeManager::instance().font(FontRole::Display, 20);
+        vf.setWeight(QFont::DemiBold);
         valueOut->setFont(vf);
         col->addWidget(lbl);
         col->addWidget(valueOut);
@@ -215,8 +164,8 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     makeMetric("Avg Velocity (EMA)", avgVelocityValue_);
 
     mainLayout->addWidget(summaryCard);
+    mainLayout->addWidget(buildSettingsCard(contentWidget));
 
-    // --- Add Member Card ---
     auto* addCard = new QFrame(contentWidget);
     addCard->setObjectName("card");
     auto* addCardLayout = new QVBoxLayout(addCard);
@@ -226,7 +175,7 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     auto* addTitle = new QLabel("Add Team Member", addCard);
     addTitle->setObjectName("cardTitle");
     auto* addSubtitle = new QLabel(
-        "Register a new member into the event log to include them in Chaos Slicer and Velocity tracking.",
+        "Add a new member to the team.",
         addCard);
     addSubtitle->setObjectName("cardSubtitle");
     addCardLayout->addWidget(addTitle);
@@ -275,13 +224,19 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
 
     mainLayout->addWidget(addCard);
 
-    // --- Member Profile Cards List ---
+    // One header row for the whole table (hidden while there are no members).
+    tableHeader_ = buildTableHeader(contentWidget);
+    auto* tableLayout = new QVBoxLayout();
+    tableLayout->setSpacing(10);
+    tableLayout->addWidget(tableHeader_);
+
     cardsLayout_ = new QVBoxLayout();
     cardsLayout_->setSpacing(14);
-    mainLayout->addLayout(cardsLayout_);
+    tableLayout->addLayout(cardsLayout_);
+    mainLayout->addLayout(tableLayout);
 
     emptyLabel_ = new QLabel(
-        "No team members registered yet. Add a member above or click 'Seed Demo Team' to populate.",
+        "No team members yet. Add the first one with the '+ Add Member' button above.",
         contentWidget);
     emptyLabel_->setObjectName("emptyLabel");
     emptyLabel_->setAlignment(Qt::AlignCenter);
@@ -291,7 +246,10 @@ TeamSkillsPage::TeamSkillsPage(MemberService& service,
     scrollArea->setWidget(contentWidget);
     rootLayout->addWidget(scrollArea);
 
-    connect(&bridge_, &CoreBridge::changed, this, [this](const QString&) {
+    connect(&bridge_, &CoreBridge::changed, this, [this](const QString& eventType) {
+        // A waiting value belongs to the project that was open when it was typed. refresh() would save it into
+        // the newly opened project, so it is dropped first.
+        if (eventType == QString::fromUtf8(ProjectOpened)) discardUnderstanding();
         if (!updating_) refresh();
     });
 
@@ -333,140 +291,262 @@ void TeamSkillsPage::onAddMember() {
     showStatus(QString("Added %1 to the team").arg(QString::fromStdString(name)));
 }
 
-void TeamSkillsPage::onSeedDemoTeam() {
-    updating_ = true;
-    try {
-        struct SeedMember {
-            const char* name;
-            const char* role;
-            bool lead;
-            int understanding;
-            int ratings[7];
-        };
-        constexpr SeedMember kSeeds[] = {
-            {"Adam",   "Team & Git Architect", true,  92, {5, 4, 4, 4, 5, 5, 4}},
-            {"Zeyad",  "Core & Systems Lead",  false, 90, {5, 3, 5, 3, 4, 4, 4}},
-            {"Hazem",  "Slicer & Algorithms",  false, 85, {4, 4, 3, 4, 4, 5, 3}},
-            {"Mai",    "UI / UX & Board Eng",  false, 88, {3, 5, 3, 5, 4, 4, 5}},
-            {"Basma",  "Analytics & QA Eng",   false, 86, {4, 4, 4, 4, 3, 5, 5}}
-        };
-
-        const auto existing = members_.all();
-        int addedCount = 0;
-        for (const auto& s : kSeeds) {
-            bool found = false;
-            for (const auto& m : existing) {
-                if (m.name == s.name) {
-                    found = true;
-                    break;
-                }
-            }
-            if (found) continue;
-
-            Id id = service_.add(s.name, s.role, s.lead);
-            service_.update(id, s.role, s.understanding);
-            for (int i = 0; i < 7; ++i) {
-                service_.rate(id, kAllSkills[i].category, s.ratings[i]);
-            }
-            ++addedCount;
+QPushButton* TeamSkillsPage::makeSwitch(const QString& objectName, const QString& title,
+                                        const QString& settingKey, QWidget* parent) {
+    // A checkable push button reports its checked state to assistive tech; "On"/"Off" in the text
+    // means the state is not shown by colour alone.
+    auto* button = new QPushButton(parent);
+    button->setObjectName(objectName);
+    button->setCheckable(true);
+    button->setCursor(Qt::PointingHandCursor);
+    button->setMinimumHeight(32);
+    button->setProperty("settingKey", settingKey);
+    button->setProperty("switchTitle", title);
+    showSwitch(button, members_.getSetting(settingKey.toStdString(), false));
+    connect(button, &QPushButton::toggled, this, [this, button, settingKey](bool on) {
+        showSwitch(button, on);
+        try {
+            service_.setSetting(settingKey.toStdString(), on);
+        } catch (const exception& e) {
+            showSwitch(button, !on);   // the setting was not saved, so the switch goes back
+            showStatus(QString::fromUtf8(e.what()));
         }
-        updating_ = false;
-        refresh();
-        showStatus(addedCount > 0
-                       ? QString("Seeded %1 team members").arg(addedCount)
-                       : QString("Demo team already present"));
-    } catch (const exception& e) {
-        updating_ = false;
-        showStatus(QString("Seed failed: %1").arg(QString::fromUtf8(e.what())));
+    });
+    switches_.push_back(button);
+    return button;
+}
+
+void TeamSkillsPage::showSwitch(QPushButton* button, bool on) {
+    // No toggled signal: showing a setting must not save it again.
+    const QSignalBlocker blocker(button);
+    button->setChecked(on);
+    button->setText(QString("%1: %2").arg(button->property("switchTitle").toString(), on ? "On" : "Off"));
+}
+
+void TeamSkillsPage::syncSwitches() {
+    // The settings belong to the open project, so the switches are read again after every project change.
+    for (QPushButton* button : switches_) {
+        const string key = button->property("settingKey").toString().toStdString();
+        showSwitch(button, members_.getSetting(key, false));
     }
 }
 
-QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex) {
-    auto* card = new QFrame(this);
+QFrame* TeamSkillsPage::buildSettingsCard(QWidget* parent) {
+    auto* card = new QFrame(parent);
     card->setObjectName("card");
-    auto* cardLayout = new QVBoxLayout(card);
-    cardLayout->setContentsMargins(20, 16, 20, 16);
-    cardLayout->setSpacing(14);
+    auto* layout = new QHBoxLayout(card);
+    layout->setContentsMargins(20, 14, 20, 14);
+    layout->setSpacing(24);
 
-    // --- Top Row: Avatar + Name/Role + Badges + Understanding Slider ---
-    auto* topRow = new QHBoxLayout();
-    topRow->setSpacing(12);
+    auto addSwitch = [&](const QString& objectName, const QString& title, const QString& hint,
+                         const QString& key) {
+        auto* col = new QVBoxLayout();
+        col->setSpacing(4);
+        auto* button = makeSwitch(objectName, title, key, card);
+        button->setAccessibleDescription(hint);
+        auto* hintLabel = new QLabel(hint, card);
+        hintLabel->setObjectName("cardSubtitle");
+        col->addWidget(button, 0, Qt::AlignLeft);
+        col->addWidget(hintLabel);
+        layout->addLayout(col);
+    };
+    addSwitch("autoMatchSwitch", "Auto-Match Priority", "Match parameters to qualify capacity",
+              "autoMatch");
+    addSwitch("smartAssignSwitch", "Smart Assign", "Match task assignments and capacity triggers",
+              "smartAssign");
+    layout->addStretch();
+    return card;
+}
 
-    auto& tm = ThemeManager::instance();
-    const QColor avatarColor = tm.color(kMemberTokens[colorIndex % 6]);
+void TeamSkillsPage::applyColumnWidths(QGridLayout* grid) const {
+    // The same widths are used by the header row and by every member row, so the columns line up.
+    // Technical Skills takes whatever is left.
+    grid->setColumnMinimumWidth(kProfileCol, kProfileWidth);
+    grid->setColumnMinimumWidth(kUnderstandingCol, understandingWidth_);
+    grid->setColumnMinimumWidth(kAssignmentCol, kAssignmentWidth);
+    grid->setColumnStretch(kSkillsCol, 1);
+}
 
-    auto* avatar = new QLabel(initialsFor(member.name), card);
-    avatar->setFixedSize(40, 40);
-    avatar->setAlignment(Qt::AlignCenter);
-    avatar->setStyleSheet(QString(
-                              "background-color: %1; color: #FFFFFF; border-radius: 20px; font-size: 14px; font-weight: 700;"
-                              ).arg(avatarColor.name()));
-    topRow->addWidget(avatar);
+QWidget* TeamSkillsPage::buildTableHeader(QWidget* parent) {
+    auto* header = new QWidget(parent);
+    header->setObjectName("teamTableHeader");
+    auto* grid = new QGridLayout(header);
+    // 1 px card border + 20 px card padding, so the titles start where the row content starts.
+    grid->setContentsMargins(21, 0, 21, 0);
+    grid->setHorizontalSpacing(kColumnGap);
 
-    auto* infoCol = new QVBoxLayout();
-    infoCol->setSpacing(2);
-
-    auto* nameRow = new QHBoxLayout();
-    nameRow->setSpacing(8);
-    auto* nameLbl = new QLabel(QString::fromStdString(member.name), card);
-    nameLbl->setObjectName("cardTitle");
-    nameRow->addWidget(nameLbl);
-
-    if (member.isLead) {
-        auto* leadBadge = new QLabel("TEAM LEAD", card);
-        leadBadge->setStyleSheet(
-            "background-color: #F3F0FF; color: #5438DC; border-radius: 8px; "
-            "padding: 2px 8px; font-size: 11px; font-weight: 700;");
-        nameRow->addWidget(leadBadge);
+    const char* titles[] = {"Role / Teammate", "Technical Skills", "Understanding & Velocity",
+                            "Assignment / Clash"};
+    QLabel* labels[4];
+    for (int col = 0; col < 4; ++col) {
+        labels[col] = new QLabel(titles[col], header);
+        labels[col]->setObjectName("tableHeaderCell");
     }
 
-    auto* velBadge = new QLabel(
-        QString("Velocity: %1").arg(member.velocity, 0, 'f', 2), card);
-    velBadge->setStyleSheet(
-        "background-color: #FAF8F5; color: #1A1A1F; border: 1px solid #E7E2D6; "
-        "border-radius: 8px; padding: 2px 8px; font-size: 11px; font-weight: 600;");
-    nameRow->addWidget(velBadge);
-    nameRow->addStretch();
+    // The Understanding column is as wide as its title needs (never below the default). Polishing first gives the
+    // label the font from team.qss, so the measured text is the text that is drawn.
+    QLabel* understandingTitle = labels[kUnderstandingCol];
+    understandingTitle->ensurePolished();
+    const int titleWidth = understandingTitle->fontMetrics().horizontalAdvance(understandingTitle->text());
+    understandingWidth_ = qMax(kMinUnderstandingWidth, titleWidth + kHeaderTitleSlack);
+    applyColumnWidths(grid);
 
-    auto* roleRow = new QHBoxLayout();
-    roleRow->setSpacing(8);
-    roleRow->setContentsMargins(0, 0, 0, 0);
+    const int fixedWidths[] = {kProfileWidth, 0, understandingWidth_, kAssignmentWidth};
+    for (int col = 0; col < 4; ++col) {
+        if (fixedWidths[col] > 0) labels[col]->setFixedWidth(fixedWidths[col]);
+        grid->addWidget(labels[col], 0, col, Qt::AlignBottom);
+    }
+    return header;
+}
 
-    auto* roleLbl = new QLabel(QString::fromStdString(member.role), card);
+QWidget* TeamSkillsPage::buildAssignmentColumn(const MemberDto& member, QWidget* parent) {
+    auto* column = new QWidget(parent);
+    column->setObjectName("assignmentColumn");
+    column->setFixedWidth(kAssignmentWidth);
+    auto* layout = new QVBoxLayout(column);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(6);
+
+    QStringList titles;
+    for (const TaskDto& task : tasks_.all()) {
+        if (task.assignee && *task.assignee == member.id && task.status != TaskStatus::Done)
+            titles << QString::fromStdString(task.title);
+    }
+    auto* current = new QLabel(titles.isEmpty() ? QString::fromUtf8("—") : titles.join("\n"), column);
+    current->setObjectName("assignmentText");
+    current->setWordWrap(true);
+    layout->addWidget(current);
+
+    bool badgeShown = false;
+    for (const ConflictView& conflict : conflictView_.openConflicts()) {
+        if (conflict.memberId != member.id) continue;
+        if (!badgeShown) {
+            auto* badge = new QLabel("Decline and Clash", column);
+            badge->setObjectName("clashBadge");
+            layout->addWidget(badge, 0, Qt::AlignLeft);
+            badgeShown = true;
+        }
+        const auto task = tasks_.byId(conflict.taskId);
+        const QString taskTitle = task ? QString::fromStdString(task->title) : QString("a task");
+        auto* text = new QLabel(QString::fromUtf8("Task Conflict Detected: %1 — %2")
+                                    .arg(taskTitle, QString::fromStdString(conflict.reason)), column);
+        text->setObjectName("conflictText");
+        text->setWordWrap(true);
+        layout->addWidget(text);
+
+        // "&&" shows one ampersand; a single one would become a keyboard mnemonic.
+        auto* resolve = new QPushButton("Agree && Resolve", column);
+        resolve->setObjectName("resolveConflict");
+        resolve->setCursor(Qt::PointingHandCursor);
+        resolve->setMinimumHeight(28);
+        connect(resolve, &QPushButton::clicked, this,
+                [this, conflictId = conflict.id, memberId = member.id]() { resolveConflict(conflictId, memberId); });
+        layout->addWidget(resolve, 0, Qt::AlignLeft);
+    }
+    return column;
+}
+
+void TeamSkillsPage::resolveConflict(const Id& conflictId, const Id& memberId) {
+    try {
+        conflicts_.resolve(conflictId, memberId);
+    } catch (const exception& e) {
+        ModalDialog::info(this, "Could not resolve", QString::fromUtf8(e.what()));
+        return;
+    }
+    showStatus("Conflict resolved");
+}
+
+QWidget* TeamSkillsPage::buildProfileColumn(const MemberDto& member, int colorIndex, QWidget* parent) {
+    auto* column = new QWidget(parent);
+    column->setObjectName("profileColumn");
+    column->setFixedWidth(kProfileWidth);
+    auto* layout = new QVBoxLayout(column);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(8);
+    auto* top = new QHBoxLayout();   // avatar and identity; the buttons below get the full column width
+    top->setSpacing(10);
+
+    auto* avatar = new QLabel(initialsFor(member.name), column);
+    avatar->setFixedSize(40, 40);
+    avatar->setAlignment(Qt::AlignCenter);
+    avatar->setObjectName("memberAvatar");
+    // team.qss maps memberColor 1..6 to the Member1..Member6 colours.
+    avatar->setProperty("memberColor", colorIndex % 6 + 1);
+    top->addWidget(avatar, 0, Qt::AlignTop);
+
+    auto* info = new QVBoxLayout();
+    info->setSpacing(4);
+
+    auto* nameLbl = new QLabel(QString::fromStdString(member.name), column);
+    nameLbl->setObjectName("cardTitle");
+    nameLbl->setWordWrap(true);
+    info->addWidget(nameLbl);
+    if (member.isLead) {
+        auto* leadBadge = new QLabel(QString::fromUtf8("Lead 👑"), column);
+        leadBadge->setObjectName("leadBadge");
+        info->addWidget(leadBadge, 0, Qt::AlignLeft);
+    }
+
+    auto* roleLbl = new QLabel(QString::fromStdString(member.role), column);
     roleLbl->setObjectName("cardSubtitle");
-    roleRow->addWidget(roleLbl);
+    roleLbl->setWordWrap(true);
+    info->addWidget(roleLbl);
 
-    auto* editRoleBtn = new QPushButton("✎ Edit Role", card);
+    // Edit Role and Remove, hidden while the role is being edited.
+    auto* actions = new QWidget(column);
+    actions->setObjectName("roleActions");
+    auto* actionsLayout = new QHBoxLayout(actions);
+    actionsLayout->setContentsMargins(0, 0, 0, 0);
+    actionsLayout->setSpacing(6);
+    auto* editRoleBtn = new QPushButton("✎ Edit Role", actions);
     editRoleBtn->setCursor(Qt::PointingHandCursor);
     editRoleBtn->setToolTip("Change this member's role");
-    editRoleBtn->setStyleSheet(
-        "QPushButton { background-color: #FAF8F5; color: #5438DC; border: 1px solid #E7E2D6; "
-        "border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }"
-        "QPushButton:hover { background-color: #F3F0FF; border-color: #5438DC; }");
-    roleRow->addWidget(editRoleBtn);
-
-    auto* removeBtn = new QPushButton("✕ Remove", card);
+    editRoleBtn->setObjectName("editRoleButton");
+    editRoleBtn->setProperty("focusKey", QString::fromStdString(member.id) + ":editRole");
+    editRoleBtn->setMinimumHeight(24);   // pointer target of at least 24 px
+    auto* removeBtn = new QPushButton("✕ Remove", actions);
     removeBtn->setCursor(Qt::PointingHandCursor);
     removeBtn->setToolTip("Remove member from the team");
-    removeBtn->setStyleSheet(
-        "QPushButton { background-color: #FAF8F5; color: #DC2626; border: 1px solid #FEE2E2; "
-        "border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }"
-        "QPushButton:hover { background-color: #FEE2E2; color: #991B1B; border-color: #EF4444; }");
-    roleRow->addWidget(removeBtn);
+    removeBtn->setObjectName("removeMemberButton");
+    removeBtn->setMinimumHeight(24);
+    actionsLayout->addWidget(editRoleBtn);
+    actionsLayout->addWidget(removeBtn);
+    actionsLayout->addStretch();
+    layout->addWidget(actions);
 
-    // Inline edit widgets: Dropdown of known roles + custom text input
-    auto* editRoleCombo = new QComboBox(card);
+    // Inline role editor: a dropdown of known roles, a custom text input and Save / Cancel.
+    auto* editBox = new QWidget(column);
+    editBox->setObjectName("roleEditBox");
+    auto* editLayout = new QVBoxLayout(editBox);
+    editLayout->setContentsMargins(0, 0, 0, 0);
+    editLayout->setSpacing(6);
+    auto* editRoleCombo = new QComboBox(editBox);
     editRoleCombo->setObjectName("roleCombo");
+    editRoleCombo->setAccessibleName("Role");
     editRoleCombo->addItems(kKnownRoles);
-    editRoleCombo->hide();
-    roleRow->addWidget(editRoleCombo);
-
-    auto* editCustomRoleInput = new QLineEdit(card);
+    editLayout->addWidget(editRoleCombo);
+    auto* editCustomRoleInput = new QLineEdit(editBox);
     editCustomRoleInput->setObjectName("lightInput");
+    editCustomRoleInput->setAccessibleName("Custom role");
     editCustomRoleInput->setPlaceholderText("Write custom role...");
-    editCustomRoleInput->setFixedWidth(180);
     editCustomRoleInput->hide();
-    roleRow->addWidget(editCustomRoleInput);
+    editLayout->addWidget(editCustomRoleInput);
+    auto* editButtons = new QHBoxLayout();
+    editButtons->setSpacing(6);
+    auto* saveRoleBtn = new QPushButton("Save", editBox);
+    saveRoleBtn->setCursor(Qt::PointingHandCursor);
+    saveRoleBtn->setObjectName("saveRoleButton");
+    saveRoleBtn->setMinimumHeight(24);
+    auto* cancelRoleBtn = new QPushButton("Cancel", editBox);
+    cancelRoleBtn->setCursor(Qt::PointingHandCursor);
+    cancelRoleBtn->setObjectName("cancelRoleButton");
+    cancelRoleBtn->setMinimumHeight(24);
+    editButtons->addWidget(saveRoleBtn);
+    editButtons->addWidget(cancelRoleBtn);
+    editButtons->addStretch();
+    editLayout->addLayout(editButtons);
+    editBox->hide();
+    layout->addWidget(editBox);
 
     connect(editRoleCombo, &QComboBox::currentTextChanged, [editCustomRoleInput](const QString& text) {
         if (text == "Other..." || text == "Other") {
@@ -478,30 +558,9 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
         }
     });
 
-    auto* saveRoleBtn = new QPushButton("Save", card);
-    saveRoleBtn->setCursor(Qt::PointingHandCursor);
-    saveRoleBtn->setStyleSheet(
-        "QPushButton { background-color: #5438DC; color: #FFFFFF; border: none; "
-        "border-radius: 6px; padding: 2px 10px; font-size: 11px; font-weight: 600; }"
-        "QPushButton:hover { background-color: #4526CB; }");
-    saveRoleBtn->hide();
-    roleRow->addWidget(saveRoleBtn);
-
-    auto* cancelRoleBtn = new QPushButton("Cancel", card);
-    cancelRoleBtn->setCursor(Qt::PointingHandCursor);
-    cancelRoleBtn->setStyleSheet(
-        "QPushButton { background-color: #FAF8F5; color: #6B6B73; border: 1px solid #E7E2D6; "
-        "border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }"
-        "QPushButton:hover { background-color: #F5F2EA; }");
-    cancelRoleBtn->hide();
-    roleRow->addWidget(cancelRoleBtn);
-
-    roleRow->addStretch();
-
     connect(editRoleBtn, &QPushButton::clicked, this, [=]() {
         roleLbl->hide();
-        editRoleBtn->hide();
-        removeBtn->hide();
+        actions->hide();
 
         const QString currentRole = QString::fromStdString(member.role);
         int idx = editRoleCombo->findText(currentRole, Qt::MatchFixedString);
@@ -515,9 +574,7 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
             editCustomRoleInput->show();
         }
 
-        editRoleCombo->show();
-        saveRoleBtn->show();
-        cancelRoleBtn->show();
+        editBox->show();
         if (editCustomRoleInput->isVisible()) {
             editCustomRoleInput->setFocus();
             editCustomRoleInput->selectAll();
@@ -527,16 +584,15 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
     });
 
     connect(cancelRoleBtn, &QPushButton::clicked, this, [=]() {
-        editRoleCombo->hide();
-        editCustomRoleInput->hide();
-        saveRoleBtn->hide();
-        cancelRoleBtn->hide();
+        editBox->hide();
         roleLbl->show();
-        editRoleBtn->show();
-        removeBtn->show();
+        actions->show();
+        editRoleBtn->setFocus();
+        // An understanding commit was put off while a role editor was open. Another open editor still holds it off.
+        if (pendingRefresh_ && !roleEditorOpen()) refresh();
     });
 
-    auto doSaveRole = [this, id = member.id, und = member.understanding, name = member.name, editRoleCombo, editCustomRoleInput]() {
+    auto doSaveRole = [this, id = member.id, name = member.name, editRoleCombo, editCustomRoleInput]() {
         QString newRole = editRoleCombo->currentText();
         if (newRole == "Other..." || newRole == "Other") {
             newRole = editCustomRoleInput->text().trimmed();
@@ -544,6 +600,12 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
         if (newRole.isEmpty()) {
             newRole = "Developer";
         }
+        // Read the stored value, not the one from when the card was built: while this editor was open an
+        // understanding change may have been saved without a rebuild.
+        flushUnderstanding();   // a waiting slider value must not be saved later with the old role
+        int und = 0;
+        for (const MemberDto& m : members_.all())
+            if (m.id == id) und = m.understanding;
         updating_ = true;
         try {
             service_.update(id, newRole.toStdString(), und);
@@ -563,15 +625,14 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
     connect(editCustomRoleInput, &QLineEdit::returnPressed, this, doSaveRole);
 
     connect(removeBtn, &QPushButton::clicked, this, [this, id = member.id, name = QString::fromStdString(member.name)]() {
-        auto reply = QMessageBox::question(
+        const bool confirmed = ModalDialog::confirm(
             this,
             "Remove Team Member",
-            QString("Are you sure you want to remove %1 from the team?\n\nThis action will record a MemberRemoved event in the event log.")
+            QString("This removes %1 from the team. Their open tasks go back to unassigned.")
                 .arg(name),
-            QMessageBox::Yes | QMessageBox::No,
-            QMessageBox::No);
+            "Remove", ModalDialog::Role::Danger);
 
-        if (reply != QMessageBox::Yes) {
+        if (!confirmed) {
             return;
         }
 
@@ -588,61 +649,21 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
         showStatus(QString("Removed %1 from the team").arg(name));
     });
 
-    infoCol->addLayout(nameRow);
-    infoCol->addLayout(roleRow);
-    topRow->addLayout(infoCol, 1);
+    top->addLayout(info, 1);
+    layout->insertLayout(0, top);
+    return column;
+}
 
-    // Understanding Slider (0 - 100%)
-    auto* undCol = new QVBoxLayout();
-    undCol->setSpacing(4);
-    auto* undHeader = new QHBoxLayout();
-    auto* undTitle = new QLabel("Project Understanding", card);
-    undTitle->setObjectName("cardSubtitle");
-    auto* undVal = new QLabel(QString("%1%").arg(member.understanding), card);
-    undVal->setObjectName("sliderValueLabel");
-    undHeader->addWidget(undTitle);
-    undHeader->addStretch();
-    undHeader->addWidget(undVal);
-
-    auto* undSlider = new QSlider(Qt::Horizontal, card);
-    undSlider->setRange(0, 100);
-    undSlider->setValue(member.understanding);
-    undSlider->setFixedWidth(180);
-
-    connect(undSlider, &QSlider::valueChanged, this, [undVal](int v) {
-        undVal->setText(QString("%1%").arg(v));
-    });
-    connect(undSlider, &QSlider::sliderReleased, this,
-            [this, id = member.id, role = member.role, undSlider]() {
-                updating_ = true;
-                try {
-                    service_.update(id, role, undSlider->value());
-                } catch (const exception& e) {
-                    updating_ = false;
-                    showStatus(QString::fromUtf8(e.what()));
-                    return;
-                }
-                updating_ = false;
-                refresh();
-                showStatus("Updated project understanding");
-            });
-
-    undCol->addLayout(undHeader);
-    undCol->addWidget(undSlider);
-    topRow->addLayout(undCol);
-
-    cardLayout->addLayout(topRow);
-
-    // --- Divider ---
-    auto* divider = new QFrame(card);
-    divider->setFrameShape(QFrame::HLine);
-    divider->setStyleSheet("background-color: #F5F2EA; border: none; max-height: 1px;");
-    cardLayout->addWidget(divider);
-
-    // --- 7-Domain Skill Rating Matrix ---
-    auto* skillsGrid = new QGridLayout();
-    skillsGrid->setHorizontalSpacing(18);
-    skillsGrid->setVerticalSpacing(8);
+QWidget* TeamSkillsPage::buildSkillsColumn(const MemberDto& member, QWidget* parent) {
+    auto* column = new QWidget(parent);
+    column->setObjectName("skillsColumn");
+    auto* grid = new QGridLayout(column);
+    grid->setContentsMargins(0, 0, 0, 0);
+    grid->setHorizontalSpacing(10);
+    grid->setVerticalSpacing(6);
+    grid->setColumnStretch(0, 1);
+    grid->setColumnStretch(1, 1);
+    grid->setColumnStretch(2, 1);
 
     for (int i = 0; i < 7; ++i) {
         const auto& meta = kAllSkills[i];
@@ -652,32 +673,38 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
             currentRating = it->second;
         }
 
-        const int row = i / 4;
-        const int col = i % 4;
-
-        auto* cellWidget = new QWidget(card);
-        cellWidget->setStyleSheet("background: transparent;");
-        auto* cellLayout = new QHBoxLayout(cellWidget);
+        auto* cellWidget = new QWidget(column);
+        cellWidget->setObjectName("skillCell");
+        // Label above, five 24 px steps below; three cells per row keep the column narrow enough for 1280 px.
+        auto* cellLayout = new QVBoxLayout(cellWidget);
         cellLayout->setContentsMargins(0, 0, 0, 0);
-        cellLayout->setSpacing(4);
+        cellLayout->setSpacing(2);
+        auto* stepsLayout = new QHBoxLayout();
+        stepsLayout->setSpacing(1);
 
         auto* skillLbl = new QLabel(meta.label, cellWidget);
-        skillLbl->setFixedWidth(92);
-        skillLbl->setStyleSheet("color: #6B6B73; font-size: 12px; font-weight: 500;");
+        skillLbl->setObjectName("skillLabel");
         cellLayout->addWidget(skillLbl);
+        cellLayout->addLayout(stepsLayout);
 
         for (int r = 1; r <= 5; ++r) {
             auto* rateBtn = new QPushButton(QString::number(r), cellWidget);
             rateBtn->setFixedSize(24, 24);
             rateBtn->setCursor(Qt::PointingHandCursor);
+            // The step number is the text; the name says which skill and member it belongs to.
+            rateBtn->setAccessibleName(QString("%1 rating %2 of 5 for %3")
+                                           .arg(meta.label).arg(r).arg(QString::fromStdString(member.name)));
             const bool active = (r <= currentRating);
-            rateBtn->setStyleSheet(active
-                                       ? "QPushButton { background-color: #5438DC; color: #FFFFFF; border: none; "
-                                         "border-radius: 6px; padding: 0px; font-size: 11px; font-weight: 700; }"
-                                         "QPushButton:hover { background-color: #4526CB; }"
-                                       : "QPushButton { background-color: #FAF8F5; color: #6B6B73; border: 1px solid #E7E2D6; "
-                                         "border-radius: 6px; padding: 0px; font-size: 11px; font-weight: 600; }"
-                                         "QPushButton:hover { background-color: #F3F0FF; color: #5438DC; border-color: #5438DC; }");
+            rateBtn->setObjectName("ratingButton");
+            // Member + skill + step: the five steps of one skill must not share a key.
+            rateBtn->setProperty("focusKey", QString("%1:%2:%3")
+                                                 .arg(QString::fromStdString(member.id))
+                                                 .arg(static_cast<int>(meta.category))
+                                                 .arg(r));
+            rateBtn->setProperty("active", active);
+            // Re-polish so the qss [active] selector is applied.
+            rateBtn->style()->unpolish(rateBtn);
+            rateBtn->style()->polish(rateBtn);
 
             connect(rateBtn, &QPushButton::clicked, this,
                     [this, id = member.id, cat = meta.category, r, label = QString(meta.label)]() {
@@ -693,17 +720,111 @@ QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex)
                         refresh();
                         showStatus(QString("Rated %1: %2/5").arg(label).arg(r));
                     });
-            cellLayout->addWidget(rateBtn);
+            stepsLayout->addWidget(rateBtn);
         }
-        cellLayout->addStretch();
-        skillsGrid->addWidget(cellWidget, row, col);
+        stepsLayout->addStretch();
+        grid->addWidget(cellWidget, i / 3, i % 3);
     }
+    return column;
+}
 
-    cardLayout->addLayout(skillsGrid);
+QWidget* TeamSkillsPage::buildUnderstandingColumn(const MemberDto& member, QWidget* parent) {
+    auto* column = new QWidget(parent);
+    column->setObjectName("understandingColumn");
+    column->setFixedWidth(understandingWidth_);
+    auto* layout = new QVBoxLayout(column);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(10);
+
+    // Project understanding: editable, 0 - 100 %.
+    auto* undHeader = new QHBoxLayout();
+    auto* undTitle = new QLabel("Understanding", column);
+    undTitle->setObjectName("meterLabel");
+    auto* undVal = new QLabel(QString("%1%").arg(member.understanding), column);
+    undVal->setObjectName("sliderValueLabel");
+    undHeader->addWidget(undTitle);
+    undHeader->addStretch();
+    undHeader->addWidget(undVal);
+
+    auto* undSlider = new QSlider(Qt::Horizontal, column);
+    undSlider->setRange(0, 100);
+    undSlider->setValue(member.understanding);
+    undSlider->setAccessibleName(QString("Project understanding of %1").arg(QString::fromStdString(member.name)));
+
+    // refresh() rebuilds the card and finds the slider again by its focus key to give it back the keyboard focus.
+    undSlider->setObjectName("understandingSlider");
+    undSlider->setProperty("focusKey", QString::fromStdString(member.id) + ":understanding");
+
+    connect(undSlider, &QSlider::valueChanged, this,
+            [this, undVal, id = member.id, role = member.role, undSlider](int v) {
+                undVal->setText(QString("%1%").arg(v));
+                // While the mouse drags, the release saves. Keys, wheel and a click on the groove arrive here.
+                if (!undSlider->isSliderDown()) queueUnderstanding(id, role, v);
+            });
+    connect(undSlider, &QSlider::sliderReleased, this,
+            [this, id = member.id, role = member.role, undSlider]() {
+                queueUnderstanding(id, role, undSlider->value());
+                commitUnderstanding();
+            });
+    auto* undBlock = new QVBoxLayout();
+    undBlock->setSpacing(4);
+    undBlock->addLayout(undHeader);
+    undBlock->addWidget(undSlider);
+    layout->addLayout(undBlock);
+
+    // Velocity (EMA, 0.25x to 5x): read-only, two decimals, bar scaled to the 5x maximum.
+    auto* velHeader = new QHBoxLayout();
+    auto* velTitle = new QLabel("Velocity", column);
+    velTitle->setObjectName("meterLabel");
+    auto* velVal = new QLabel(QString("%1x").arg(member.velocity, 0, 'f', 2), column);
+    velVal->setObjectName("velocityValue");
+    velHeader->addWidget(velTitle);
+    velHeader->addStretch();
+    velHeader->addWidget(velVal);
+
+    auto* velBar = new QProgressBar(column);
+    velBar->setObjectName("velocityBar");
+    velBar->setRange(0, 100);
+    velBar->setValue(qBound(0, qRound(member.velocity / 5.0 * 100.0), 100));
+    velBar->setTextVisible(false);
+    velBar->setFixedHeight(6);
+    velBar->setAccessibleName(QString("Velocity of %1").arg(QString::fromStdString(member.name)));
+    velBar->setAccessibleDescription(velVal->text());
+    auto* velBlock = new QVBoxLayout();
+    velBlock->setSpacing(4);
+    velBlock->addLayout(velHeader);
+    velBlock->addWidget(velBar);
+    layout->addLayout(velBlock);
+    return column;
+}
+
+QFrame* TeamSkillsPage::buildMemberCard(const MemberDto& member, int colorIndex) {
+    auto* card = new QFrame(this);
+    card->setObjectName("card");
+    auto* grid = new QGridLayout(card);
+    grid->setContentsMargins(20, 18, 20, 18);
+    grid->setHorizontalSpacing(kColumnGap);
+    applyColumnWidths(grid);
+    grid->addWidget(buildProfileColumn(member, colorIndex, card), 0, kProfileCol, Qt::AlignVCenter);
+    grid->addWidget(buildSkillsColumn(member, card), 0, kSkillsCol, Qt::AlignVCenter);
+    grid->addWidget(buildUnderstandingColumn(member, card), 0, kUnderstandingCol, Qt::AlignVCenter);
+    grid->addWidget(buildAssignmentColumn(member, card), 0, kAssignmentCol, Qt::AlignVCenter);
     return card;
 }
 
 void TeamSkillsPage::refresh() {
+    // A value still waiting for its pause is saved first, so a rebuild never throws a keyboard change away.
+    flushUnderstanding();
+
+    pendingRefresh_ = false;
+    syncSwitches();
+
+    // The cards are rebuilt, so the control the user is working with (slider, rating step or Edit Role button) is
+    // remembered by its "focusKey" and focused again below.
+    QString focusedKey;
+    if (const QWidget* focused = QApplication::focusWidget(); focused && isAncestorOf(focused))
+        focusedKey = focused->property("focusKey").toString();
+
     while (QLayoutItem* item = cardsLayout_->takeAt(0)) {
         if (QWidget* w = item->widget()) {
             w->deleteLater();
@@ -713,6 +834,7 @@ void TeamSkillsPage::refresh() {
 
     const vector<MemberDto> allMembers = members_.all();
     emptyLabel_->setVisible(allMembers.empty());
+    tableHeader_->setVisible(!allMembers.empty());
 
     totalMembersValue_->setText(QString::number(allMembers.size()));
 
@@ -734,7 +856,16 @@ void TeamSkillsPage::refresh() {
         }
         sumUnderstanding += m.understanding;
         sumVelocity += m.velocity;
-        cardsLayout_->addWidget(buildMemberCard(m, static_cast<int>(i)));
+        QFrame* card = buildMemberCard(m, static_cast<int>(i));
+        cardsLayout_->addWidget(card);
+        if (!focusedKey.isEmpty() && focusedKey.startsWith(QString::fromStdString(m.id) + ":")) {
+            for (QWidget* w : card->findChildren<QWidget*>()) {
+                if (w->property("focusKey").toString() == focusedKey) {
+                    w->setFocus(Qt::OtherFocusReason);
+                    break;
+                }
+            }
+        }
     }
 
     const double count = static_cast<double>(allMembers.size());
@@ -743,6 +874,62 @@ void TeamSkillsPage::refresh() {
         QString("%1%").arg( qRound(sumUnderstanding / count) ));
     avgVelocityValue_->setText(
         QString::number(sumVelocity / count, 'f', 2));
+}
+
+TeamSkillsPage::~TeamSkillsPage() {
+    flushUnderstanding();   // catches its own exceptions; the children are still alive here
+}
+
+void TeamSkillsPage::hideEvent(QHideEvent* event) {
+    flushUnderstanding();
+    QWidget::hideEvent(event);
+}
+
+void TeamSkillsPage::queueUnderstanding(const Id& memberId, const string& role, int value) {
+    // The single waiting slot belongs to one member: save it before another member takes the slot.
+    if (pending_.valid && pending_.memberId != memberId) flushUnderstanding();
+    pending_ = {memberId, role, value, true};
+    understandingTimer_->start();   // every step restarts the wait, so holding an arrow key saves once at the end
+}
+
+bool TeamSkillsPage::flushUnderstanding() {
+    understandingTimer_->stop();
+    if (!pending_.valid) return true;
+    const PendingUnderstanding toSave = pending_;
+    pending_.valid = false;
+
+    updating_ = true;   // our own change must not trigger a second refresh through CoreBridge::changed
+    try {
+        service_.update(toSave.memberId, toSave.role, toSave.value);
+    } catch (const exception& e) {
+        updating_ = false;
+        showStatus(QString::fromUtf8(e.what()));
+        return false;
+    }
+    updating_ = false;
+    return true;
+}
+
+void TeamSkillsPage::discardUnderstanding() {
+    understandingTimer_->stop();
+    pending_.valid = false;
+}
+
+void TeamSkillsPage::commitUnderstanding() {
+    const bool saved = flushUnderstanding();
+    // The rebuild would delete a role editor the user is typing in, so it waits until the editor closes.
+    if (roleEditorOpen()) pendingRefresh_ = true;
+    else refresh();
+    if (saved) showStatus("Updated project understanding");
+}
+
+bool TeamSkillsPage::roleEditorOpen() const {
+    for (int i = 0; i < cardsLayout_->count(); ++i) {
+        const QWidget* card = cardsLayout_->itemAt(i)->widget();
+        const QWidget* editor = card ? card->findChild<QWidget*>("roleEditBox") : nullptr;
+        if (editor && !editor->isHidden()) return true;
+    }
+    return false;
 }
 
 void TeamSkillsPage::showStatus(const QString& text) {

@@ -1,0 +1,129 @@
+/* Modal dialogs and message boxes (ui/widgets/ModalDialog). Colours are token placeholders.
+   The overlay, the card fill, its border and the shadow are painted in C++ from tokens. This file styles the
+   widgets inside the card, following .modal-box in the Figma prototype (css/components.css).
+   Every rule is scoped by QDialog#ModalDialog, so page widgets are not affected. */
+
+QDialog#ModalDialog { background: transparent; }
+QFrame#modalCard, QFrame#modalHeader, QScrollArea#modalScroll, QWidget#modalViewport, QWidget#modalBody,
+QWidget#modalDepsHost {
+    background: transparent;
+    border: none;
+}
+QDialog#ModalDialog QLabel { background: transparent; border: none; }
+
+/* ---------- header, footer ---------- */
+QFrame#modalHeader { border-bottom: 1px solid @BorderSubtle; }
+QLabel#modalTitle { font-size: 16px; font-weight: 600; color: @TextPrimary; }
+QFrame#modalFooter {
+    background: @GlassFill;
+    border-top: 1px solid @BorderSubtle;
+    border-bottom-left-radius: 19px;
+    border-bottom-right-radius: 19px;
+}
+QLabel#modalMessage { font-size: 14px; color: @TextPrimary; }
+
+/* close button: 32 px target, shown by the glyph and the tooltip, not by colour */
+QToolButton#modalClose {
+    min-width: 32px; max-width: 32px; min-height: 32px; max-height: 32px;
+    border: none; border-radius: 8px; background: transparent; color: @TextSecondary; font-size: 14px;
+}
+QToolButton#modalClose:hover { background: @SurfaceHover; color: @TextPrimary; }
+QToolButton#modalClose:pressed { background: @Track; color: @TextPrimary; }
+
+/* ---------- buttons ----------
+   1 px border normally. On keyboard focus the border becomes a 2 px TextPrimary ring and the padding shrinks by 1 px,
+   so the button keeps its size. Primary and Danger swap their fill for Surface: Dark Accent equals TextPrimary, and
+   the hovered Danger fill is a light pink, so a ring on those fills would vanish. The focus rules sit after the
+   hover and pressed rules and repeat the combined states, so the ring survives hover and pressed. */
+QDialog#ModalDialog QPushButton {
+    border-radius: 10px; padding: 7px 15px; min-height: 20px; font-size: 14px; font-weight: 600;
+    border: 1px solid transparent;
+}
+
+QDialog#ModalDialog QPushButton#modalPrimaryButton { background: @Accent; color: @AccentText; border-color: @Accent; }
+QDialog#ModalDialog QPushButton#modalPrimaryButton:hover { background: @AccentHover; border-color: @AccentHover; }
+QDialog#ModalDialog QPushButton#modalPrimaryButton:pressed { background: @AccentPressed; border-color: @AccentPressed; }
+
+QDialog#ModalDialog QPushButton#modalSecondaryButton {
+    background: @GlassFillStrong; color: @TextPrimary; border-color: @BorderDefault;
+}
+QDialog#ModalDialog QPushButton#modalSecondaryButton:hover { background: @SurfaceHover; border-color: @BorderStrong; }
+QDialog#ModalDialog QPushButton#modalSecondaryButton:pressed { background: @Track; }
+
+QDialog#ModalDialog QPushButton#modalDangerButton {
+    background: @DangerSoft; color: @DangerText; border-color: @DangerSoft;
+}
+QDialog#ModalDialog QPushButton#modalDangerButton:hover { background: @DangerText; color: @TextInverse; border-color: @DangerText; }
+QDialog#ModalDialog QPushButton#modalDangerButton:pressed { background: @DangerText; color: @TextInverse; border-color: @DangerText; }
+
+QDialog#ModalDialog QPushButton#modalPrimaryButton:focus,
+QDialog#ModalDialog QPushButton#modalPrimaryButton:focus:hover,
+QDialog#ModalDialog QPushButton#modalPrimaryButton:focus:pressed,
+QDialog#ModalDialog QPushButton#modalDangerButton:focus,
+QDialog#ModalDialog QPushButton#modalDangerButton:focus:hover,
+QDialog#ModalDialog QPushButton#modalDangerButton:focus:pressed {
+    background: @Surface; border: 2px solid @TextPrimary; padding: 6px 14px;
+}
+QDialog#ModalDialog QPushButton#modalPrimaryButton:focus,
+QDialog#ModalDialog QPushButton#modalPrimaryButton:focus:hover,
+QDialog#ModalDialog QPushButton#modalPrimaryButton:focus:pressed { color: @TextPrimary; }
+QDialog#ModalDialog QPushButton#modalDangerButton:focus,
+QDialog#ModalDialog QPushButton#modalDangerButton:focus:hover,
+QDialog#ModalDialog QPushButton#modalDangerButton:focus:pressed { color: @DangerText; }
+QDialog#ModalDialog QPushButton#modalSecondaryButton:focus,
+QDialog#ModalDialog QPushButton#modalSecondaryButton:focus:hover,
+QDialog#ModalDialog QPushButton#modalSecondaryButton:focus:pressed {
+    border: 2px solid @TextPrimary; padding: 6px 14px;
+}
+
+
+/* ---------- form fields ---------- */
+QDialog#ModalDialog QLabel#modalFieldLabel { font-size: 12px; font-weight: 600; color: @TextSecondary; }
+QDialog#ModalDialog QLabel#modalHint { font-size: 12px; font-weight: 500; color: @TextTertiary; }
+QDialog#ModalDialog QLabel#modalError, QDialog#ModalDialog QLabel#editProjectError {
+    background: @DangerSoft; color: @DangerText; border-radius: 10px; padding: 8px 12px; font-size: 14px;
+}
+
+QDialog#ModalDialog QLineEdit, QDialog#ModalDialog QPlainTextEdit, QDialog#ModalDialog QSpinBox {
+    background: @GlassFillStrong; color: @TextPrimary; border: 1px solid @BorderDefault; border-radius: 10px;
+    padding: 8px 11px; font-size: 14px;
+    selection-background-color: @Accent; selection-color: @AccentText;
+}
+QDialog#ModalDialog QLineEdit:focus, QDialog#ModalDialog QPlainTextEdit:focus, QDialog#ModalDialog QSpinBox:focus {
+    border: 2px solid @Accent; padding: 7px 10px;
+}
+QDialog#ModalDialog QLineEdit:disabled, QDialog#ModalDialog QPlainTextEdit:disabled,
+QDialog#ModalDialog QSpinBox:disabled {
+    background: @SurfaceAlt; color: @TextMuted;
+}
+
+QDialog#ModalDialog QSpinBox QLineEdit { background: transparent; border: none; padding: 0; }
+QDialog#ModalDialog QLabel#modalSubtitle { font-size: 14px; color: @TextSecondary; }
+/* "Current" mark on the open project in the start dialog */
+QDialog#ModalDialog QLabel#startDialogCurrent {
+    background: @AccentSoft; color: @Accent; border-radius: 8px; padding: 2px 8px;
+    font-size: 12px; font-weight: 600;
+}
+QDialog#ModalDialog QPushButton#modalPrimaryButton:disabled,
+QDialog#ModalDialog QPushButton#modalSecondaryButton:disabled,
+QDialog#ModalDialog QPushButton#modalDangerButton:disabled { background: @Track; color: @TextMuted; border-color: @Track; }
+
+/* task dependency list: check boxes in a small scrolling box.
+   Off: a hollow box. On: an Accent fill with a tick (the tick, not only the hue, says "checked"). */
+QScrollArea#modalDeps { background: @GlassFillStrong; border: 1px solid @BorderDefault; border-radius: 10px; }
+QDialog#ModalDialog QCheckBox { spacing: 8px; font-size: 14px; color: @TextPrimary; background: transparent; }
+QDialog#ModalDialog QCheckBox::indicator {
+    width: 16px; height: 16px; border-radius: 4px; border: 1px solid @TextMuted; background: @Surface;
+}
+QDialog#ModalDialog QCheckBox::indicator:hover { border-color: @TextPrimary; }
+QDialog#ModalDialog QCheckBox::indicator:checked { background: @Accent; border-color: @Accent; image: @icon(check,AccentText); }
+QDialog#ModalDialog QCheckBox::indicator:checked:hover { background: @AccentHover; border-color: @AccentHover; }
+/* 14 + 2 x 2 px border = the same 18 px as the 16 + 2 x 1 px resting box, so focus never moves the label. */
+QDialog#ModalDialog QCheckBox::indicator:focus { width: 14px; height: 14px; border: 2px solid @TextPrimary; }
+/* The fill is clipped to the content box, so a 1 px gap keeps the ring apart from it (dark Accent is near the ring colour). */
+QDialog#ModalDialog QCheckBox::indicator:checked:focus {
+    width: 12px; height: 12px; padding: 1px; background: @Accent; background-clip: content;
+    border: 2px solid @TextPrimary; image: @icon(check,AccentText);
+}
+QDialog#ModalDialog QCheckBox::indicator:disabled { background: @Track; border: 1px solid @TextMuted; }
+QDialog#ModalDialog QCheckBox::indicator:checked:disabled { background: @Track; border: 1px solid @TextMuted; image: @icon(check,TextMuted); }

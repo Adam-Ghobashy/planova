@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(Planova VERSION 0.1 LANGUAGES CXX)
+if(WIN32)
+    enable_language(RC)
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -7,9 +10,10 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Test)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg Test)
 
 enable_testing()
 add_subdirectory(core)
 add_subdirectory(ui)
+add_subdirectory(tools)
 add_subdirectory(tests)

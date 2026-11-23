@@ -1,7 +1,6 @@
 #include "StatCardWidget.h"
 
 #include <QEasingCurve>
-#include <QFont>
 #include <QLabel>
 #include <QSizePolicy>
 #include <QStyle>
@@ -9,19 +8,6 @@
 #include <QVariantAnimation>
 
 #include <cstdlib>
-
-namespace
-{
-// Reference --font-mono: JetBrains Mono, Consolas, monospace.
-QFont monoFont()
-{
-    QFont f;
-    f.setFamilies({QStringLiteral("JetBrains Mono"), QStringLiteral("Consolas"),
-                   QStringLiteral("Menlo"), QStringLiteral("DejaVu Sans Mono"),
-                   QStringLiteral("monospace")});
-    return f;
-}
-}
 
 StatCardWidget::StatCardWidget(
     const QString& label,
@@ -37,7 +23,8 @@ StatCardWidget::StatCardWidget(
         QSizePolicy::Preferred
         );
 
-    setMinimumHeight(86);
+    // No fixed minimum height: the layout's own minimum includes the caption, so a short window never
+    // squeezes the number.
 
     titleLabel = new QLabel(label, this);
     valueLabel = new QLabel(m_targetText, this);
@@ -45,10 +32,8 @@ StatCardWidget::StatCardWidget(
     titleLabel->setObjectName("statCardTitle");
     valueLabel->setObjectName("statCardValue");
 
-    // Family only: size and weight come from home.qss. A fixed-pitch face
-    // keeps digit width constant so the count-up does not jitter.
-    QFont valueFont = monoFont();
-    valueLabel->setFont(valueFont);
+    // Font family, size and weight come from home.qss (QLabel#statCardValue); Segoe UI digits all have the
+    // same width, so the count-up does not jitter.
 
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(20, 16, 20, 16);
@@ -121,10 +106,10 @@ void StatCardWidget::setCaption(const QString& text)
 {
     if (!captionLabel)
     {
-        // Created on first use, so cards without a caption (Home) are unchanged.
+        // Created on first use, so cards that never get a caption are unchanged.
         // Appended after the layout's stretch, so it sits at the bottom of the card.
         captionLabel = new QLabel(this);
-        captionLabel->setObjectName("TrackingCardCaption"); // styled in tracking.qss
+        captionLabel->setObjectName("statCardCaption"); // styled in tracking.qss and home.qss
         layout()->addWidget(captionLabel);
     }
 

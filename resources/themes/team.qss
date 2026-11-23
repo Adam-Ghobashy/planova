@@ -1,0 +1,571 @@
+/* Team & Skills page (S2).
+   Generic rules (card, buttons, inputs, slider, scroll area) are copies of the slicer ones,
+   scoped under this page so the two pages do not depend on each other. */
+
+QWidget#TeamSkillsPage {
+    background-color: transparent;
+    color: @TextPrimary;
+    font-family: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI";
+}
+
+QWidget#TeamSkillsPage QScrollArea#slicerScrollArea {
+    background: transparent;
+    border: none;
+}
+
+QWidget#TeamSkillsPage QWidget#slicerScrollContent {
+    background: transparent;
+}
+
+QWidget#TeamSkillsPage QFrame#card {
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
+    border-radius: 12px;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel {
+    background: transparent;
+}
+
+QWidget#TeamSkillsPage QLabel#cardTitle {
+    color: @TextPrimary;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QLabel#cardSubtitle {
+    color: @TextMuted;
+    font-size: 12px; font-weight: 500;
+}
+
+QWidget#TeamSkillsPage QPushButton#primaryButton {
+    background-color: @Accent;
+    color: @AccentText;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#primaryButton:hover {
+    background-color: @AccentHover;
+}
+
+QWidget#TeamSkillsPage QPushButton#primaryButton:pressed {
+    background-color: @AccentPressed;
+}
+
+QWidget#TeamSkillsPage QPushButton#secondaryButton {
+    background-color: @GlassFillStrong;
+    color: @TextPrimary;
+    border: 1px solid @Border;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+QWidget#TeamSkillsPage QPushButton#secondaryButton:hover {
+    background-color: @SurfaceAlt;
+}
+
+QWidget#TeamSkillsPage QPushButton#secondaryButton:pressed {
+    background-color: @Track;
+}
+
+QWidget#TeamSkillsPage QLabel#statusLabel {
+    background-color: @SuccessSoft;
+    color: @TextPrimary;
+    border-radius: 12px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QLabel#emptyLabel {
+    color: @TextMuted;
+    font-size: 14px;
+    padding: 28px;
+}
+
+QWidget#TeamSkillsPage QLabel#sliderValueLabel {
+    color: @TextPrimary;
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 36px;
+}
+
+QWidget#TeamSkillsPage QSlider::groove:horizontal {
+    height: 6px;
+    background: @Track;
+    border-radius: 3px;
+}
+
+QWidget#TeamSkillsPage QSlider::sub-page:horizontal {
+    background: @Accent;
+    border-radius: 3px;
+}
+
+QWidget#TeamSkillsPage QSlider::handle:horizontal {
+    background: @Accent;
+    border: 2px solid @Surface;
+    width: 16px;
+    height: 16px;
+    margin: -5px 0;
+    border-radius: 8px;
+}
+
+QWidget#TeamSkillsPage QSlider::handle:horizontal:hover {
+    background: @AccentHover;
+}
+
+/* ---------- inputs ---------- */
+QWidget#TeamSkillsPage QLineEdit#lightInput {
+    background-color: @GlassFillStrong;
+    color: @TextPrimary;
+    border: 1px solid @Border;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 14px;
+}
+
+QWidget#TeamSkillsPage QLineEdit#lightInput:focus {
+    border: 2px solid @Accent;
+    padding: 6px 11px;
+}
+
+QWidget#TeamSkillsPage QCheckBox#leadCheck {
+    color: @TextPrimary;
+    font-size: 14px;
+    font-weight: 500;
+    spacing: 6px;
+    background: transparent;
+}
+
+QWidget#TeamSkillsPage QComboBox#roleCombo {
+    background-color: @GlassFillStrong;
+    color: @TextPrimary;
+    border: 1px solid @Border;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 14px;
+    min-width: 160px;
+}
+
+QWidget#TeamSkillsPage QComboBox#roleCombo:hover {
+    border: 1px solid @Accent;
+}
+
+/* Focus is a 2 px ring, so it differs from the 1 px hover border; the padding shrinks by 1 px. */
+QWidget#TeamSkillsPage QComboBox#roleCombo:focus {
+    border: 2px solid @Accent;
+    padding: 5px 11px;
+}
+
+QWidget#TeamSkillsPage QComboBox#roleCombo::drop-down {
+    border: none;
+    width: 24px;
+}
+
+QWidget#TeamSkillsPage QComboBox#roleCombo QAbstractItemView {
+    background-color: @SurfaceDialog;
+    color: @TextPrimary;
+    border: 1px solid @Border;
+    selection-background-color: @AccentSoft;
+    selection-color: @Accent;
+    padding: 4px;
+}
+
+/* ---------- member card ---------- */
+/* Avatar fills: property memberColor 1..6 = the Member1..Member6 colours of Tokens.h. */
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar {
+    color: @MemberText;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar[memberColor="1"] { background-color: @Member1; }
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar[memberColor="2"] { background-color: @Member2; }
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar[memberColor="3"] { background-color: @Member3; }
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar[memberColor="4"] { background-color: @Member4; }
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar[memberColor="5"] { background-color: @Member5; }
+QWidget#TeamSkillsPage QFrame#card QLabel#memberAvatar[memberColor="6"] { background-color: @Member6; }
+
+QWidget#TeamSkillsPage QFrame#card QLabel#leadBadge {
+    background-color: @AccentSoft;
+    color: @Accent;
+    border-radius: 8px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+QWidget#TeamSkillsPage QPushButton#editRoleButton {
+    background-color: @GlassFillStrong;
+    color: @Accent;
+    border: 1px solid @Border;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#editRoleButton:hover {
+    background-color: @AccentSoft;
+    border-color: @Accent;
+}
+
+QWidget#TeamSkillsPage QPushButton#removeMemberButton {
+    background-color: @GlassFillStrong;
+    color: @DangerAction;
+    border: 1px solid @DangerSoft;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#removeMemberButton:hover {
+    background-color: @DangerSoft;
+    color: @DangerText;
+    border-color: @DangerBorder;
+}
+
+QWidget#TeamSkillsPage QPushButton#saveRoleButton {
+    background-color: @Accent;
+    color: @AccentText;
+    border: none;
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#saveRoleButton:hover {
+    background-color: @AccentHover;
+}
+
+QWidget#TeamSkillsPage QPushButton#cancelRoleButton {
+    background-color: @GlassFillStrong;
+    color: @TextMuted;
+    border: 1px solid @Border;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#cancelRoleButton:hover {
+    background-color: @SurfaceAlt;
+}
+
+
+/* ---------- skill rating matrix ---------- */
+QWidget#TeamSkillsPage QWidget#skillCell {
+    background: transparent;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel#skillLabel {
+    color: @TextMuted;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* property "active" is "true" for the rating steps up to the member's rating */
+QWidget#TeamSkillsPage QPushButton#ratingButton {
+    background-color: @GlassFillStrong;
+    color: @TextMuted;
+    border: 1px solid @Border;
+    border-radius: 6px;
+    padding: 0px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#ratingButton:hover {
+    background-color: @AccentSoft;
+    color: @Accent;
+    border-color: @Accent;
+}
+
+QWidget#TeamSkillsPage QPushButton#ratingButton[active="true"] {
+    background-color: @Accent;
+    color: @AccentText;
+    border: none;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#ratingButton[active="true"]:hover {
+    background-color: @AccentHover;
+    color: @AccentText;
+}
+
+/* ---------- keyboard focus on the buttons ----------
+   Dark Accent equals TextPrimary, so the Accent-filled buttons (primary, save, active rating step) swap their fill for
+   Surface and get a 2 px TextPrimary ring; the other buttons keep their fill and only get the ring. The border grows
+   and the padding shrinks by the same amount, so the size stays. The focus rules come after the hover rules and list
+   the combined states, so hover and pressed do not bring the Accent fill (and an invisible ring) back. */
+QWidget#TeamSkillsPage QPushButton#primaryButton:focus,
+QWidget#TeamSkillsPage QPushButton#primaryButton:focus:hover,
+QWidget#TeamSkillsPage QPushButton#primaryButton:focus:pressed {
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 2px solid @TextPrimary;
+    padding: 6px 16px;
+}
+
+QWidget#TeamSkillsPage QPushButton#saveRoleButton:focus,
+QWidget#TeamSkillsPage QPushButton#saveRoleButton:focus:hover {
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 2px solid @TextPrimary;
+    padding: 0px 8px;
+}
+
+QWidget#TeamSkillsPage QPushButton#ratingButton[active="true"]:focus,
+QWidget#TeamSkillsPage QPushButton#ratingButton[active="true"]:focus:hover {
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 2px solid @TextPrimary;
+}
+
+QWidget#TeamSkillsPage QPushButton#ratingButton:focus,
+QWidget#TeamSkillsPage QPushButton#ratingButton:focus:hover {
+    border: 2px solid @TextPrimary;
+}
+
+QWidget#TeamSkillsPage QPushButton#secondaryButton:focus,
+QWidget#TeamSkillsPage QPushButton#secondaryButton:focus:hover,
+QWidget#TeamSkillsPage QPushButton#secondaryButton:focus:pressed {
+    border: 2px solid @TextPrimary;
+    padding: 7px 15px;
+}
+
+QWidget#TeamSkillsPage QPushButton#editRoleButton:focus,
+QWidget#TeamSkillsPage QPushButton#editRoleButton:focus:hover,
+QWidget#TeamSkillsPage QPushButton#removeMemberButton:focus,
+QWidget#TeamSkillsPage QPushButton#removeMemberButton:focus:hover,
+QWidget#TeamSkillsPage QPushButton#cancelRoleButton:focus,
+QWidget#TeamSkillsPage QPushButton#cancelRoleButton:focus:hover {
+    border: 2px solid @TextPrimary;
+    padding: 1px 7px;
+}
+
+/* ---------- settings switches ---------- */
+/* Checkable buttons: the text says "On" or "Off", the fill is only a second cue. */
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch {
+    background-color: @GlassFillStrong;
+    color: @TextPrimary;
+    border: 1px solid @Border;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:hover,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:hover {
+    background-color: @SurfaceAlt;
+}
+
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:checked,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:checked {
+    background-color: @Accent;
+    color: @AccentText;
+    border: 1px solid @Accent;
+}
+
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:checked:hover,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:checked:hover {
+    background-color: @AccentHover;
+}
+
+/* Focus rules for the switches. Surface fill and a TextPrimary ring: visible on the Accent fill of the checked
+   switch in both themes. The combined states are listed because ":checked:hover" has two pseudo-classes and
+   would otherwise win over a plain ":focus" (hover fill with focus text, ring lost); these have three and come later. */
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:focus,
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:focus:hover,
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:focus:pressed,
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:checked:focus,
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:checked:focus:hover,
+QWidget#TeamSkillsPage QPushButton#autoMatchSwitch:checked:focus:pressed,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:focus,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:focus:hover,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:focus:pressed,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:checked:focus,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:checked:focus:hover,
+QWidget#TeamSkillsPage QPushButton#smartAssignSwitch:checked:focus:pressed {
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 2px solid @TextPrimary;
+    padding: 5px 15px; /* the border grows by 1 px, so the button keeps its size */
+}
+
+/* ---------- assignment / clash column ---------- */
+QWidget#TeamSkillsPage QWidget#assignmentColumn {
+    background: transparent;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel#assignmentText {
+    color: @TextPrimary;
+    font-size: 12px; font-weight: 500;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel#clashBadge {
+    background-color: @DangerSoft;
+    color: @DangerText;
+    border: 1px solid @DangerBorder;
+    border-radius: 8px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel#conflictText {
+    color: @TextMuted;
+    font-size: 12px; font-weight: 500;
+}
+
+QWidget#TeamSkillsPage QPushButton#resolveConflict {
+    background-color: @Accent;
+    color: @AccentText;
+    border: 1px solid @Accent;
+    border-radius: 6px;
+    padding: 3px 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QWidget#TeamSkillsPage QPushButton#resolveConflict:hover {
+    background-color: @AccentHover;
+}
+
+QWidget#TeamSkillsPage QPushButton#resolveConflict:pressed {
+    background-color: @AccentPressed;
+}
+
+/* Focus comes after hover and pressed (equal specificity), and the combined states are listed, so the Surface fill,
+   TextPrimary text and ring stay together while the mouse is over the button or it is pressed. */
+QWidget#TeamSkillsPage QPushButton#resolveConflict:focus,
+QWidget#TeamSkillsPage QPushButton#resolveConflict:focus:hover,
+QWidget#TeamSkillsPage QPushButton#resolveConflict:focus:pressed {
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 2px solid @TextPrimary;
+    padding: 2px 11px;
+}
+
+/* Hollow box when off, Accent fill with a tick when on (the tick, not only the hue, says "checked").
+   Every state is 18 px wide and tall: 16 + 2 x 1 px border at rest, 14 + 2 x 2 px border with focus. */
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid @TextMuted;
+    background: @Surface;
+}
+
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:hover {
+    border-color: @TextPrimary;
+}
+
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:checked {
+    background: @Accent;
+    border-color: @Accent;
+    image: @icon(check,AccentText);
+}
+
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:checked:hover {
+    background: @AccentHover;
+    border-color: @AccentHover;
+}
+
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:focus {
+    width: 14px;
+    height: 14px;
+    border: 2px solid @TextPrimary;
+}
+
+/* The fill is clipped to the content box, so a 1 px gap keeps the ring apart from it (dark Accent is near the
+   ring colour). */
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:checked:focus {
+    width: 12px;
+    height: 12px;
+    padding: 1px;
+    background: @Accent;
+    background-clip: content;
+    border: 2px solid @TextPrimary;
+    image: @icon(check,AccentText);
+}
+
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:disabled {
+    background: @Track;
+    border: 1px solid @TextMuted;
+}
+
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:checked:disabled {
+    background: @Track;
+    border: 1px solid @TextMuted;
+    image: @icon(check,TextMuted);
+}
+
+/* Surface disc inside a thick ring, the same recipe as the setup page. */
+QWidget#TeamSkillsPage QSlider::handle:horizontal:focus {
+    background: @Surface;
+    border: 3px solid @TextPrimary;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0;
+    border-radius: 10px;
+}
+
+/* ---------- table header and meters ---------- */
+/* One header row above the member rows. TextTertiary on the page background is a tested pair (tst_Contrast). */
+QWidget#TeamSkillsPage QWidget#teamTableHeader {
+    background: transparent;
+}
+
+QWidget#TeamSkillsPage QLabel#tableHeaderCell {
+    color: @TextTertiary;
+    font-size: 12px;
+    font-weight: 600;
+    background: transparent;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel#meterLabel {
+    color: @TextSecondary;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+QWidget#TeamSkillsPage QFrame#card QLabel#velocityValue {
+    color: @TextPrimary;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Read-only velocity bar; the number next to it carries the value, the bar is the second cue. */
+QWidget#TeamSkillsPage QProgressBar#velocityBar {
+    background: @Track;
+    border: none;
+    border-radius: 3px;
+}
+
+QWidget#TeamSkillsPage QProgressBar#velocityBar::chunk {
+    background: @Accent;
+    border-radius: 3px;
+}
+
+/* Layout containers inside a member row stay transparent, so the glass card shows through. */
+QWidget#TeamSkillsPage QWidget#profileColumn,
+QWidget#TeamSkillsPage QWidget#skillsColumn,
+QWidget#TeamSkillsPage QWidget#understandingColumn,
+QWidget#TeamSkillsPage QWidget#roleActions,
+QWidget#TeamSkillsPage QWidget#roleEditBox {
+    background: transparent;
+}

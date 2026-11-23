@@ -1,21 +1,24 @@
 #include "PinsPage.h"
 
 #include <QAbstractButton>
+#include <QApplication>
 #include <QButtonGroup>
 #include <QDateTime>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QMessageBox>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <algorithm>
 #include <exception>
 
 #include "LeavePinDialog.h"
+#include "widgets/ModalDialog.h"
 #include "PinCardWidget.h"
 #include "PinColumnWidget.h"
 #include "PinUiHelpers.h"
+#include "widgets/EmptyHint.h"
 
 namespace planova::s5 {
 
@@ -41,7 +44,7 @@ PinsPage::PinsPage(IPinBoardQuery& query, IPinCommands& commands, IMemberQuery& 
     auto* header = new QHBoxLayout;
     auto* titles = new QVBoxLayout;
     titles->setSpacing(2);
-    auto* title = new QLabel(tr("Pins and Team Handoffs"), this);
+    auto* title = new QLabel(tr("Pins & Team Handoffs"), this);
     title->setObjectName("PinsTitle");
     auto* subtitle = new QLabel(tr("Context-rich notes for handoffs, blockers, testing and decisions."), this);
     subtitle->setObjectName("PinsSubtitle");
@@ -65,16 +68,30 @@ PinsPage::PinsPage(IPinBoardQuery& query, IPinCommands& commands, IMemberQuery& 
     chipGroup_->setExclusive(true);
     root->addWidget(chipBar_);
 
+    emptyHint_ = makeEmptyHint(tr("No pins yet. Use 'Leave a Pin' to add a handoff, blocker, test request or decision."), this);
+    root->addWidget(emptyHint_);
+
     // Columns
-    auto* cols = new QHBoxLayout;
+    // Columns sit in a sideways scroll area (like the Board), so narrow windows scroll instead of cutting cards.
+    auto* host = new QWidget;
+    host->setObjectName("PinColumnsHost");
+    auto* cols = new QHBoxLayout(host);
+    cols->setContentsMargins(0, 0, 0, 0);
     cols->setSpacing(14);
     for (PinCategory c : kColumnOrder) {
-        auto* col = new PinColumnWidget(c, categoryTitle(c), this);
+        auto* col = new PinColumnWidget(c, categoryTitle(c), host);
         connect(col, &PinColumnWidget::pinDropped, this, &PinsPage::onDropped);
         columns_.push_back(col);
         cols->addWidget(col, 1);
     }
-    root->addLayout(cols, 1);
+    auto* scroll = new QScrollArea(this);
+    scroll->setObjectName("PinsScroll");
+    scroll->setWidgetResizable(true);
+    scroll->setFocusPolicy(Qt::NoFocus);   // the controls inside take focus; the area itself would be a Tab stop with no ring
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);   // each column scrolls its own cards
+    scroll->setWidget(host);
+    root->addWidget(scroll, 1);
 
     connect(leave, &QPushButton::clicked, this, &PinsPage::onLeavePin);
 
@@ -104,7 +121,7 @@ void PinsPage::runCommand(const std::function<void()>& fn)
     try {
         fn();
     } catch (const std::exception& e) {
-        QMessageBox::warning(this, tr("Pins"), QString::fromUtf8(e.what()));
+        ModalDialog::info(this, tr("Pins"), QString::fromUtf8(e.what()));
     }
     scheduleRefresh();
     emit pinsChanged();
@@ -114,6 +131,7 @@ void PinsPage::addChip(const QString& text, const Id& memberId, int memberIndex)
 {
     auto* b = new QPushButton(text, chipBar_);
     b->setObjectName("PinFilterChip");
+    b->setProperty("memberId", QString::fromStdString(memberId));  // finds the chip again after a rebuild
     b->setCheckable(true);
     b->setChecked(memberId == filterMemberId_);
     b->setCursor(Qt::PointingHandCursor);
@@ -140,6 +158,15 @@ void PinsPage::addChip(const QString& text, const Id& memberId, int memberIndex)
 
 void PinsPage::rebuildChips(const std::vector<PinView>& all)
 {
+    // The chips are rebuilt, so the focused one is remembered by member id and focused again below.
+    bool chipHadFocus = false;
+    QString focusedMember;
+    if (const QWidget* focused = QApplication::focusWidget();
+        focused && focused->objectName() == "PinFilterChip" && chipBar_->isAncestorOf(focused)) {
+        chipHadFocus = true;
+        focusedMember = focused->property("memberId").toString();
+    }
+
     while (QLayoutItem* item = chipLayout_->takeAt(0)) {
         if (QWidget* w = item->widget()) {
             chipGroup_->removeButton(qobject_cast<QAbstractButton*>(w));
@@ -157,6 +184,21 @@ void PinsPage::rebuildChips(const std::vector<PinView>& all)
                 static_cast<int>(i % 6) + 1);
     }
     chipLayout_->addStretch();
+
+    if (chipHadFocus) {
+        // A member who is gone has no chip any more: the "All" chip (the first one) takes the focus.
+        QAbstractButton* target = chipGroup_->buttons().value(0);
+        for (QAbstractButton* chip : chipGroup_->buttons()) {
+            if (chip->property("memberId").toString() == focusedMember) {
+                target = chip;
+                break;
+            }
+        }
+        if (target) {
+            target->show();   // a chip that is not shown yet cannot take the focus
+            target->setFocus(Qt::OtherFocusReason);
+        }
+    }
 }
 
 void PinsPage::refresh()
@@ -165,7 +207,13 @@ void PinsPage::refresh()
     tasks_ = taskQuery_.all();
     const std::vector<PinView> all = query_.openPins();
 
+    // A filter on a removed member would hide every pin and leave no chip to clear it.
+    const bool filterMemberExists = std::any_of(members_.begin(), members_.end(),
+                                                [&](const MemberDto& m) { return m.id == filterMemberId_; });
+    if (!filterMemberId_.empty() && !filterMemberExists) filterMemberId_.clear();
+
     rebuildChips(all);
+    emptyHint_->setVisible(all.empty());
 
     std::map<Id, QString> names;
     std::map<Id, int> indexOf;
@@ -213,7 +261,7 @@ void PinsPage::refresh()
             nowShown[v.pin.id] = v.pin.category;
             cards.push_back(card);
         }
-        col->setCards(cards);
+        col->setCards(cards, !all.empty());
         // The scroll range is only valid after the layout ran.
         QTimer::singleShot(0, col, [col, scroll] { col->setScrollValue(scroll); });
     }
@@ -266,10 +314,9 @@ void PinsPage::onResolve(const Id& pinId)
 
 void PinsPage::onDelete(const Id& pinId)
 {
-    const auto answer = QMessageBox::question(this, tr("Delete pin"),
-                                              tr("Delete this pin? This cannot be undone."),
-                                              QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-    if (answer != QMessageBox::Yes) return;
+    if (!ModalDialog::confirm(this, tr("Delete pin"), tr("Delete this pin? This cannot be undone."),
+                              tr("Delete"), ModalDialog::Role::Danger))
+        return;
     const Id by = actorFor(pinId);
     auto act = [this, alive = alive_, pinId, by] {
         if (*alive) runCommand([&] { commands_.remove(pinId, by); });

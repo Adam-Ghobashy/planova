@@ -26,11 +26,47 @@ QRectF pillRectFor(const QRect& cell, const QFontMetrics& fm, const QString& tex
     return QRectF(cell.left() + 8, cell.top() + (cell.height() - height) / 2.0, width, height);
 }
 
-QFont boldFont(const QFont& base, int pointSize) {
+QFont boldFont(const QFont& base, int pixelSize) {
     QFont font = base;
-    font.setPointSize(pointSize);
-    font.setBold(true);
+    font.setPixelSize(pixelSize);
+    font.setWeight(QFont::DemiBold);
     return font;
+}
+
+// Cell width for a pill: text, the pill's own padding (16) and the 8 px margin on each side.
+int pillWidth(const QStyleOptionViewItem& option, const QModelIndex& index, int role) {
+    const QFontMetrics fm(boldFont(option.font, 12));
+    return fm.horizontalAdvance(index.data(role).toString()) + 16 + 16;
+}
+
+// Cell width for the assignee: avatar, name, the match or "Manual" badge, laid out as in paint(), plus an 8 px margin.
+int assigneeWidth(const QStyleOptionViewItem& option, const QModelIndex& index) {
+    const QFont nameFont = ThemeManager::instance().textFont(TextStyle::Body);
+    const QString name = index.data(AssignmentTableModel::AssigneeNameRole).toString();
+    const int matchPct = index.data(AssignmentTableModel::MatchPctRole).toInt();
+    const bool manual = index.data(AssignmentTableModel::ManualOverrideRole).toBool();
+    int width = 16 + 22 + QFontMetrics(nameFont).horizontalAdvance(name);
+    if (manual || matchPct > 0) {
+        const QString badge = manual ? QString("Manual") : QString("%1%").arg(matchPct);
+        width += QFontMetrics(boldFont(option.font, 12)).horizontalAdvance(badge) + 12;
+    }
+    return width + 8;
+}
+
+// Wraps text to the width and keeps two lines at most; the second line is elided with "...".
+QString twoLines(const QString& text, const QFontMetrics& fm, int width) {
+    const QStringList words = text.split(' ', Qt::SkipEmptyParts);
+    QString first;
+    int used = 0;
+    while (used < words.size()) {
+        const QString candidate = first.isEmpty() ? words[used] : first + ' ' + words[used];
+        if (!first.isEmpty() && fm.horizontalAdvance(candidate) > width) break;
+        first = candidate;
+        ++used;
+    }
+    const QString rest = words.mid(used).join(' ');
+    if (rest.isEmpty()) return fm.elidedText(first, Qt::ElideRight, width);
+    return fm.elidedText(first, Qt::ElideRight, width) + '\n' + fm.elidedText(rest, Qt::ElideRight, width);
 }
 
 QColor complexityColor(int complexity) {
@@ -48,8 +84,8 @@ QColor slicerRowBackground(const QStyleOptionViewItem& option, const QModelIndex
         index.data(AssignmentTableModel::HighlightedRole).toBool()) {
         return tm.color(Token::AccentSoft);
     }
-    if (option.state & QStyle::State_MouseOver) return tm.color(Token::SurfaceAlt);
-    return tm.color(Token::Surface);
+    if (option.state & QStyle::State_MouseOver) return tm.color(Token::GlassFillStrong);
+    return QColor(Qt::transparent);   // at rest the glass table shows through
 }
 
 SlicerTableDelegate::SlicerTableDelegate(QObject* parent)
@@ -59,9 +95,12 @@ QSize SlicerTableDelegate::sizeHint(const QStyleOptionViewItem& option,
                                     const QModelIndex& index) const {
     switch (index.column()) {
         case AssignmentTableModel::TaskComplexity: return QSize(260, 56);
-        case AssignmentTableModel::Skill: return QSize(110, 56);
-        case AssignmentTableModel::Priority: return QSize(95, 56);
-        case AssignmentTableModel::Assignee: return QSize(180, 56);
+        // Pill width follows the text, so a wider body font never clips a long label such as DOCUMENTATION.
+        case AssignmentTableModel::Skill:
+            return QSize(std::max(110, pillWidth(option, index, AssignmentTableModel::RequiredSkillRole)), 56);
+        case AssignmentTableModel::Priority:
+            return QSize(std::max(95, pillWidth(option, index, AssignmentTableModel::PriorityRole)), 56);
+        case AssignmentTableModel::Assignee: return QSize(std::max(180, assigneeWidth(option, index)), 56);
         case AssignmentTableModel::Rationale: return QSize(240, 56);
         case AssignmentTableModel::Status: return QSize(135, 56);
         case AssignmentTableModel::ActionOverride: return QSize(140, 56);
@@ -83,20 +122,31 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     const QRect rect = option.rect;
 
     painter->fillRect(rect, slicerRowBackground(option, index));
-    painter->setPen(QPen(tm.color(Token::SurfaceAlt), 1));
+    painter->setPen(QPen(tm.color(Token::GlassEdge), 1));
     painter->drawLine(rect.bottomLeft(), rect.bottomRight());
 
     const int col = index.column();
 
+    // Selection is also shown by a bar on the left edge, so it does not rely on the tint alone.
+    // Keyboard focus draws an outline around the current cell.
+    if (col == AssignmentTableModel::TaskComplexity && (option.state & QStyle::State_Selected)) {
+        painter->fillRect(QRect(rect.left(), rect.top(), 3, rect.height() - 1), tm.color(Token::Accent));
+    }
+    if (option.state & QStyle::State_HasFocus) {
+        painter->setPen(QPen(tm.color(Token::Accent), 2));
+        painter->setBrush(Qt::NoBrush);
+        painter->drawRect(QRectF(rect).adjusted(1, 1, -1, -2));
+    }
+
     if (col == AssignmentTableModel::TaskComplexity) {
-        QFont titleFont = painter->font();
-        titleFont.setPointSize(10);
-        titleFont.setBold(true);
+        const QFont titleFont = tm.textFont(TextStyle::LabelActive);
         painter->setFont(titleFont);
         painter->setPen(tm.color(Token::TextPrimary));
-        painter->drawText(QRect(rect.left() + 12, rect.top() + 8, rect.width() - 20, 20),
-                          Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine,
-                          index.data(AssignmentTableModel::TaskTitleRole).toString());
+        const int titleWidth = rect.width() - 20;
+        const QString title = QFontMetrics(titleFont).elidedText(
+            index.data(AssignmentTableModel::TaskTitleRole).toString(), Qt::ElideRight, titleWidth);
+        painter->drawText(QRect(rect.left() + 12, rect.top() + 8, titleWidth, 20),
+                          Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine, title);
 
         const int complexity = index.data(AssignmentTableModel::TaskComplexityRole).toInt();
         const int dotY = rect.top() + 36;
@@ -107,40 +157,30 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
             painter->drawEllipse(QPointF(dotX + d * 10, dotY), 3, 3);
         }
 
-        QFont levelFont = painter->font();
-        levelFont.setPointSize(9);
-        levelFont.setBold(false);
+        QFont levelFont = ThemeManager::instance().textFont(TextStyle::Caption);
         painter->setFont(levelFont);
         painter->setPen(tm.color(Token::TextMuted));
         painter->drawText(QRect(dotX + 54, dotY - 8, 40, 16), Qt::AlignLeft | Qt::AlignVCenter,
                           QString("C%1").arg(complexity));
 
     } else if (col == AssignmentTableModel::Skill) {
-        const QFont font = boldFont(painter->font(), 9);
+        const QFont font = boldFont(painter->font(), 12);
         painter->setFont(font);
         const QString skill = index.data(AssignmentTableModel::RequiredSkillRole).toString();
         drawPill(painter, pillRectFor(rect, QFontMetrics(font), skill), skill,
                  tm.color(Token::AccentSoft), tm.color(Token::Accent), tm.color(Token::Accent), 4);
 
     } else if (col == AssignmentTableModel::Priority) {
-        const QFont font = boldFont(painter->font(), 9);
+        const QFont font = boldFont(painter->font(), 12);
         painter->setFont(font);
         const QString priority = index.data(AssignmentTableModel::PriorityRole).toString();
 
-        QColor background = tm.color(Token::SurfaceAlt);
-        QColor foreground = tm.color(Token::TextMuted);
-        QColor border = tm.color(Token::Border);
-        if (priority == "CRITICAL") {
-            background = tm.color(Token::DangerSoft);
-            foreground = tm.color(Token::DangerText);
-            border = tm.color(Token::DangerSoft);
-        } else if (priority == "HIGH") {
-            background = tm.color(Token::AccentSoft);
-            foreground = tm.color(Token::Accent);
-            border = tm.color(Token::Accent);
-        } else if (priority == "MEDIUM") {
-            background = tm.color(Token::StatusBar);
-        }
+        // As in the design: Critical is the danger badge, every other priority is the primary badge.
+        // The text always names the priority, so colour is never the only signal.
+        const bool critical = priority == "CRITICAL";
+        const QColor background = tm.color(critical ? Token::DangerSoft : Token::AccentSoft);
+        const QColor foreground = tm.color(critical ? Token::DangerText : Token::Accent);
+        const QColor border = tm.color(critical ? Token::DangerSoft : Token::Accent);
         drawPill(painter, pillRectFor(rect, QFontMetrics(font), priority), priority, background, foreground,
                  border, 4);
 
@@ -153,16 +193,15 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         const int cy = rect.top() + rect.height() / 2;
         const int avatarX = rect.left() + 16;
 
-        painter->setPen(Qt::NoPen);
-        painter->setBrush(tm.color(Token::TextPrimary));
+        // Avatar as in the design: raised fill, thin border ring, primary-colour initials.
+        painter->setPen(QPen(tm.color(Token::Border), 1));
+        painter->setBrush(tm.color(Token::SurfaceRaised));
         painter->drawEllipse(QPointF(avatarX, cy), 11, 11);
-        painter->setFont(boldFont(painter->font(), 8));
-        painter->setPen(tm.color(Token::AccentText));
+        painter->setFont(boldFont(painter->font(), 12));
+        painter->setPen(tm.color(Token::TextPrimary));
         painter->drawText(QRectF(avatarX - 11, cy - 11, 22, 22), Qt::AlignCenter, initials);
 
-        QFont nameFont = painter->font();
-        nameFont.setPointSize(10);
-        nameFont.setBold(false);
+        const QFont nameFont = ThemeManager::instance().textFont(TextStyle::Body);
         painter->setFont(nameFont);
         const int nameWidth = QFontMetrics(nameFont).horizontalAdvance(name);
         painter->setPen(tm.color(Token::TextPrimary));
@@ -170,7 +209,7 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
 
         if (manual || matchPct > 0) {
             const QString badge = manual ? QString("Manual") : QString("%1%").arg(matchPct);
-            const QFont badgeFont = boldFont(painter->font(), 9);
+            const QFont badgeFont = boldFont(painter->font(), 12);
             painter->setFont(badgeFont);
             const int badgeWidth = QFontMetrics(badgeFont).horizontalAdvance(badge) + 12;
             const QRectF badgeRect(avatarX + 22 + nameWidth, cy - 9, badgeWidth, 18);
@@ -184,17 +223,18 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         }
 
     } else if (col == AssignmentTableModel::Rationale) {
-        QFont font = painter->font();
-        font.setPointSize(9);
+        QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
         painter->setFont(font);
-        painter->setPen(tm.color(Token::TextPrimary));
-        painter->drawText(rect.adjusted(10, 6, -10, -6), Qt::AlignLeft | Qt::AlignVCenter | Qt::TextWordWrap,
-                          index.data(AssignmentTableModel::RationaleRole).toString());
+        painter->setPen(tm.color(Token::TextSecondary));
+        // At most two lines; the full text is in the tooltip.
+        const QString text = twoLines(index.data(AssignmentTableModel::RationaleRole).toString(),
+                                      QFontMetrics(font), rect.width() - 20);
+        painter->drawText(rect.adjusted(10, 6, -10, -6), Qt::AlignLeft | Qt::AlignVCenter, text);
 
     } else if (col == AssignmentTableModel::Status) {
         const bool waiting = index.data(AssignmentTableModel::WaitingOnDepRole).toBool();
         const QString text = waiting ? QString::fromUtf8("▲ Waiting on Dep") : QString("Ready");
-        const QFont font = boldFont(painter->font(), 9);
+        const QFont font = boldFont(painter->font(), 12);
         painter->setFont(font);
         const QColor background = tm.color(waiting ? Token::WarningSoft : Token::SuccessSoft);
         const QColor foreground = tm.color(waiting ? Token::WarningText : Token::TextPrimary);

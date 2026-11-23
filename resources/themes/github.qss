@@ -1,0 +1,212 @@
+/* GitHub Integration page (S2).
+   Generic rules (card, buttons, input, table, scroll area) are copies of the slicer ones,
+   scoped under this page so the two pages do not depend on each other. */
+
+QWidget#GitHubIntegrationPage {
+    background-color: transparent;
+    color: @TextPrimary;
+    font-family: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI";
+}
+
+QWidget#GitHubIntegrationPage QScrollArea#slicerScrollArea {
+    background: transparent;
+    border: none;
+}
+
+QWidget#GitHubIntegrationPage QWidget#slicerScrollContent {
+    background: transparent;
+}
+
+QWidget#GitHubIntegrationPage QFrame#card {
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
+    border-radius: 12px;
+}
+
+QWidget#GitHubIntegrationPage QFrame#card QLabel {
+    background: transparent;
+}
+
+QWidget#GitHubIntegrationPage QLabel#cardTitle {
+    color: @TextPrimary;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QWidget#GitHubIntegrationPage QLabel#cardSubtitle {
+    color: @TextMuted;
+    font-size: 12px; font-weight: 500;
+}
+
+QWidget#GitHubIntegrationPage QPushButton#primaryButton,
+QWidget#GitHubIntegrationPage QPushButton#connectButton {
+    background-color: @Accent;
+    color: @AccentText;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QWidget#GitHubIntegrationPage QPushButton#primaryButton:hover,
+QWidget#GitHubIntegrationPage QPushButton#connectButton:hover {
+    background-color: @AccentHover;
+}
+
+QWidget#GitHubIntegrationPage QPushButton#primaryButton:pressed,
+QWidget#GitHubIntegrationPage QPushButton#connectButton:pressed {
+    background-color: @AccentPressed;
+}
+
+QWidget#GitHubIntegrationPage QPushButton#secondaryButton {
+    background-color: @GlassFillStrong;
+    color: @TextPrimary;
+    border: 1px solid @Border;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+QWidget#GitHubIntegrationPage QPushButton#secondaryButton:hover {
+    background-color: @SurfaceAlt;
+}
+
+QWidget#GitHubIntegrationPage QPushButton#secondaryButton:pressed {
+    background-color: @Track;
+}
+
+/* Keyboard focus. Dark Accent equals TextPrimary, so the primary button swaps its Accent fill for Surface and gets a
+   TextPrimary ring; the secondary button only gets the ring. The border grows, the padding shrinks, size stays. The
+   combined states are listed so hover and pressed do not bring the Accent fill back. */
+QWidget#GitHubIntegrationPage QPushButton#primaryButton:focus,
+QWidget#GitHubIntegrationPage QPushButton#connectButton:focus,
+QWidget#GitHubIntegrationPage QPushButton#primaryButton:focus:hover,
+QWidget#GitHubIntegrationPage QPushButton#connectButton:focus:hover,
+QWidget#GitHubIntegrationPage QPushButton#primaryButton:focus:pressed,
+QWidget#GitHubIntegrationPage QPushButton#connectButton:focus:pressed {
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 2px solid @TextPrimary;
+    padding: 6px 16px;
+}
+
+QWidget#GitHubIntegrationPage QPushButton#secondaryButton:focus,
+QWidget#GitHubIntegrationPage QPushButton#secondaryButton:focus:hover,
+QWidget#GitHubIntegrationPage QPushButton#secondaryButton:focus:pressed {
+    border: 2px solid @TextPrimary;
+    padding: 7px 15px;
+}
+
+QWidget#GitHubIntegrationPage QLabel#statusLabel {
+    background-color: @SuccessSoft;
+    color: @TextPrimary;
+    border-radius: 12px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QWidget#GitHubIntegrationPage QLineEdit#repoInput,
+QWidget#GitHubIntegrationPage QLineEdit#branchInput {
+    background-color: @GlassFillStrong;
+    color: @TextPrimary;
+    border: 1px solid @Border;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 14px;
+}
+
+QWidget#GitHubIntegrationPage QLineEdit#repoInput:focus,
+QWidget#GitHubIntegrationPage QLineEdit#branchInput:focus {
+    border: 2px solid @Accent;
+    padding: 6px 11px;
+    background-color: @Surface;
+}
+
+/* property "state" is "connected" or "disconnected" */
+QWidget#GitHubIntegrationPage QFrame#card QLabel#connectionBadge {
+    border-radius: 10px;
+    padding: 4px 12px;
+    font-size: 12px; font-weight: 500;
+}
+
+QWidget#GitHubIntegrationPage QFrame#card QLabel#connectionBadge[state="connected"] {
+    background-color: @SuccessSoft;
+    color: @TextPrimary;
+    font-weight: 600;
+}
+
+QWidget#GitHubIntegrationPage QFrame#card QLabel#connectionBadge[state="disconnected"] {
+    background-color: @SurfaceAlt;
+    color: @TextMuted;
+    border: 1px solid @Border;
+    font-weight: 600;
+}
+
+/* ---------- tables ---------- */
+QWidget#GitHubIntegrationPage QTableView#assignmentsTable {
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
+    border-radius: 12px;
+    gridline-color: @GlassEdge;
+    selection-background-color: @AccentSoft;
+    selection-color: @TextPrimary;
+    outline: none;
+}
+
+QWidget#GitHubIntegrationPage QHeaderView,
+QWidget#GitHubIntegrationPage QTableCornerButton::section {
+    background: transparent;
+    border: none;
+}
+
+QWidget#GitHubIntegrationPage QHeaderView::section {
+    background-color: transparent;
+    color: @TextMuted;
+    border: none;
+    border-bottom: 1px solid @GlassEdge;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+}
+
+QWidget#GitHubIntegrationPage QTableView::item {
+    padding: 8px 12px;
+    border-bottom: 1px solid @GlassEdge;
+}
+
+/* ---------- notice and states ---------- */
+/* The simulated-data notice: raised bar, readable text (TextSecondary on SurfaceAlt), a border so it is not only a tint. */
+QWidget#GitHubIntegrationPage QLabel#simulatedNotice {
+    background-color: @SurfaceAlt;
+    color: @TextSecondary;
+    border: 1px solid @Border;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px; font-weight: 500;
+}
+
+/* Why Connect is off. */
+QWidget#GitHubIntegrationPage QFrame#card QLabel#connectHint {
+    color: @TextMuted;
+    font-size: 12px; font-weight: 500;
+}
+
+/* Disabled buttons: flat fill and a border instead of the accent fill, muted text. */
+QWidget#GitHubIntegrationPage QPushButton#primaryButton:disabled,
+QWidget#GitHubIntegrationPage QPushButton#connectButton:disabled {
+    background-color: @SurfaceAlt;
+    color: @TextMuted;
+    border: 1px solid @Border;
+    padding: 7px 17px;   /* the new 1 px border is taken from the padding, so the size stays */
+}
+
+QWidget#GitHubIntegrationPage QPushButton#secondaryButton:disabled {
+    background-color: @SurfaceAlt;
+    color: @TextMuted;
+}

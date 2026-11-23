@@ -11,6 +11,8 @@
 #include <QScrollBar>
 #include <QVBoxLayout>
 
+#include <algorithm>
+
 #include "PinCardWidget.h"
 #include "PinUiHelpers.h"
 
@@ -42,6 +44,7 @@ PinColumnWidget::PinColumnWidget(PinCategory category, const QString& title, QWi
     scroll_ = new QScrollArea(this);
     scroll_->setObjectName("PinColumnScroll");
     scroll_->setWidgetResizable(true);
+    scroll_->setFocusPolicy(Qt::NoFocus);   // the controls inside take focus and the area follows them; the area itself would be a Tab stop with no ring
     scroll_->setFrameShape(QFrame::NoFrame);
     scroll_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     auto* body = new QWidget;
@@ -59,7 +62,7 @@ PinColumnWidget::PinColumnWidget(PinCategory category, const QString& title, QWi
     cardsLayout_->insertWidget(0, empty_);
 }
 
-void PinColumnWidget::setCards(const std::vector<PinCardWidget*>& cards)
+void PinColumnWidget::setCards(const std::vector<PinCardWidget*>& cards, bool showEmptyLabel)
 {
     // Remove every card (all layout items except the trailing stretch and the empty label).
     for (int i = cardsLayout_->count() - 1; i >= 0; --i) {
@@ -71,15 +74,21 @@ void PinColumnWidget::setCards(const std::vector<PinCardWidget*>& cards)
         }
     }
     int index = 0;
+    int widestCard = 0;
     for (auto* card : cards) {
         card->setParent(scroll_->widget());
         cardsLayout_->insertWidget(index++, card);
         card->show();
+        widestCard = std::max(widestCard, card->minimumSizeHint().width());
     }
+    // A scroll area does not pass its content's minimum width on, so the column would get narrower than its
+    // cards and cut them off. Ask for the widest card plus room for the vertical scroll bar instead; the page
+    // scrolls sideways when the columns do not fit.
+    scroll_->setMinimumWidth(widestCard > 0 ? widestCard + scroll_->verticalScrollBar()->sizeHint().width() : 0);
     // The empty label is item 0 only while it is the first widget; keep it first, hide when cards exist.
     cardsLayout_->removeWidget(empty_);
     cardsLayout_->insertWidget(0, empty_);
-    empty_->setVisible(cards.empty());
+    empty_->setVisible(cards.empty() && showEmptyLabel);
     count_->setText(QString::number(cards.size()));
 }
 

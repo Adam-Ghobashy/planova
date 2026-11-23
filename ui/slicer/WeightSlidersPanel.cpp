@@ -63,6 +63,11 @@ WeightSlidersPanel::WeightSlidersPanel(QWidget* parent) : QWidget(parent) {
     syncWidgets();
 }
 
+void WeightSlidersPanel::setWeights(const ScoringWeights& weights) {
+    weights_ = weights;
+    syncWidgets();  // blocks the slider signals while it moves them
+}
+
 void WeightSlidersPanel::onSliderMoved(int index, int value) {
     weights_ = rebalance(weights_, index, value);
     syncWidgets();

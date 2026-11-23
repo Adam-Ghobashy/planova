@@ -1,0 +1,218 @@
+/* Planova S5 (Pins and Collab). Colours are token placeholders; the old-colour mapping is at the top of base.qss. */
+
+/* ---------- page ---------- */
+QWidget#PinsPage { background-color: transparent; }
+QLabel#PinsTitle { color: @TextPrimary; font-size: 24px; font-weight: 600; }
+QLabel#PinsSubtitle { color: @TextMuted; font-size: 14px; }
+QLabel#DialogHint { color: @TextMuted; font-size: 12px; font-weight: 500; }
+
+QPushButton#LeavePinButton,
+QPushButton#PinPrimaryButton,
+QPushButton#PinCommentSend {
+    background-color: @Accent; color: @AccentText; border: none;
+    border-radius: 8px; padding: 8px 16px; font-weight: 600;
+}
+QPushButton#LeavePinButton:hover,
+QPushButton#PinPrimaryButton:hover,
+QPushButton#PinCommentSend:hover { background-color: @AccentHover; }
+QPushButton#PinPrimaryButton:disabled { background-color: @Track; color: @TextMuted; }
+QPushButton#PinCommentSend { padding: 5px 12px; }
+/* Keyboard focus: the fill is swapped for Surface and a 2 px TextPrimary ring replaces the missing border, so the ring
+   differs from the fill in both themes (Dark Accent equals TextPrimary; an AccentText ring merged with the page).
+   The border grows from 0 to 2 px, so the padding shrinks by 2 px and the button keeps its size. Combined states are
+   listed so hover and pressed do not bring the Accent fill back. */
+QPushButton#LeavePinButton:focus,
+QPushButton#LeavePinButton:focus:hover,
+QPushButton#LeavePinButton:focus:pressed,
+QPushButton#PinPrimaryButton:focus,
+QPushButton#PinPrimaryButton:focus:hover,
+QPushButton#PinPrimaryButton:focus:pressed,
+QPushButton#PinCommentSend:focus,
+QPushButton#PinCommentSend:focus:hover,
+QPushButton#PinCommentSend:focus:pressed {
+    background-color: @Surface; color: @TextPrimary; border: 2px solid @TextPrimary; padding: 6px 14px;
+}
+QPushButton#PinCommentSend:focus,
+QPushButton#PinCommentSend:focus:hover,
+QPushButton#PinCommentSend:focus:pressed { padding: 3px 10px; }
+
+/* ---------- filter chips ---------- */
+QPushButton#PinFilterChip {
+    background-color: @GlassFillStrong; color: @TextMuted; border: 1px solid @Border;
+    border-radius: 14px; padding: 6px 14px; font-weight: 600;
+}
+QPushButton#PinFilterChip[dot="true"] { padding-left: 28px; }
+QPushButton#PinFilterChip:hover { border-color: @Accent; color: @TextPrimary; }
+QPushButton#PinFilterChip:checked { background-color: @AccentSoft; color: @Accent; border-color: @Accent; }
+/* Focus comes last, so it also wins over :checked. TextPrimary keeps the ring different from the Accent border of a
+   checked chip in Light; the border grows by 1 px and the padding shrinks by 1 px. */
+QPushButton#PinFilterChip:focus { border: 2px solid @TextPrimary; padding: 5px 13px; }
+QPushButton#PinFilterChip[dot="true"]:focus { padding-left: 27px; }
+
+QLabel#ChipDot { border-radius: 4px; background-color: @TextMuted; }
+QLabel#ChipDot[member="1"] { background-color: @Member1; }
+QLabel#ChipDot[member="2"] { background-color: @Member2; }
+QLabel#ChipDot[member="3"] { background-color: @Member3; }
+QLabel#ChipDot[member="4"] { background-color: @Member4; }
+QLabel#ChipDot[member="5"] { background-color: @Member5; }
+QLabel#ChipDot[member="6"] { background-color: @Member6; }
+
+/* ---------- columns ---------- */
+QFrame#PinColumn {
+    background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 12px;
+}
+QFrame#PinColumn[dropActive="true"] { background-color: @AccentSoft; border: 2px solid @Accent; }
+QLabel#PinColumnTitle { color: @TextPrimary; font-size: 14px; font-weight: 600; background: transparent; }
+QLabel#PinColumnCount {
+    background-color: @Track; color: @TextSecondary; border-radius: 10px;
+    min-width: 20px; max-height: 20px; padding: 0 6px; font-size: 12px; font-weight: 600;
+}
+QLabel#PinColumnEmpty { color: @TextMuted; padding: 28px 8px; background: transparent; }
+QScrollArea#PinColumnScroll, QWidget#PinColumnBody { background: transparent; }
+QScrollArea#PinsScroll, QWidget#PinColumnsHost { background: transparent; border: none; }
+QScrollArea#PinsScroll QScrollBar:horizontal { height: 8px; background: transparent; margin: 0 4px; }
+QScrollArea#PinsScroll QScrollBar::handle:horizontal { background: @ScrollHandle; border-radius: 4px; min-width: 30px; }
+QScrollArea#PinsScroll QScrollBar::add-line:horizontal,
+QScrollArea#PinsScroll QScrollBar::sub-line:horizontal { width: 0; }
+
+/* ---------- cards ---------- */
+QFrame#PinCard { border: 1px solid @Border; border-radius: 10px; background-color: @GlassFillStrong; }
+/* Each category is a sticky-note colour: tint, border and text come from the design's sticky tokens
+   (Handoff green, Blocker pink, Testing yellow, Architecture blue). */
+QFrame#PinCard[category="handoff"]      { background-color: @PinHandoff;      border-color: @StickyGreenBorder; }
+QFrame#PinCard[category="blocker"]      { background-color: @PinBlocker;      border-color: @StickyPinkBorder; }
+QFrame#PinCard[category="testing"]      { background-color: @PinTesting;      border-color: @StickyYellowBorder; }
+QFrame#PinCard[category="architecture"] { background-color: @PinArchitecture; border-color: @StickyBlueBorder; }
+QFrame#PinCard:hover { border: 1px solid @Accent; }
+QFrame#PinCard[dragging="true"] { border: 1px dashed @Accent; background-color: @AccentSoft; }
+QFrame#PinCard QLabel { background: transparent; }
+
+QLabel#PinCardText { color: @TextPrimary; font-size: 14px; }
+QLabel#PinCardTime { color: @TextMuted; font-size: 12px; font-weight: 600; }
+QLabel#PinCardTag { color: @TextMuted; font-size: 12px; font-weight: 600; }
+QLabel#PinTaskLine { color: @TextMuted; font-size: 12px; font-weight: 500; }
+QLabel#PinAuthorName { color: @TextPrimary; font-size: 12px; font-weight: 600; }
+/* Text on a sticky note uses the matching sticky text colour (contrast pairs are in tst_Contrast). */
+QFrame#PinCard[category="handoff"] QLabel#PinCardText,
+QFrame#PinCard[category="handoff"] QLabel#PinCardTime,
+QFrame#PinCard[category="handoff"] QLabel#PinCardTag,
+QFrame#PinCard[category="handoff"] QLabel#PinTaskLine,
+QFrame#PinCard[category="handoff"] QLabel#PinAuthorName { color: @StickyGreenText; }
+QFrame#PinCard[category="blocker"] QLabel#PinCardText,
+QFrame#PinCard[category="blocker"] QLabel#PinCardTime,
+QFrame#PinCard[category="blocker"] QLabel#PinCardTag,
+QFrame#PinCard[category="blocker"] QLabel#PinTaskLine,
+QFrame#PinCard[category="blocker"] QLabel#PinAuthorName { color: @StickyPinkText; }
+QFrame#PinCard[category="testing"] QLabel#PinCardText,
+QFrame#PinCard[category="testing"] QLabel#PinCardTime,
+QFrame#PinCard[category="testing"] QLabel#PinCardTag,
+QFrame#PinCard[category="testing"] QLabel#PinTaskLine,
+QFrame#PinCard[category="testing"] QLabel#PinAuthorName { color: @StickyYellowText; }
+QFrame#PinCard[category="architecture"] QLabel#PinCardText,
+QFrame#PinCard[category="architecture"] QLabel#PinCardTime,
+QFrame#PinCard[category="architecture"] QLabel#PinCardTag,
+QFrame#PinCard[category="architecture"] QLabel#PinTaskLine,
+QFrame#PinCard[category="architecture"] QLabel#PinAuthorName { color: @StickyBlueText; }
+
+QLabel#PinAvatar {
+    border-radius: 12px; color: @TextInverse; font-size: 12px; font-weight: 600;
+    background-color: @TextMuted;
+}
+QLabel#PinAvatar[member="1"] { background-color: @Member1; color: @MemberText; }
+QLabel#PinAvatar[member="2"] { background-color: @Member2; color: @MemberText; }
+QLabel#PinAvatar[member="3"] { background-color: @Member3; color: @MemberText; }
+QLabel#PinAvatar[member="4"] { background-color: @Member4; color: @MemberText; }
+QLabel#PinAvatar[member="5"] { background-color: @Member5; color: @MemberText; }
+QLabel#PinAvatar[member="6"] { background-color: @Member6; color: @MemberText; }
+
+QToolButton#PinMenuButton { border: 2px solid transparent; border-radius: 6px; background: transparent; color: @TextMuted; font-weight: 600; padding: 0 4px; }
+QToolButton#PinMenuButton:hover { color: @Accent; }
+QToolButton#PinMenuButton:focus { border-color: @Accent; color: @Accent; }
+QToolButton#PinMenuButton::menu-indicator { image: none; width: 0px; }
+
+QPushButton#PinResolveButton {
+    background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @Border;
+    border-radius: 8px; padding: 4px 12px; font-weight: 600;
+}
+QPushButton#PinResolveButton:hover { border-color: @Accent; }
+QPushButton#PinResolveButton:focus { border: 2px solid @Accent; padding: 3px 11px; }
+
+QToolButton#PinCommentChip { border: 2px solid transparent; border-radius: 6px; background: transparent; color: @TextMuted; font-size: 12px; font-weight: 600; }
+QToolButton#PinCommentChip:hover { color: @Accent; }
+QToolButton#PinCommentChip:focus { border-color: @Accent; color: @Accent; }
+QToolButton#PinCommentChip:checked { color: @Accent; }
+
+QFrame#PinCommentsPanel {
+    background-color: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 8px;
+}
+QFrame#PinCommentsPanel QLabel { background: transparent; }
+QLabel#PinCommentMeta { color: @TextMuted; font-size: 12px; font-weight: 600; }
+QLabel#PinCommentText { color: @TextPrimary; font-size: 12px; font-weight: 500; }
+QLineEdit#PinCommentInput {
+    background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @Border;
+    border-radius: 8px; padding: 5px 8px;
+}
+QLineEdit#PinCommentInput:focus { border: 2px solid @Accent; padding: 4px 7px; }
+
+/* ---------- sidebar badge (open pins, from IPinQuery::openCount) ---------- */
+QLabel#NavBadge {
+    background-color: @AccentSoft; color: @Accent; border-radius: 9px;
+    min-width: 18px; max-height: 18px; padding: 0 5px; font-size: 12px; font-weight: 600;
+}
+
+/* ---------- combo box (StyledComboBox, object name PinCombo) ----------
+   Chevron is painted in C++ from the two qproperty colours (TextMuted, Accent). */
+QComboBox#PinCombo {
+    background-color: @GlassFillStrong; color: @TextPrimary; border: 1px solid @Border; border-radius: 8px;
+    padding: 6px 30px 6px 10px; min-height: 20px;
+    combobox-popup: 0;
+    qproperty-arrowColor: @TextMuted; qproperty-arrowActiveColor: @Accent;
+}
+QComboBox#PinCombo:hover { border: 1px solid @Accent; }
+/* Focus (and the open list) is a 2 px ring, so it differs from the 1 px hover border; padding shrinks by 1 px. */
+QComboBox#PinCombo:focus, QComboBox#PinCombo:on { border: 2px solid @Accent; padding: 5px 29px 5px 9px; }
+QComboBox#PinCombo:disabled { background-color: @SurfaceAlt; color: @TextMuted; border: 1px solid @Border; }
+QComboBox#PinCombo::drop-down {
+    border: none; background: transparent; width: 30px;
+    subcontrol-origin: padding; subcontrol-position: center right;
+}
+QComboBox#PinCombo::down-arrow { image: none; }
+
+/* popup: an opaque card (SurfaceDialog). Square outer corners: an opaque window cannot be rounded by QSS. */
+QComboBox#PinCombo QComboBoxPrivateContainer {
+    background-color: @SurfaceDialog; border: 1px solid @Border; border-radius: 0;
+}
+QComboBox#PinCombo QAbstractItemView {
+    background-color: @SurfaceDialog; color: @TextPrimary; border: none; outline: 0; margin: 4px;
+    selection-background-color: @AccentSoft; selection-color: @Accent;
+}
+QComboBox#PinCombo QAbstractItemView::item { min-height: 28px; padding: 2px 10px; border-radius: 6px; }
+QComboBox#PinCombo QAbstractItemView::item:selected { background-color: @AccentSoft; color: @Accent; }
+
+/* ---------- card menu ("...") ---------- */
+QMenu#PinCardMenu { background-color: @SurfaceDialog; border: 1px solid @Border; border-radius: 10px; padding: 4px; }
+QMenu#PinCardMenu::item { color: @TextPrimary; padding: 7px 24px 7px 14px; border-radius: 6px; margin: 1px 0; }
+QMenu#PinCardMenu::item:selected { background-color: @AccentSoft; color: @Accent; }
+
+/* ---------- scroll bars: thin rounded handle, TextMuted at 35% / 60%, Accent while dragging ---------- */
+QWidget#PinsPage QScrollBar:vertical,
+QComboBox#PinCombo QScrollBar:vertical { background: transparent; width: 10px; margin: 0; }
+
+QWidget#PinsPage QScrollBar::handle:vertical,
+QComboBox#PinCombo QScrollBar::handle:vertical {
+    background: @ScrollThumb; border-radius: 3px; min-height: 32px; margin: 2px;
+}
+QWidget#PinsPage QScrollBar::handle:vertical:hover,
+QComboBox#PinCombo QScrollBar::handle:vertical:hover { background: @ScrollThumbHover; }
+
+QWidget#PinsPage QScrollBar::handle:vertical:pressed,
+QComboBox#PinCombo QScrollBar::handle:vertical:pressed { background: @Accent; }
+
+QWidget#PinsPage QScrollBar::add-line:vertical, QWidget#PinsPage QScrollBar::sub-line:vertical,
+QComboBox#PinCombo QScrollBar::add-line:vertical, QComboBox#PinCombo QScrollBar::sub-line:vertical {
+    height: 0; background: none; border: none;
+}
+QWidget#PinsPage QScrollBar::add-page:vertical, QWidget#PinsPage QScrollBar::sub-page:vertical,
+QComboBox#PinCombo QScrollBar::add-page:vertical, QComboBox#PinCombo QScrollBar::sub-page:vertical {
+    background: transparent;
+}

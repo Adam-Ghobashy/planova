@@ -1,9 +1,13 @@
 #include <QtTest>
+#include <QJsonObject>
 #include <stdexcept>
 #include <vector>
 
 #include "planova/common/Clock.h"
+#include "planova/common/EventTypes.h"
 #include "planova/store/EventLog.h"
+#include "planova/task/TaskProjection.h"
+#include "planova/task/TaskService.h"
 #include "planova/team/MemberProjection.h"
 #include "planova/team/MemberService.h"
 #include "planova/team/SkillCategory.h"
@@ -44,7 +48,8 @@ private slots:
         MemberProjection proj;
         log.add(proj);
 
-        MemberService svc(log, clock);
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
 
         Id id1 = svc.add("Adam", "Backend Lead", true);
         clock.advance(10);
@@ -74,7 +79,9 @@ private slots:
         MemoryStore store;
         EventLog log(store);
         FakeClock clock(1000);
-        MemberService svc(log, clock);
+        MemberProjection proj;
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
 
         QVERIFY_THROWS_EXCEPTION(invalid_argument, svc.add("", "Developer", false));
     }
@@ -88,10 +95,10 @@ private slots:
         MemberProjection proj;
         log.add(proj);
 
-        MemberService svc(log, clock);
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
         Id id = svc.add("Adam", "Junior Dev", false);
 
-        // Normal update
         clock.advance(10);
         svc.update(id, "Senior Dev", 85);
         QCOMPARE(proj.byId(id)->role, string("Senior Dev"));
@@ -117,7 +124,8 @@ private slots:
         MemberProjection proj;
         log.add(proj);
 
-        MemberService svc(log, clock);
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
         Id id = svc.add("Adam", "Backend", true);
 
         clock.advance(10);
@@ -144,18 +152,45 @@ private slots:
         MemberProjection proj;
         log.add(proj);
 
-        MemberService svc(log, clock);
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
 
-        // Default before setting
         QCOMPARE(proj.getSetting("auto_assign", false), false);
 
         clock.advance(10);
         svc.setSetting("auto_assign", true);
         QCOMPARE(proj.getSetting("auto_assign", false), true);
 
-        // Rebuild from EventLog store and verify state matches
         log.rebuild();
         QCOMPARE(proj.getSetting("auto_assign", false), true);
+    }
+
+    void unknownSkillCategoryIsIgnored()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock(1000);
+
+        MemberProjection proj;
+        log.add(proj);
+
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
+        Id id = svc.add("Adam", "Backend", true);
+
+        // A hand-edited or newer-build event with a skill name we do not know
+        Event e;
+        e.id = "evt-quantum";
+        e.ts = clock.nowMs() + 10;
+        e.author = id;
+        e.type = SkillRated;
+        e.payload = QJsonObject{{"memberId", QString::fromStdString(id)},
+                                {"category", "Quantum"},
+                                {"rating", 3}};
+        store.append(e);
+
+        QVERIFY_THROWS_NO_EXCEPTION(log.rebuild());
+        QVERIFY(proj.byId(id)->ratings.empty());
     }
 
     void removeMemberAndRebuild()
@@ -167,7 +202,8 @@ private slots:
         MemberProjection proj;
         log.add(proj);
 
-        MemberService svc(log, clock);
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
         Id id1 = svc.add("Adam", "Lead", true);
         clock.advance(10);
         Id id2 = svc.add("Zeyad", "UI", false);
@@ -182,10 +218,118 @@ private slots:
         // Out-of-bounds / empty ID must throw invalid_argument
         QVERIFY_THROWS_EXCEPTION(invalid_argument, svc.remove(""));
 
-        // Rebuild and verify removal persists
         log.rebuild();
         QCOMPARE(proj.all().size(), size_t(1));
         QCOMPARE(proj.byId(id1).has_value(), false);
+    }
+
+    void updateUnknownThrows()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock(1000);
+        MemberProjection proj;
+        log.add(proj);
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
+
+        QVERIFY_THROWS_EXCEPTION(invalid_argument, svc.update("ghost", "Dev", 50));
+        QCOMPARE(store.events.size(), size_t(0));
+    }
+
+    void removeUnknownThrows()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock(1000);
+        MemberProjection proj;
+        log.add(proj);
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
+
+        QVERIFY_THROWS_EXCEPTION(invalid_argument, svc.remove("ghost"));
+        QCOMPARE(store.events.size(), size_t(0));
+    }
+
+    void rateUnknownThrows()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock(1000);
+        MemberProjection proj;
+        log.add(proj);
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
+
+        QVERIFY_THROWS_EXCEPTION(invalid_argument, svc.rate("ghost", SkillCategory::Backend, 3));
+        QCOMPARE(store.events.size(), size_t(0));
+    }
+
+    void addBlankNameThrows()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock(1000);
+        MemberProjection proj;
+        log.add(proj);
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
+
+        QVERIFY_THROWS_EXCEPTION(invalid_argument, svc.add("   ", "Dev", false));
+        QCOMPARE(store.events.size(), size_t(0));
+    }
+
+    void addTrimsName()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock(1000);
+        MemberProjection proj;
+        log.add(proj);
+        TaskProjection tasks;
+        MemberService svc(log, clock, proj, tasks);
+
+        const Id id = svc.add(" Ana ", "Dev", false);
+        QCOMPARE(proj.byId(id)->name, string("Ana"));
+    }
+
+    void removeUnassignsOpenTasks()
+    {
+        MemoryStore store;
+        EventLog log(store);
+        FakeClock clock(1000);
+        MemberProjection proj;
+        TaskProjection tasks;
+        log.add(proj);
+        log.add(tasks);
+        MemberService svc(log, clock, proj, tasks);
+        TaskService taskSvc(log, tasks, clock, &proj);
+
+        const Id member = svc.add("Ana", "Dev", false);
+        clock.advance(10);
+        const Id open = taskSvc.create(NewTask{"Open", SkillCategory::Backend, Priority::Medium, 3, 2, {}});
+        clock.advance(10);
+        const Id done = taskSvc.create(NewTask{"Done", SkillCategory::Backend, Priority::Medium, 3, 2, {}});
+        clock.advance(10);
+        taskSvc.assign(open, member, "board");
+        clock.advance(10);
+        taskSvc.assign(done, member, "board");
+        clock.advance(10);
+        taskSvc.move(done, TaskStatus::InProgress);
+        clock.advance(10);
+        taskSvc.move(done, TaskStatus::Review);
+        clock.advance(10);
+        taskSvc.move(done, TaskStatus::Done);
+        clock.advance(10);
+
+        svc.remove(member);
+
+        QVERIFY(!tasks.byId(open)->assignee.has_value());
+        QCOMPARE(tasks.byId(done)->assignee.value(), member);
+        const size_t n = store.events.size();
+        QCOMPARE(store.events[n - 2].type, string(TaskUnassigned));
+        QCOMPARE(store.events[n - 2].payload["taskId"].toString().toStdString(), open);
+        QCOMPARE(store.events[n - 1].type, string(MemberRemoved));
     }
 };
 

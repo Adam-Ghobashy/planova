@@ -25,7 +25,8 @@ public:
                     QWidget* parent = nullptr);
 
 public slots:
-    void refreshFromBoard();
+    // eventType is the CoreBridge::changed argument; empty means "just re-read the board".
+    void refreshFromBoard(const QString& eventType = QString());
 
 signals:
     void assignmentsApplied(int changed);
@@ -37,6 +38,7 @@ private slots:
 private:
     bool recalculate();
     void fitTableHeight();
+    void updateRecalculateIcon();
     void showStatus(const QString& text);
     planova::slicer::SlicerService& slicer_;
     ITaskQuery& tasks_;

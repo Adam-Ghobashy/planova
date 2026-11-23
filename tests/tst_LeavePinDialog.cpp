@@ -4,8 +4,8 @@
 #include <QComboBox>
 #include <QListView>
 
-#include "ui/pins/LeavePinDialog.h"
-#include "ui/pins/StyledComboBox.h"
+#include "pins/LeavePinDialog.h"
+#include "pins/StyledComboBox.h"
 
 using planova::s5::LeavePinDialog;
 using planova::s5::StyledComboBox;

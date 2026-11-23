@@ -74,6 +74,9 @@ PinCardWidget::PinCardWidget(const PinView& view, const std::map<Id, QString>& m
     menuBtn->setText(QStringLiteral("···"));
     menuBtn->setPopupMode(QToolButton::InstantPopup);
     menuBtn->setCursor(Qt::PointingHandCursor);
+    menuBtn->setToolTip(tr("Pin actions"));
+    menuBtn->setAccessibleName(tr("Pin actions"));   // the visible text is only dots
+    menuBtn->setMinimumSize(28, 24);                 // touch and pointer target of at least 24 px
     auto* menu = new QMenu(menuBtn);
     menu->setObjectName("PinCardMenu");
     applyPopupChrome(menu, true);
@@ -132,6 +135,8 @@ PinCardWidget::PinCardWidget(const PinView& view, const std::map<Id, QString>& m
     chip_->setText(tr("Comments (%1)").arg(view.comments.size()));
     chip_->setCheckable(true);
     chip_->setCursor(Qt::PointingHandCursor);
+    chip_->setToolTip(tr("Show or hide comments"));
+    chip_->setMinimumHeight(24);
     auto* resolve = new QPushButton(tr("Resolve"), this);
     resolve->setObjectName("PinResolveButton");
     resolve->setCursor(Qt::PointingHandCursor);

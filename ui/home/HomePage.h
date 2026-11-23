@@ -17,6 +17,7 @@ class QGridLayout;
 class QLabel;
 class QObject;
 class QPushButton;
+class QToolButton;
 class StatCardWidget;
 
 namespace planova::s6 {
@@ -35,6 +36,9 @@ public slots:
 
     void setProjectName(const QString& name);
 
+    // "Agile" or "Scrum" shows the Active Sprint badge; any other model hides it.
+    void setProcessModel(const QString& model);
+
     // Total open pins (IPinQuery::openCount) for the footer of the pins preview.
     void setOpenPinCount(int count);
 
@@ -44,6 +48,8 @@ signals:
     void teamSkillsRequested();
     void githubRequested();
     void pinsRequested();
+    void editProjectRequested();
+    void deleteProjectRequested();
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
@@ -75,6 +81,8 @@ private:
     IMemberQuery& m_memberQuery;
 
     QLabel* m_projectTitle = nullptr;
+    QLabel* m_sprintBadge = nullptr;
+    QToolButton* m_moreButton = nullptr;
 
     StatCardWidget* m_totalCard = nullptr;
     StatCardWidget* m_completedCard = nullptr;

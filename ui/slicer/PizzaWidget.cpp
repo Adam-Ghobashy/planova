@@ -1,4 +1,5 @@
 #include "slicer/PizzaWidget.h"
+#include "slicer/PizzaText.h"
 #include "theme/ThemeManager.h"
 #include <QEasingCurve>
 #include <QFont>
@@ -19,7 +20,8 @@ constexpr double kPi = 3.14159265358979323846;
 constexpr double kMargin = 20.0;
 constexpr double kLegendGap = 22.0;
 constexpr double kHintHeight = 26.0;
-constexpr double kMinRadius = 120.0;
+constexpr double kMaxRadius = 160.0;
+constexpr double kMinRadius = 40.0;
 constexpr double kPillHeight = 26.0;
 constexpr double kPillSpacing = 10.0;
 constexpr double kRestOffset = 6.0;
@@ -42,15 +44,6 @@ QString initialsOf(const std::string& name) {
     if (parts.isEmpty()) return {};
     if (parts.size() == 1) return parts[0].left(1).toUpper();
     return (parts.first().left(1) + parts.last().left(1)).toUpper();
-}
-
-QString firstNameOf(const std::string& name) {
-    const QStringList parts = QString::fromStdString(name).trimmed().split(' ', Qt::SkipEmptyParts);
-    return parts.isEmpty() ? QString() : parts.first();
-}
-
-QString pillText(const Portion& p) {
-    return QString("%1  %2 tasks").arg(firstNameOf(p.memberName)).arg(p.taskCount);
 }
 
 QColor memberColor(int index) {
@@ -92,9 +85,9 @@ void paintPizzaDisc(QPainter& painter, const QPointF& c, double r) {
 }
 
 PizzaWidget::PizzaWidget(QWidget* parent) : QWidget(parent) {
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    setMinimumSize(280, 420);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     setMouseTracking(true);
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this] { update(); });
 
     anim_ = new QVariantAnimation(this);
     anim_->setEasingCurve(QEasingCurve::Linear);
@@ -116,7 +109,7 @@ void PizzaWidget::setPortions(const std::vector<planova::slicer::Portion>& porti
         selectedMemberId_.clear();
         emit memberSelected(QString());
     }
-    updateMinimumHeight();
+    updateGeometry();
     update();
 }
 
@@ -164,21 +157,34 @@ double PizzaWidget::legendBottom() const {
     return legendTop() + legendHeight();
 }
 
-double PizzaWidget::pieRadius() const {
-    const double reserve = kRestOffset + kSpreadOffset + kLegendGap + legendHeight() + kHintHeight;
-    const double byWidth = (width() - 2 * kMargin) / 2.0;
-    const double byHeight = (height() - reserve - 2 * kMargin) / 2.0;
-    return (std::max)(40.0, (std::min)(byWidth, byHeight));
+// Space needed below the pie: slice offsets, the gap to the legend, the legend and the hint line.
+double PizzaWidget::belowPieHeight() const {
+    return kRestOffset + kSpreadOffset + kLegendGap + legendHeight() + kHintHeight;
 }
 
-void PizzaWidget::updateMinimumHeight() {
-    const double reserve = kRestOffset + kSpreadOffset + kLegendGap + legendHeight() + kHintHeight;
-    setMinimumHeight(static_cast<int>(std::ceil((std::max)(420.0, 2 * kMargin + 2 * kMinRadius + reserve))));
+// The radius the content wants: at most 160 px, smaller only when the widget is narrow.
+double PizzaWidget::idealRadius() const {
+    return (std::max)(kMinRadius, (std::min)(kMaxRadius, (width() - 2 * kMargin) / 2.0));
+}
+
+double PizzaWidget::pieRadius() const {
+    const double byHeight = (height() - belowPieHeight() - kMargin) / 2.0;
+    return (std::max)(kMinRadius, (std::min)(idealRadius(), byHeight));
+}
+
+// The height follows the content (pie plus legend plus hint), so there is no dead space under the legend.
+QSize PizzaWidget::sizeHint() const {
+    const double height = kMargin + 2 * idealRadius() + belowPieHeight();
+    return QSize(2 * static_cast<int>(kMargin + kMaxRadius), static_cast<int>(std::ceil(height)));
+}
+
+QSize PizzaWidget::minimumSizeHint() const {
+    return QSize(280, sizeHint().height());
 }
 
 void PizzaWidget::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
-    updateMinimumHeight();
+    updateGeometry();  // the legend wraps differently at a new width, so the wanted height changes
 }
 
 QPointF PizzaWidget::pieCenter() const {
@@ -305,8 +311,7 @@ void PizzaWidget::paintEvent(QPaintEvent* ) {
     const double legendEnd = drawLegend(painter);
     if (!sliced_ && !animating_ && hasCuts()) {
         painter.setPen(tm.color(Token::TextMuted));
-        QFont font = painter.font();
-        font.setPointSize(9);
+        QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
         painter.setFont(font);
         painter.drawText(QRectF(0, legendEnd + 2, width(), 20), Qt::AlignCenter,
                          "Press \"Slice the Project\" to divide the work");
@@ -376,10 +381,10 @@ void PizzaWidget::drawSlice(QPainter& painter, int index) const {
     painter.setBrush(memberColor(index));
     painter.drawEllipse(badge, 14, 14);
     QFont font = painter.font();
-    font.setBold(true);
-    font.setPointSize(9);
+    font.setWeight(QFont::DemiBold);
+    font.setPixelSize(12);
     painter.setFont(font);
-    painter.setPen(tm.color(Token::AccentText));
+    painter.setPen(tm.color(Token::MemberText));
     painter.drawText(QRectF(badge.x() - 14, badge.y() - 14, 28, 28), Qt::AlignCenter, initialsOf(p.memberName));
     painter.restore();
 }
@@ -412,14 +417,12 @@ void PizzaWidget::drawCutter(QPainter& painter) const {
 }
 
 PizzaWidget::LegendLayout PizzaWidget::layoutLegend(double top) const {
-    QFont font = this->font();
-    font.setPointSize(9);
-    font.setBold(false);
+    QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
     const QFontMetrics fm(font);
     const double maxRowWidth = width() - 2 * kMargin;
 
     std::vector<double> widths;
-    for (const Portion& p : portions_) widths.push_back(fm.horizontalAdvance(pillText(p)) + 34.0);
+    for (const Portion& p : portions_) widths.push_back(fm.horizontalAdvance(legendText(p.memberName, p.taskCount)) + 34.0);
 
     LegendLayout layout;
     layout.rects.assign(portions_.size(), QRectF());
@@ -447,9 +450,7 @@ PizzaWidget::LegendLayout PizzaWidget::layoutLegend(double top) const {
 
 double PizzaWidget::drawLegend(QPainter& painter) const {
     auto& tm = ThemeManager::instance();
-    QFont font = painter.font();
-    font.setPointSize(9);
-    font.setBold(false);
+    QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
     painter.setFont(font);
 
     const LegendLayout layout = layoutLegend(legendTop());
@@ -458,14 +459,14 @@ double PizzaWidget::drawLegend(QPainter& painter) const {
         const bool selected = !selectedMemberId_.isEmpty() &&
                               selectedMemberId_ == QString::fromStdString(portions_[i].memberId);
         painter.setPen(QPen(tm.color(selected ? Token::Accent : Token::Border), 1.0));
-        painter.setBrush(tm.color(selected ? Token::AccentSoft : Token::Surface));
+        painter.setBrush(tm.color(selected ? Token::AccentSoft : Token::GlassFillStrong));
         painter.drawRoundedRect(r, kPillHeight / 2, kPillHeight / 2);
         painter.setPen(Qt::NoPen);
         painter.setBrush(memberColor(static_cast<int>(i)));
         painter.drawEllipse(QPointF(r.left() + 13, r.center().y()), 4, 4);
         painter.setPen(tm.color(Token::TextPrimary));
         painter.drawText(QRectF(r.left() + 24, r.top(), r.width() - 28, r.height()),
-                         Qt::AlignLeft | Qt::AlignVCenter, pillText(portions_[i]));
+                         Qt::AlignLeft | Qt::AlignVCenter, legendText(portions_[i].memberName, portions_[i].taskCount));
     }
     return layout.bottom;
 }

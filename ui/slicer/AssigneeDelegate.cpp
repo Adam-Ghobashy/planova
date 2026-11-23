@@ -54,7 +54,7 @@ void AssigneeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     const QRect rect = option.rect;
 
     painter->fillRect(rect, slicerRowBackground(option, index));
-    painter->setPen(QPen(tm.color(Token::SurfaceAlt), 1));
+    painter->setPen(QPen(tm.color(Token::GlassEdge), 1));
     painter->drawLine(rect.bottomLeft(), rect.bottomRight());
 
     int comboW = 120;
@@ -62,12 +62,11 @@ void AssigneeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     QRectF comboRect(rect.left() + 8, rect.top() + (rect.height() - comboH) / 2.0, comboW, comboH);
 
     painter->setPen(QPen(tm.color(Token::Border), 1));
-    painter->setBrush(tm.color(Token::Surface));
+    painter->setBrush(tm.color(Token::GlassFillStrong));
     painter->drawRoundedRect(comboRect, 6, 6);
 
     QString text = index.data(Qt::DisplayRole).toString();
-    QFont font = painter->font();
-    font.setPointSize(9);
+    QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
     painter->setFont(font);
     painter->setPen(tm.color(Token::TextPrimary));
     painter->drawText(comboRect.adjusted(8, 0, -20, 0), Qt::AlignLeft | Qt::AlignVCenter, text);

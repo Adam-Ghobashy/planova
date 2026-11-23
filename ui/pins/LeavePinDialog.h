@@ -1,22 +1,21 @@
 #pragma once
-#include <QDialog>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "planova/pins/PinBoardApi.h"
+#include "widgets/ModalDialog.h"
 
 class QComboBox;
 class QLabel;
 class QLineEdit;
 class QPlainTextEdit;
 class QPushButton;
-class QShowEvent;
 
 namespace planova::s5 {
 
-// Create a pin ("Leave a Pin") or edit one ("Edit Pin"). No colours here, see pins.qss.
-class LeavePinDialog : public QDialog {
+// Create a pin ("Leave a Pin") or edit one ("Edit Pin"). Look: ModalDialog and modal.qss. No colours here.
+class LeavePinDialog : public ModalDialog {
     Q_OBJECT
 public:
     // Create mode.
@@ -35,9 +34,6 @@ public:
     // Pure helper, exposed for tests: "#A, b  A" -> {"a","b"}.
     static std::vector<std::string> parseTags(const QString& raw);
 
-protected:
-    void showEvent(QShowEvent* e) override;
-
 private:
     void build(const std::vector<TaskDto>& tasks, const std::vector<MemberDto>& members, bool edit);
     void updateOk();
@@ -49,7 +45,6 @@ private:
     QLineEdit* tags_ = nullptr;
     QLabel* hint_ = nullptr;
     QPushButton* ok_ = nullptr;
-    bool fadedIn_ = false;
 };
 
 }  // namespace planova::s5

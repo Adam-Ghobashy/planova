@@ -1,0 +1,173 @@
+/* Fair Performance & Tracking (TrackingPage). Stat-card styling lives in home.qss (shared widget). */
+
+#TrackingPage {
+    background: transparent;
+}
+
+/* Reference: h2 22px / 800, p 13px */
+#TrackingTitle {
+    background: transparent;
+    color: @TextPrimary;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+#TrackingSubtitle {
+    background: transparent;
+    color: @TextMuted;
+    font-size: 14px;
+}
+
+/* Caption line under a stat-card number (reference: 11px, secondary text) */
+QLabel#statCardCaption {
+    background: transparent;
+    border: none;
+    color: @TextMuted;
+    font-size: 12px; font-weight: 500;
+}
+
+/* Cards */
+QFrame#TrackingCard {
+    background: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
+    border-radius: 14px;
+}
+
+QFrame#TrackingCardHeader {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid @GlassEdge;
+    border-radius: 0px;
+}
+
+QFrame#TrackingCardHeaderPlain {
+    background: transparent;
+    border: none;
+}
+
+/* Reference: card titles 14px / 700 */
+QLabel#TrackingCardTitle {
+    background: transparent;
+    border: none;
+    color: @TextPrimary;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Reference .badge-primary: radius 6, padding 3px 8px, 11px / 600 */
+QLabel#TrackingBadge {
+    background: @AccentSoft;
+    border: 1px solid @Accent;
+    border-radius: 6px;
+    color: @Accent;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 8px;
+}
+
+/* Metric toggle (reference .btn-sm: radius 6, padding 5px 10px, 12px / 600) */
+QPushButton#TrackingToggle {
+    background: @GlassFillStrong;
+    border: 1px solid @Border;
+    border-radius: 6px;
+    color: @TextPrimary;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+}
+
+QPushButton#TrackingToggle:hover {
+    background: @SurfaceHover;
+}
+
+QPushButton#TrackingToggle:checked {
+    background: @Accent;
+    border: 1px solid @Accent;
+    color: @AccentText;
+}
+
+/* Keyboard focus: a 2 px TextPrimary ring (the border grows by 1 px and the padding shrinks by 1 px). The checked
+   toggle has the Accent fill, which equals TextPrimary in Dark, so it swaps the fill for Surface while focused. */
+QPushButton#TrackingToggle:focus,
+QPushButton#TrackingToggle:focus:hover {
+    border: 2px solid @TextPrimary;
+    padding: 4px 9px;
+}
+
+QPushButton#TrackingToggle:checked:focus,
+QPushButton#TrackingToggle:checked:focus:hover {
+    background: @Surface;
+    color: @TextPrimary;
+}
+
+/* Palette handed to the delegates through qproperty-* (LeaderboardTable). */
+#LeaderboardTable {
+    qproperty-textPrimaryColor: @TextPrimary;
+    qproperty-textMutedColor: @TextMuted;
+    qproperty-accentColor: @Accent;
+    qproperty-accentTextColor: @Surface;
+    qproperty-memberTextColor: @MemberText;
+    qproperty-accentSoftColor: @AccentSoft;
+    qproperty-successSoftColor: @SuccessSoft;
+    qproperty-trackColor: @Track;
+    qproperty-surfaceAltColor: @SurfaceAlt;
+    qproperty-borderColor: @Border;
+    qproperty-member1Color: @Member1;
+    qproperty-member2Color: @Member2;
+    qproperty-member3Color: @Member3;
+    qproperty-member4Color: @Member4;
+    qproperty-member5Color: @Member5;
+    qproperty-member6Color: @Member6;
+}
+
+/* Leaderboard table. Every cell is painted by a delegate; QSS still draws the row
+   separator through ::item. Reference cell padding is 14px left and right. */
+/* Complexity chart colours (ComplexityBarChart, qproperty-*). Same values as above. */
+QWidget#ComplexityBarChart {
+    background: transparent;
+    qproperty-fillColor: @Accent;
+    qproperty-trackColor: @Track;
+    qproperty-valueColor: @TextPrimary;
+    qproperty-labelColor: @TextMuted;
+}
+
+QTableView#LeaderboardTable {
+    background: transparent;
+    border: none;
+    color: @TextMuted;
+    font-size: 14px;
+    outline: 0;
+}
+
+QTableView#LeaderboardTable::item {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid @Track;
+    padding: 0px 14px;
+}
+
+QTableView#LeaderboardTable QHeaderView {
+    background: transparent;
+}
+
+/* Reference th: padding 10px 14px, 13px / 600, secondary text, bottom border */
+QTableView#LeaderboardTable QHeaderView::section {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid @GlassEdge;
+    color: @TextMuted;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 14px;
+}
+
+QTableView#LeaderboardTable QTableCornerButton::section {
+    background: transparent;
+    border: none;
+}
+
+/* Card body: transparent, so the glass card shows through. */
+QWidget#TrackingCardBody {
+    background: transparent;
+}

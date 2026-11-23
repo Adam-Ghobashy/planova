@@ -6,11 +6,13 @@
 #include "planova/common/Clock.h"
 #include "planova/common/Dtos.h"
 #include "planova/common/Types.h"
+#include "planova/git/GitProjection.h"
 #include "planova/store/EventLog.h"
 
 class GitService {
 public:
-    GitService(EventLog& log, IClock& clock);
+    // state may be null: the "must be connected" check is then skipped.
+    GitService(EventLog& log, IClock& clock, const GitProjection* state = nullptr);
 
     void connect(const std::string& repoUrl, const std::string& branch = "main", const Id& author = "system");
     void disconnect(const Id& author = "system");
@@ -25,4 +27,5 @@ public:
 private:
     EventLog& log_;
     IClock& clock_;
+    const GitProjection* state_;
 };

@@ -3,16 +3,20 @@
 #include "app/CoreBridge.h"
 #include "planova/common/Dtos.h"
 #include "planova/common/Queries.h"
+#include "planova/conflict/ConflictService.h"
+#include "planova/team/MemberProjection.h"
 #include "planova/team/MemberService.h"
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFrame>
+#include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <vector>
 
 namespace planova::team {
 
@@ -20,26 +24,57 @@ class TeamSkillsPage : public QWidget {
     Q_OBJECT
 public:
     TeamSkillsPage(MemberService& service,
-                   IMemberQuery& members,
+                   const MemberProjection& members,
+                   planova::ConflictService& conflicts,
+                   const planova::ConflictProjection& conflictView,
+                   ITaskQuery& tasks,
                    CoreBridge& bridge,
                    QWidget* parent = nullptr);
 
+    ~TeamSkillsPage() override;
+
     void refresh();
+
+protected:
+    void hideEvent(QHideEvent* event) override;   // a waiting slider value is saved when the page is left
 
 private slots:
     void onAddMember();
-    void onSeedDemoTeam();
 
 private:
     QFrame* buildMemberCard(const MemberDto& member, int colorIndex);
+    QFrame* buildSettingsCard(QWidget* parent);
+    QWidget* buildTableHeader(QWidget* parent);
+    QWidget* buildProfileColumn(const MemberDto& member, int colorIndex, QWidget* parent);
+    QWidget* buildSkillsColumn(const MemberDto& member, QWidget* parent);
+    QWidget* buildUnderstandingColumn(const MemberDto& member, QWidget* parent);
+    QWidget* buildAssignmentColumn(const MemberDto& member, QWidget* parent);
+    void applyColumnWidths(QGridLayout* grid) const;
+    QPushButton* makeSwitch(const QString& objectName, const QString& title, const QString& settingKey,
+                            QWidget* parent);
+    void showSwitch(QPushButton* button, bool on);   // sets the check state and the "On"/"Off" text, saves nothing
+    void syncSwitches();                             // reads both settings of the open project again
+    bool roleEditorOpen() const;
+    void resolveConflict(const Id& conflictId, const Id& memberId);
     void showStatus(const QString& text);
+    // Understanding slider: a keyboard or wheel change waits for a pause before it is saved, a mouse release saves now.
+    void queueUnderstanding(const Id& memberId, const std::string& role, int value);
+    bool flushUnderstanding();   // saves the waiting value, if any; false when the service rejected it
+    void discardUnderstanding();  // drops the waiting value without saving it (the project it belongs to is gone)
+    void commitUnderstanding();  // flush, rebuild, confirm
 
     MemberService& service_;
-    IMemberQuery& members_;
+    const MemberProjection& members_;
+    planova::ConflictService& conflicts_;
+    const planova::ConflictProjection& conflictView_;
+    ITaskQuery& tasks_;
     CoreBridge& bridge_;
 
     QLabel* statusLabel_ = nullptr;
     QTimer* statusTimer_ = nullptr;
+    QTimer* understandingTimer_ = nullptr;   // single shot, restarted by every slider step
+    struct PendingUnderstanding { Id memberId; std::string role; int value = 0; bool valid = false; };
+    PendingUnderstanding pending_;
 
     QLineEdit* nameInput_ = nullptr;
     QComboBox* roleCombo_ = nullptr;
@@ -51,10 +86,16 @@ private:
     QLabel* avgVelocityValue_ = nullptr;
     QLabel* teamLeadValue_ = nullptr;
 
+    QWidget* tableHeader_ = nullptr;
+    int understandingWidth_ = 0;   // set from the header title, so the title is never cut off
     QVBoxLayout* cardsLayout_ = nullptr;
     QLabel* emptyLabel_ = nullptr;
 
+    std::vector<QPushButton*> switches_;   // Auto-Match and Smart Assign
+
     bool updating_ = false;
+    // An understanding commit while a role editor is open only saves; the rebuild waits until the editor closes.
+    bool pendingRefresh_ = false;
 };
 
 } // namespace planova::team

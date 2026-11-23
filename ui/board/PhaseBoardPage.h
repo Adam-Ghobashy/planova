@@ -1,0 +1,40 @@
+#pragma once
+#include <vector>
+#include <QWidget>
+#include "planova/common/Dtos.h"
+
+class PlanovaCore;
+class CoreBridge;
+class QComboBox;
+class QLabel;
+class QLineEdit;
+class QPushButton;
+class TaskColumnWidget;
+
+class PhaseBoardPage : public QWidget {
+    Q_OBJECT
+public:
+    PhaseBoardPage(PlanovaCore& core, CoreBridge& bridge, QWidget* parent = nullptr);
+
+public slots:
+    // Opens the decline dialog for the task's current assignee. Does nothing for an unassigned task.
+    void declineTask(const Id& taskId);
+
+signals:
+    void slicerRequested();   // the user chose "Open Slicer" after declining
+
+private:
+    void refresh();                                   // rebuild cards + apply search/member filter
+    void rebuildMemberFilter(const std::vector<MemberDto>& members);
+    void onAdvance(const Id& taskId);
+    void onNewTask();
+
+    PlanovaCore& core_;
+    QLabel* modelValue_ = nullptr;
+    QLabel* taskCount_ = nullptr;
+    QLabel* emptyHint_ = nullptr;
+    QLineEdit* search_ = nullptr;
+    QComboBox* memberFilter_ = nullptr;
+    QPushButton* newTask_ = nullptr;
+    TaskColumnWidget* columns_[4] = {};
+};

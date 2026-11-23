@@ -8,6 +8,7 @@
 #include "../widgets/StatCardWidget.h"
 
 class QButtonGroup;
+class QLabel;
 class QPushButton;
 
 namespace planova::s6 {
@@ -24,8 +25,7 @@ class TrackingPage : public QWidget {
 public:
     TrackingPage(StatsService& stats, IMemberQuery& members, QWidget* parent = nullptr);
 
-    // Re-reads the services. Connect CoreBridge::changed to this at integration;
-    // MainWindow also calls it when the page is shown.
+    // Re-reads the services. MainWindow connects CoreBridge::changed to it.
     void refresh();
 
 private:
@@ -48,6 +48,8 @@ private:
     LeaderboardModel* model_ = nullptr;
 
     ComplexityBarChart* chart_ = nullptr;
+    QLabel* emptyLeaderboard_ = nullptr;
+    QLabel* emptyChart_ = nullptr;
 
     QPushButton* contributionButton_ = nullptr;
     QPushButton* efficiencyButton_ = nullptr;

@@ -1,168 +1,365 @@
 #include "MainWindow.h"
+#include "EventText.h"
+#include "board/PhaseBoardPage.h"
 #include "git/GitHubIntegrationPage.h"
+#include "Sidebar.h"
+#include "home/HomePage.h"
+#include "pins/PinsPage.h"
+#include "slicer/ChaosSlicerPage.h"
 #include "team/TeamSkillsPage.h"
-#include "welcome/ProjectsHubPage.h"
-#include "welcome/SetupWizard.h"
+#include "tracking/TrackingPage.h"
+#include "welcome/DeleteProjectDialog.h"
+#include "welcome/EditProjectDialog.h"
+#include "welcome/SetupPage.h"
+#include "welcome/StartDialog.h"
 #include "welcome/WelcomePage.h"
-#include <QFrame>
+#include "widgets/ModalDialog.h"
+#include "theme/GlassBackdrop.h"
+#include "theme/ThemeManager.h"
+#include "planova/common/EventTypes.h"
+#include <QApplication>
+#include <QDir>
 #include <QHBoxLayout>
-#include <QLabel>
-#include <QPushButton>
+#include <QSettings>
+#include <QShortcut>
 #include <QStatusBar>
-#include <QStringList>
-#include <QVBoxLayout>
-
-namespace {
-const QStringList kScreens = {
-    "Welcome", "Projects Hub", "Chaos Slicer (Pizza)", "Pins & Collab",
-    "Team & Skills", "Phase Board", "Fair Tracking & Charts", "GitHub Integration", "Project Home"
-};
-}
+#include <exception>
+#include <filesystem>
+#include <functional>
 
 MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
-    : QMainWindow(parent), core_(core), bridge_(bridge), pages_(new QStackedWidget(this))
+    : QMainWindow(parent), core_(core), bridge_(bridge), sidebar_(new Sidebar(core, this)), pages_(new QStackedWidget(this))
 {
     setWindowTitle("Planova");
     resize(1280, 820);
 
-    auto* central = new QWidget(this);
+    // The painted glass backdrop sits behind the sidebar and the pages.
+    auto* central = new GlassBackdrop(this);
     auto* layout = new QHBoxLayout(central);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
-    layout->addWidget(buildSidebar());
+    layout->addWidget(sidebar_);
     layout->addWidget(pages_, 1);
     setCentralWidget(central);
+    // Start with focus on the page area, so no sidebar item shows a focus ring before the user presses Tab.
+    central->setFocusPolicy(Qt::ClickFocus);
+    central->setFocus();
+    // Sees every key and mouse press, to tell keyboard use from mouse use.
+    qApp->installEventFilter(this);
 
     buildPages();
+    addShortcuts();
+    // A project that was auto-opened at start-up shows its Home; otherwise the Projects Hub is behind the start popup.
+    // Read the saved page first: showing Home below would overwrite it.
+    const std::optional<Page> lastPage = savedPage();
+    if (core_.currentProject()) {
+        showHomeForCurrentProject();
+        if (lastPage)
+            showPage(*lastPage);
+    } else {
+        showPage(Page::Hub);
+    }
 
-    auto updateTelemetry = [this](const QString& lastEvent = QString()) {
-        const size_t memberCount = core_.memberProjection().all().size();
-        const QString gitState = core_.gitProjection().isConnected() ? "Synced" : "Disconnected";
-        QString msg = QString("Workspace: Ready  •  Git: %1  •  Core Engine: C++17  •  %2 Team Members")
-                          .arg(gitState)
-                          .arg(memberCount);
-        if (!lastEvent.isEmpty()) {
-            msg += "  •  Last Event: " + lastEvent;
-        }
-        statusBar()->showMessage(msg);
-    };
-
-    connect(&bridge_, &CoreBridge::changed, this, [updateTelemetry](const QString& eventType) {
-        updateTelemetry(eventType);
-    });
-    updateTelemetry();
+    connect(&bridge_, &CoreBridge::changed, sidebar_, &Sidebar::refresh);
+    connect(sidebar_, &Sidebar::pageRequested, this, [this](Page page) { showPage(page); });
+    connect(&bridge_, &CoreBridge::changed, this, &MainWindow::updateStatusBar);
+    updateStatusBar();
 }
 
 void MainWindow::buildPages()
 {
-    auto* welcome = new WelcomePage(pages_);
-    auto* hub = new ProjectsHubPage(core_, bridge_, pages_);
-    pages_->addWidget(welcome);
-    pages_->addWidget(hub);
+    welcome_ = new WelcomePage(core_, bridge_, pages_);
+    setupPage_ = new SetupPage(core_, pages_);
+    auto* slicerPage = new planova::slicer::ChaosSlicerPage(
+        core_.slicer(), core_.taskQuery(), core_.memberQuery(), pages_);
+    auto* pinsPage = new planova::s5::PinsPage(
+        core_.pinBoard(), core_.pins(), core_.memberQuery(), core_.taskQuery(), pages_);
+    auto* teamPage = new planova::team::TeamSkillsPage(
+        core_.members(), core_.memberProjection(), core_.conflicts(), core_.conflictProjection(),
+        core_.taskQuery(), bridge_, pages_);
+    auto* boardPage = new PhaseBoardPage(core_, bridge_, pages_);
+    auto* trackingPage = new planova::s6::TrackingPage(core_.stats(), core_.memberQuery(), pages_);
+    auto* gitPage = new planova::git::GitHubIntegrationPage(
+        core_.git(), core_.gitProjection(), core_.memberQuery(), bridge_, pages_);
+    homePage_ = new planova::s6::HomePage(core_.home(), core_.memberQuery(), pages_);
 
-    connect(welcome, &WelcomePage::continueProjects, this, [this] {
-        pages_->setCurrentIndex(1);
+    // One line per page, in Page enum order.
+    pages_->addWidget(welcome_);   // Page::Hub
+    pages_->addWidget(setupPage_);
+    pages_->addWidget(slicerPage);
+    pages_->addWidget(pinsPage);
+    pages_->addWidget(teamPage);
+    pages_->addWidget(boardPage);
+    pages_->addWidget(trackingPage);
+    pages_->addWidget(gitPage);
+    pages_->addWidget(homePage_);
+
+    // Board, Team and GitHub pages connect to the bridge themselves.
+    connect(&bridge_, &CoreBridge::changed, slicerPage, &planova::slicer::ChaosSlicerPage::refreshFromBoard);
+    connect(&bridge_, &CoreBridge::changed, trackingPage, &planova::s6::TrackingPage::refresh);
+    connect(&bridge_, &CoreBridge::changed, homePage_, &planova::s6::HomePage::refresh);
+    connect(&bridge_, &CoreBridge::changed, pinsPage, &planova::s5::PinsPage::refresh);
+    // The Home footer counts every open pin, not just the four shown.
+    auto showOpenPinCount = [this] { homePage_->setOpenPinCount(core_.pinQuery().openCount()); };
+    connect(&bridge_, &CoreBridge::changed, homePage_, showOpenPinCount);
+    showOpenPinCount();
+
+    connect(boardPage, &PhaseBoardPage::slicerRequested, this, [this] { showPage(Page::Slicer, true); });
+    connect(slicerPage, &planova::slicer::ChaosSlicerPage::assignmentsApplied, this,
+            [this](int) { showPage(Page::Board, true); });
+
+    connect(homePage_, &planova::s6::HomePage::projectsHubRequested, this, [this] { showPage(Page::Hub, true); });
+    connect(homePage_, &planova::s6::HomePage::slicerRequested, this, [this] { showPage(Page::Slicer, true); });
+    connect(homePage_, &planova::s6::HomePage::teamSkillsRequested, this, [this] { showPage(Page::Team, true); });
+    connect(homePage_, &planova::s6::HomePage::githubRequested, this, [this] { showPage(Page::GitHub, true); });
+    connect(homePage_, &planova::s6::HomePage::pinsRequested, this, [this] { showPage(Page::Pins, true); });
+
+    connect(welcome_, &WelcomePage::startNewProject, this, [this] {
+        setupPage_->reset();   // every visit starts with an empty setup
+        showPage(Page::Setup);
     });
-
-    connect(welcome, &WelcomePage::startNewProject, this, [this] {
-        SetupWizard wizard(core_, this);
-        wizard.exec();
+    // The new project is already open (setupProject opens it), so Home can show it.
+    connect(setupPage_, &SetupPage::projectCreated, this, [this] { showHomeForCurrentProject(true); });
+    connect(setupPage_, &SetupPage::skipped, this, [this] {
+        if (core_.currentProject())
+            showHomeForCurrentProject(true);
+        else
+            showPage(Page::Hub);
     });
+    // openProject publishes ProjectOpened on the bridge, which also refreshes the sidebar badges.
+    connect(welcome_, &WelcomePage::projectOpened, this, [this] { showHomeForCurrentProject(true); });
+    connect(welcome_, &WelcomePage::editProjectRequested, this, &MainWindow::editProject);
+    connect(welcome_, &WelcomePage::deleteProjectRequested, this, &MainWindow::deleteProject);
+    // The Home menu always acts on the open project.
+    connect(homePage_, &planova::s6::HomePage::editProjectRequested, this, [this] {
+        if (const auto current = core_.currentProject())
+            editProject(QString::fromStdString(*current));
+    });
+    connect(homePage_, &planova::s6::HomePage::deleteProjectRequested, this, [this] {
+        if (const auto current = core_.currentProject())
+            deleteProject(QString::fromStdString(*current));
+    });
+    // An edit of the open project changes its name and model, which Home shows in the header and the badge.
+    connect(&bridge_, &CoreBridge::changed, this, [this](const QString& eventType) {
+        if (eventType == ProjectUpdated)
+            applyCurrentProjectToHome();
+    });
+    connect(welcome_, &WelcomePage::manageGitRequested, this, [this] {
+        if (core_.currentProject()) showPage(Page::GitHub);   // the GitHub page belongs to the open project
+    });
+}
 
-    for (int i = 2; i < kScreens.size(); ++i) {
-        if (i == 4) {
-            auto* teamPage = new planova::team::TeamSkillsPage(
-                core_.members(), const_cast<MemberProjection&>(core_.memberProjection()), bridge_, pages_);
-            pages_->addWidget(teamPage);
-        } else if (i == 7) {
-            auto* gitPage = new planova::git::GitHubIntegrationPage(
-                core_.git(), const_cast<GitProjection&>(core_.gitProjection()), const_cast<MemberProjection&>(core_.memberProjection()), bridge_, pages_);
-            pages_->addWidget(gitPage);
-        } else {
-            auto* page = new QLabel(kScreens[i] + " - Coming soon", pages_);
-            page->setAlignment(Qt::AlignCenter);
-            pages_->addWidget(page);
-        }
-    }
-    }
-
-
-QWidget* MainWindow::buildSidebar()
+void MainWindow::addShortcuts()
 {
-    auto* sidebar = new QWidget(this);
-    sidebar->setFixedWidth(230);
-    sidebar->setStyleSheet("background-color: #F5F1E8; border-right: 1px solid #E7E2D6;");
-    auto* layout = new QVBoxLayout(sidebar);
-    layout->setContentsMargins(12, 16, 12, 16);
-    layout->setSpacing(6);
-
-    for (int i = 0; i < kScreens.size(); ++i) {
-        auto* button = new QPushButton(kScreens[i], sidebar);
-        button->setCursor(Qt::PointingHandCursor);
-        connect(button, &QPushButton::clicked, this, [this, i] {
-            pages_->setCurrentIndex(i);
-        });
-        layout->addWidget(button);
-    }
-    layout->addStretch();
-
-    // --- S2 Sidebar Git Sync Status Card ---
-    auto* gitCard = new QFrame(sidebar);
-    gitCard->setStyleSheet(
-        "QFrame { background-color: #FFFFFF; border: 1px solid #E7E2D6; border-radius: 10px; }");
-    auto* gitLayout = new QHBoxLayout(gitCard);
-    gitLayout->setContentsMargins(12, 10, 12, 10);
-    gitLayout->setSpacing(8);
-
-    auto* dotLbl = new QLabel("●", gitCard);
-    dotLbl->setStyleSheet("color: #10B981; font-size: 14px; border: none; background: transparent;");
-    gitLayout->addWidget(dotLbl);
-
-    auto* textCol = new QVBoxLayout();
-    textCol->setSpacing(1);
-    auto* syncTitle = new QLabel("Synced with Git", gitCard);
-    syncTitle->setStyleSheet("color: #1A1A1F; font-size: 12px; font-weight: 700; border: none; background: transparent;");
-    auto* syncSub = new QLabel("Peer Event Store", gitCard);
-    syncSub->setStyleSheet("color: #6B6B73; font-size: 11px; border: none; background: transparent;");
-    textCol->addWidget(syncTitle);
-    textCol->addWidget(syncSub);
-    gitLayout->addLayout(textCol, 1);
-
-    auto* syncBtn = new QPushButton("⟳", gitCard);
-    syncBtn->setFixedSize(28, 28);
-    syncBtn->setCursor(Qt::PointingHandCursor);
-    syncBtn->setToolTip("Simulate Git Sync");
-    syncBtn->setStyleSheet(
-        "QPushButton { background-color: #FAF8F5; color: #5438DC; border: 1px solid #E7E2D6; "
-        "border-radius: 6px; padding: 0px; font-size: 14px; font-weight: 700; }"
-        "QPushButton:hover { background-color: #F3F0FF; border-color: #5438DC; }");
-    connect(syncBtn, &QPushButton::clicked, this, [this] {
-        if (!core_.gitProjection().isConnected()) {
-            core_.git().connect("https://github.com/Zeyad-101/planova.git", "main");
-        }
-        core_.git().simulateSync(core_.memberProjection().all());
-        pages_->setCurrentIndex(7);
-    });
-    gitLayout->addWidget(syncBtn);
-
-    auto updateGitCard = [this, dotLbl, syncTitle, syncSub]() {
-        if (core_.gitProjection().isConnected()) {
-            dotLbl->setStyleSheet("color: #10B981; font-size: 14px; border: none; background: transparent;");
-            syncTitle->setText("Synced with Git");
-            syncSub->setText(QString::fromStdString(
-                "Branch: " + core_.gitProjection().branch() + " (" +
-                std::to_string(core_.gitProjection().commits().size()) + " commits)"));
-        } else {
-            dotLbl->setStyleSheet("color: #6B6B73; font-size: 14px; border: none; background: transparent;");
-            syncTitle->setText("Git Disconnected");
-            syncSub->setText("Click ⟳ to sync");
-        }
+    auto add = [this](QKeySequence keys, std::function<void()> action) {
+        auto* shortcut = new QShortcut(keys, this);
+        shortcut->setContext(Qt::WindowShortcut);
+        connect(shortcut, &QShortcut::activated, this, std::move(action));
     };
-    connect(&bridge_, &CoreBridge::changed, this, [updateGitCard](const QString&) {
-        updateGitCard();
-    });
-    updateGitCard();
 
-    layout->addWidget(gitCard);
-    return sidebar;
+    add(QKeySequence(Qt::CTRL | Qt::Key_0), [this] { showPage(Page::Hub); });
+
+    // Ctrl+1 to Ctrl+7 follow the sidebar order. Project pages need an open project, like the disabled items.
+    const QList<Page> order = Sidebar::navOrder();
+    for (int i = 0; i < order.size(); ++i) {
+        const Page page = order[i];
+        const QKeyCombination keys(Qt::ControlModifier, static_cast<Qt::Key>(Qt::Key_1 + i));
+        add(QKeySequence(keys), [this, page] {
+            if (core_.currentProject())
+                showPage(page);
+        });
+    }
+
+    // A Setup page that is already open may be half filled, so Ctrl+N leaves it alone.
+    add(QKeySequence(Qt::CTRL | Qt::Key_N), [this] {
+        if (pages_->currentIndex() == static_cast<int>(Page::Setup))
+            return;
+        setupPage_->reset();
+        showPage(Page::Setup);
+    });
+
+    add(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_L), [] { ThemeManager::instance().toggle(); });
+}
+
+namespace {
+// Gives the first control of `page` that Tab reaches the focus, with the Tab reason so its focus ring shows.
+void focusFirstControl(QWidget* page)
+{
+    for (QWidget* w = page->nextInFocusChain(); w != page; w = w->nextInFocusChain()) {
+        if (page->isAncestorOf(w) && w->isVisible() && w->isEnabled() && (w->focusPolicy() & Qt::TabFocus)) {
+            w->setFocus(Qt::TabFocusReason);
+            return;
+        }
+    }
+}
+}
+
+bool MainWindow::eventFilter(QObject* watched, QEvent* event)
+{
+    if (event->type() == QEvent::KeyPress)
+        lastInputWasKey_ = true;
+    else if (event->type() == QEvent::MouseButtonPress)
+        lastInputWasKey_ = false;
+    return QMainWindow::eventFilter(watched, event);
+}
+
+void MainWindow::showPage(Page page, bool fromControl)
+{
+    // Read the focus before the old page is hidden: hiding it makes Qt move the focus on by itself.
+    QWidget* focusedBefore = focusWidget();
+    const bool focusWasInPages = focusedBefore && pages_->isAncestorOf(focusedBefore);
+    // A control asked for the switch and the last input was a key press (Space or Enter on a control the user
+    // Tabbed to): keep a visible ring. Mouse, sidebar and Ctrl+number never do.
+    const bool keepRing = fromControl && focusWasInPages && lastInputWasKey_;
+
+    pages_->setCurrentIndex(static_cast<int>(page));
+    sidebar_->setActivePage(page);
+    // Home and Team start with a control first in the focus chain, which would show a focus ring right away. The page
+    // itself takes the focus instead (Tab still moves on to the first control). The focus is only moved when nothing
+    // has it yet or it is already inside the pages: a keyboard user who pressed Enter on a sidebar item keeps it there.
+    if ((page == Page::Home || page == Page::Team) && (!focusedBefore || focusWasInPages)) {
+        QWidget* target = pages_->currentWidget();
+        target->setFocus();
+        // After a keyboard activation the ring stays visible: go on to the first control of the new page.
+        if (keepRing)
+            focusFirstControl(target);
+    }
+    // Only the pages with a sidebar item are remembered; Setup and the Hub are not.
+    if (Sidebar::navOrder().contains(page))
+        QSettings().setValue("ui/lastPage", static_cast<int>(page));
+}
+
+std::optional<Page> MainWindow::savedPage() const
+{
+    bool isNumber = false;
+    const int value = QSettings().value("ui/lastPage").toInt(&isNumber);
+    if (!isNumber)
+        return std::nullopt;
+    for (Page page : Sidebar::navOrder()) {
+        if (static_cast<int>(page) == value)
+            return page;
+    }
+    return std::nullopt;
+}
+
+std::optional<ProjectDto> MainWindow::currentProjectInfo() const
+{
+    const auto current = core_.currentProject();
+    if (!current)
+        return std::nullopt;
+    for (const auto& project : core_.projects().list()) {
+        if (project.id == *current)
+            return project;
+    }
+    return std::nullopt;
+}
+
+void MainWindow::updateStatusBar(const QString& lastEvent)
+{
+    const auto project = currentProjectInfo();
+    const QString projectName = project ? QString::fromStdString(project->name) : tr("No project open");
+    const QString gitState = core_.gitProjection().isConnected() ? tr("Synced") : tr("Not connected");
+    QString message = tr("%1  •  Git: %2").arg(projectName, gitState);
+    if (!lastEvent.isEmpty())
+        message += tr("  •  Saved: %1").arg(friendlyEventText(lastEvent));
+    statusBar()->showMessage(message);
+}
+
+void MainWindow::applyCurrentProjectToHome()
+{
+    if (const auto project = currentProjectInfo()) {
+        homePage_->setProjectName(QString::fromStdString(project->name));
+        homePage_->setProcessModel(QString::fromStdString(project->seModel));
+    }
+}
+
+void MainWindow::showHomeForCurrentProject(bool fromControl)
+{
+    applyCurrentProjectToHome();
+    showPage(Page::Home, fromControl);
+}
+
+void MainWindow::editProject(const QString& projectId)
+{
+    try {
+        const std::string id = projectId.toStdString();
+        for (const ProjectDto& project : core_.projects().list()) {
+            if (project.id != id)
+                continue;
+            // The dialog calls this on Save and shows a bad-input message inside itself.
+            EditProjectDialog dialog(
+                project,
+                [this, id](const QString& name, const QString& team, const QString& model) {
+                    core_.updateProject(id, name.toStdString(), team.toStdString(), model.toStdString());
+                },
+                this);
+            dialog.exec();
+            return;
+        }
+    } catch (const std::exception& error) {
+        ModalDialog::info(this, tr("Could not edit project"), QString::fromUtf8(error.what()));
+    } catch (...) {
+        ModalDialog::info(this, tr("Could not edit project"), tr("Something went wrong. Please try again."));
+    }
+}
+
+void MainWindow::deleteProject(const QString& projectId)
+{
+    try {
+        const std::string id = projectId.toStdString();
+        std::optional<ProjectDto> project;
+        for (const ProjectDto& candidate : core_.projects().list()) {
+            if (candidate.id == id)
+                project = candidate;
+        }
+        if (!project)
+            return;
+
+        DeleteProjectDialog dialog(QString::fromStdString(project->name), this);
+        if (dialog.exec() != QDialog::Accepted)
+            return;
+
+        const bool wasOpen = core_.currentProject() == id;
+        // A failure throws and is reported by the single catch below.
+        const std::optional<std::filesystem::path> leftoverFolder = core_.deleteProject(id);
+
+        if (wasOpen) {
+            // The saved page belongs to the project that is gone; the next start must not restore it.
+            QSettings().remove("ui/lastPage");
+            showPage(Page::Hub);
+        }
+        if (leftoverFolder) {
+            const QString folder = QDir::toNativeSeparators(QString::fromStdU16String(leftoverFolder->u16string()));
+            ModalDialog::info(this, tr("Project folder not removed"),
+                              tr("The project was deleted, but its folder could not be removed. "
+                                 "You can delete it yourself:\n%1").arg(folder));
+        }
+    } catch (const std::exception& error) {
+        ModalDialog::info(this, tr("Could not delete project"), QString::fromUtf8(error.what()));
+    } catch (...) {
+        ModalDialog::info(this, tr("Could not delete project"), tr("Something went wrong. Please try again."));
+    }
+}
+
+void MainWindow::showStartDialog()
+{
+    StartDialog dialog(core_, this);
+    dialog.exec();
+    switch (dialog.choice()) {
+    case StartDialog::Choice::NewProject:
+        setupPage_->reset();   // every visit starts with an empty setup
+        showPage(Page::Setup);
+        break;
+    case StartDialog::Choice::OpenProject:
+        try {
+            core_.openProject(dialog.projectId().toStdString());   // publishes ProjectOpened on the bridge
+        } catch (const std::exception& error) {
+            ModalDialog::info(this, tr("Could not open project"), QString::fromUtf8(error.what()));
+            break;
+        }
+        showHomeForCurrentProject();
+        break;
+    case StartDialog::Choice::None:
+        break;                 // dismissed: stay on the page behind the popup
+    }
 }

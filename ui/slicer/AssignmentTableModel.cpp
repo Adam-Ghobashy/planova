@@ -86,6 +86,8 @@ QVariant AssignmentTableModel::data(const QModelIndex& index, int role) const {
 
     switch (index.column()) {
         case Column::TaskComplexity:
+            // The cell paints an elided title; the tooltip carries the whole title.
+            if (role == Qt::ToolTipRole && t) return QString::fromStdString(t->title);
             if (role == Qt::DisplayRole && t) {
                 return QString("%1 (%2 pts)").arg(QString::fromStdString(t->title)).arg(t->complexity);
             }
@@ -110,7 +112,7 @@ QVariant AssignmentTableModel::data(const QModelIndex& index, int role) const {
             }
             break;
         case Column::Rationale:
-            if (role == Qt::DisplayRole) {
+            if (role == Qt::DisplayRole || role == Qt::ToolTipRole) {
                 return QString::fromStdString(a.rationale);
             }
             break;

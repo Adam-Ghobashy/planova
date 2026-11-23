@@ -12,6 +12,11 @@ public:
     ProjectService(EventLog& log, IClock& clock);
     Id create(const std::string& name, const std::string& team,
               const std::string& seModel, const std::string& idea);
+    // Replaces name, team and process model. Appends nothing when nothing changed.
+    void update(const Id& id, const std::string& name, const std::string& team,
+                const std::string& seModel);
+    void remove(const Id& id);
+    bool exists(const Id& id) const;
     std::vector<ProjectDto> list() const;
 
 private:

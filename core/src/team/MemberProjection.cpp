@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QString>
 #include <algorithm>
+#include <stdexcept>
 
 using namespace std;
 
@@ -15,6 +16,7 @@ void MemberProjection::reset()
     memberOrder_.clear();
     settings_.clear();
     taskInProgressTs_.clear();
+    taskAssignee_.clear();
 }
 
 void MemberProjection::apply(const Event& event)
@@ -58,7 +60,12 @@ void MemberProjection::apply(const Event& event)
         auto it = members_.find(id);
         if (it != members_.end()) {
             string catStr = p["category"].toString().toStdString();
-            SkillCategory cat = fromString(catStr);
+            SkillCategory cat;
+            try {
+                cat = fromString(catStr);
+            } catch (const std::invalid_argument&) {
+                return; // unknown skill name (hand-edited or newer build): skip the event
+            }
             int rating = p["rating"].toInt(1);
             it->second.ratings[cat] = rating;
         }
@@ -68,42 +75,44 @@ void MemberProjection::apply(const Event& event)
         bool val = p["value"].toBool(false);
         settings_[key] = val;
     }
-else if (event.type == "TaskMoved") {
+    else if (event.type == TaskAssigned) {
         Id taskId = p["taskId"].toString().toStdString();
-        string toStatus = p["toStatus"].toString().toStdString();
-        if (toStatus.empty()) {
-            toStatus = p["status"].toString().toStdString();
+        Id memberId = p["memberId"].toString().toStdString();
+        if (!taskId.empty() && !memberId.empty()) {
+            taskAssignee_[taskId] = memberId;
         }
+    }
+    else if (event.type == TaskUnassigned) {
+        taskAssignee_.erase(p["taskId"].toString().toStdString());
+    }
+    else if (event.type == TaskMoved) {
+        // Contract payload: taskId, from, to, estHours (no assignee).
+        Id taskId = p["taskId"].toString().toStdString();
+        string toStatus = p["to"].toString().toStdString();
 
         if (toStatus == "InProgress" && !taskId.empty()) {
             taskInProgressTs_[taskId] = event.ts;
         }
         else if (toStatus == "Done") {
-            Id memberId = p["assigneeId"].toString().toStdString();
-            if (memberId.empty()) {
-                memberId = p["memberId"].toString().toStdString();
+            // The assignee comes from the TaskAssigned events seen so far.
+            auto assigneeIt = taskAssignee_.find(taskId);
+            if (assigneeIt == taskAssignee_.end()) {
+                return;
+            }
+            auto memIt = members_.find(assigneeIt->second);
+            auto tsIt = taskInProgressTs_.find(taskId);
+            if (memIt == members_.end() || tsIt == taskInProgressTs_.end()
+                || event.ts <= tsIt->second) {
+                return;
             }
 
-            auto memIt = members_.find(memberId);
-            if (memIt != members_.end()) {
-                double estimatedHours = p["estimatedHours"].toDouble(0.0);
-                double actualHours = p["actualHours"].toDouble(0.0);
-
-                if (actualHours <= 0.0 && !taskId.empty()) {
-                    auto tsIt = taskInProgressTs_.find(taskId);
-                    if (tsIt != taskInProgressTs_.end() && event.ts > tsIt->second) {
-                        actualHours = static_cast<double>(event.ts - tsIt->second) / 3600000.0;
-                    }
-                }
-
-                if (estimatedHours > 0.0 && actualHours > 0.0) {
-                    memIt->second.velocity = VelocityCalculator::update(
-                        memIt->second.velocity,
-                        estimatedHours,
-                        actualHours
-                        );
-                }
+            double estimatedHours = p["estHours"].toDouble(0.0);
+            double actualHours = static_cast<double>(event.ts - tsIt->second) / 3600000.0;
+            if (actualHours < 0.05) {
+                return; // under 3 minutes is bookkeeping (a card moved straight to Done), not work
             }
+            memIt->second.velocity = VelocityCalculator::update(
+                memIt->second.velocity, estimatedHours, actualHours);
         }
     }
 }

@@ -12,6 +12,8 @@ class WeightSlidersPanel : public QWidget {
 public:
     explicit WeightSlidersPanel(QWidget* parent = nullptr);
     ScoringWeights weights() const { return weights_; }
+    // Shows these weights without emitting any signal (used to load saved weights).
+    void setWeights(const ScoringWeights& weights);
 signals:
     void weightsChanged(const planova::slicer::ScoringWeights& weights);
     void weightsCommitted(const planova::slicer::ScoringWeights& weights);

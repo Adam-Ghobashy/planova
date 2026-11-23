@@ -24,7 +24,6 @@ void GitProjection::apply(const Event& event)
     } else if (event.type == GitDisconnected) {
         reset();
     } else if (event.type == GitSynced) {
-        // 1. Parse synced commits
         if (event.payload.contains("commits") && event.payload["commits"].isArray()) {
             commits_.clear();
             const QJsonArray commitArray = event.payload["commits"].toArray();
@@ -39,7 +38,6 @@ void GitProjection::apply(const Event& event)
             }
         }
 
-        // 2. Parse synced issues
         if (event.payload.contains("issues") && event.payload["issues"].isArray()) {
             issues_.clear();
             const QJsonArray issueArray = event.payload["issues"].toArray();
@@ -53,7 +51,6 @@ void GitProjection::apply(const Event& event)
             }
         }
 
-        // 3. Parse conflicted member IDs
         if (event.payload.contains("conflictedMembers") && event.payload["conflictedMembers"].isArray()) {
             conflictedMembers_.clear();
             const QJsonArray conflictArray = event.payload["conflictedMembers"].toArray();

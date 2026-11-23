@@ -1,5 +1,7 @@
 #include "LeaderboardModel.h"
 
+#include "theme/ThemeManager.h"
+
 #include <QApplication>
 #include <QPainter>
 #include <QStringList>
@@ -51,28 +53,29 @@ QFont fixedFont(const QFont& base, bool bold)
 {
     QFont font = monoFont();
     font.setBold(bold);
-    font.setPixelSize(base.pixelSize() > 0 ? base.pixelSize() : 13);
+    font.setPixelSize(base.pixelSize() > 0 ? base.pixelSize() : 14);
     return font;
 }
 
 QFont chipFontFor(const QFont& base, bool high)
 {
     QFont font(base);
-    font.setPixelSize(11);
-    font.setWeight(high ? QFont::Bold : QFont::DemiBold);
+    font.setPixelSize(12);
+    font.setWeight(high ? QFont::DemiBold : QFont::Medium);
     return font;
 }
 
 } // namespace
 
-// ---------------------------------------------------------------- table
 
 LeaderboardTable::LeaderboardTable(QWidget* parent)
     : QTableView(parent)
 {
+    // Cell delegates paint with the qproperty colours, which change with the theme.
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, viewport(),
+            qOverload<>(&QWidget::update));
 }
 
-// ---------------------------------------------------------------- model
 
 LeaderboardModel::LeaderboardModel(QObject* parent)
     : QAbstractTableModel(parent)
@@ -181,7 +184,7 @@ QVariant LeaderboardModel::data(const QModelIndex& index, int role) const
         case RankMemberColumn:
             return entry.name;
         case RoleColumn:
-            return entry.role; // role is optional, may be empty
+            return entry.role.isEmpty() ? QString(QChar(0x2014)) : entry.role; // role is optional: an em dash, never a blank cell
         case DoneAssignedColumn:
             return QStringLiteral("%1 / %2").arg(row.done).arg(row.assigned);
         case PointsColumn:
@@ -235,7 +238,6 @@ Qt::ItemFlags LeaderboardModel::flags(const QModelIndex& index) const
     return index.isValid() ? Qt::ItemIsEnabled : Qt::NoItemFlags;
 }
 
-// ------------------------------------------------------------ delegates
 
 const LeaderboardTable* LeaderboardCellDelegate::tableOf(const QStyleOptionViewItem& option)
 {
@@ -270,8 +272,8 @@ void TextCellDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
         return;
     }
 
-    QFont font(option.font);
-    font.setPixelSize(12); // reference: 12px for Role and Done / Assigned
+    // Reference: 12 px for Role and Done / Assigned.
+    QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
     const QRect area = option.rect.adjusted(kCellPadding, 0, -kCellPadding, 0);
 
     painter->save();
@@ -286,11 +288,10 @@ void TextCellDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 QSize TextCellDelegate::sizeHint(const QStyleOptionViewItem& option,
                                  const QModelIndex& index) const
 {
-    QFont font(option.font);
-    font.setPixelSize(12);
+    QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
     return QSize(QFontMetrics(font).horizontalAdvance(index.data(Qt::DisplayRole).toString())
-                     + 2 * kCellPadding,
-                 kRowHeight);
+                + 2 * kCellPadding,
+                kRowHeight);
 }
 
 void MemberCellDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,
@@ -328,10 +329,10 @@ void MemberCellDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
     painter->drawEllipse(QRectF(badge).adjusted(0.5, 0.5, -0.5, -0.5));
 
     QFont initialsFont(option.font);
-    initialsFont.setBold(true);
-    initialsFont.setPixelSize(10);
+    initialsFont.setWeight(QFont::DemiBold);
+    initialsFont.setPixelSize(12);
     painter->setFont(initialsFont);
-    painter->setPen(tinted ? table->accentTextColor() : table->textPrimaryColor());
+    painter->setPen(tinted ? table->memberTextColor() : table->textPrimaryColor());
     painter->drawText(badge, Qt::AlignCenter, index.data(LeaderboardModel::InitialsRole).toString());
 
     QFont nameFont(option.font);

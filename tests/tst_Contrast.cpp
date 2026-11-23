@@ -1,0 +1,198 @@
+#include <QtTest>
+
+#include "theme/Tokens.h"
+
+#include <algorithm>
+#include <cmath>
+
+namespace {
+// WCAG relative luminance of one 0..255 channel.
+double channelLuminance(int value)
+{
+    const double c = value / 255.0;
+    return c <= 0.03928 ? c / 12.92 : std::pow((c + 0.055) / 1.055, 2.4);
+}
+
+double luminance(const QColor& color)
+{
+    return 0.2126 * channelLuminance(color.red()) + 0.7152 * channelLuminance(color.green())
+           + 0.0722 * channelLuminance(color.blue());
+}
+
+// WCAG contrast ratio, from 1 (same colour) to 21 (black on white).
+double contrast(const QColor& a, const QColor& b)
+{
+    const double la = luminance(a);
+    const double lb = luminance(b);
+    return (std::max(la, lb) + 0.05) / (std::min(la, lb) + 0.05);
+}
+
+QColor tokenColor(bool dark, Token token)
+{
+    return QColor((dark ? kDarkHex : kLightHex)[static_cast<int>(token)]);
+}
+
+// Paints `over` on top of `under` (normal "source over" alpha compositing) and returns the visible colour.
+QColor blend(const QColor& over, const QColor& under)
+{
+    const double ao = over.alphaF();
+    const double au = under.alphaF();
+    const double outAlpha = ao + au * (1.0 - ao);
+    if (outAlpha <= 0.0)
+        return QColor(0, 0, 0, 0);
+    auto channel = [&](double o, double u) { return (o * ao + u * au * (1.0 - ao)) / outAlpha; };
+    QColor result;
+    result.setRgbF(float(channel(over.redF(), under.redF())), float(channel(over.greenF(), under.greenF())),
+                   float(channel(over.blueF(), under.blueF())), float(outAlpha));
+    return result;
+}
+
+// The two brightest points of the backdrop: the centre of each glow. The primary glow sits at the top of the
+// gradient (BackdropTop), the secondary glow at the bottom (BackdropBottom).
+QColor primaryGlowPoint(bool dark)
+{
+    return blend(tokenColor(dark, Token::GlowPrimary), tokenColor(dark, Token::BackdropTop));
+}
+
+QColor secondaryGlowPoint(bool dark)
+{
+    return blend(tokenColor(dark, Token::GlowSecondary), tokenColor(dark, Token::BackdropBottom));
+}
+}
+
+Q_DECLARE_METATYPE(Token)
+
+class TstContrast : public QObject {
+    Q_OBJECT
+private slots:
+    void helperKnownValues()
+    {
+        QVERIFY(qAbs(contrast(Qt::black, Qt::white) - 21.0) < 0.01);
+        QVERIFY(qAbs(contrast(Qt::white, Qt::white) - 1.0) < 0.01);
+    }
+
+    void blendKnownValues()
+    {
+        const QColor halfWhite(255, 255, 255, 128);
+        const QColor mixed = blend(halfWhite, Qt::black);
+        QVERIFY(qAbs(mixed.red() - 128) <= 1);
+        QCOMPARE(mixed.alpha(), 255);
+        QCOMPARE(blend(QColor(Qt::red), Qt::blue), QColor(Qt::red));   // an opaque colour hides what is under it
+    }
+
+    void textPairsReachAA_data()
+    {
+        QTest::addColumn<bool>("dark");
+        QTest::addColumn<Token>("foreground");
+        QTest::addColumn<QColor>("background");
+
+        for (bool dark : {false, true}) {
+            const char* mode = dark ? "dark" : "light";
+            // Adds the pair on its solid surface. Text that sits on Background, Surface or SurfaceAlt will sit on
+            // glass panels too, so it is also checked on a glass panel and a strong glass panel at both glow centres.
+            const QColor glass = tokenColor(dark, Token::GlassFill);
+            const QColor strongGlass = tokenColor(dark, Token::GlassFillStrong);
+            auto addPair = [&](Token text, Token surface) {
+                const QByteArray name = QByteArray(mode) + " " + kTokenNames[int(text)] + " on "
+                                        + kTokenNames[int(surface)];
+                QTest::newRow(name.constData()) << dark << text << tokenColor(dark, surface);
+                if (surface == Token::Background || surface == Token::Surface || surface == Token::SurfaceAlt) {
+                    const QColor glow1 = primaryGlowPoint(dark);
+                    const QColor glow2 = secondaryGlowPoint(dark);
+                    QTest::newRow((name + " as glass").constData()) << dark << text << blend(glass, glow1);
+                    QTest::newRow((name + " as strong glass").constData()) << dark << text << blend(strongGlass, glow1);
+                    QTest::newRow((name + " as glass (glow 2)").constData()) << dark << text << blend(glass, glow2);
+                    QTest::newRow((name + " as strong glass (glow 2)").constData())
+                        << dark << text << blend(strongGlass, glow2);
+                    // A strong glass panel inside a glass panel (cards on a page panel): both layers add up.
+                    QTest::newRow((name + " as strong glass on glass").constData())
+                        << dark << text << blend(strongGlass, blend(glass, glow1));
+                    QTest::newRow((name + " as strong glass on glass (glow 2)").constData())
+                        << dark << text << blend(strongGlass, blend(glass, glow2));
+                }
+            };
+            for (Token text : {Token::TextPrimary, Token::TextSecondary, Token::TextMuted}) {
+                for (Token surface : {Token::Background, Token::Surface, Token::SurfaceAlt})
+                    addPair(text, surface);
+            }
+            addPair(Token::AccentText, Token::Accent);
+            addPair(Token::DangerText, Token::DangerSoft);
+            addPair(Token::WarningText, Token::WarningSoft);
+            addPair(Token::ReviewText, Token::ReviewSoft);
+            addPair(Token::NavActiveText, Token::NavActiveBg);
+            // Welcome page: raised banner, hovered ghost button, current project card and its chip.
+            for (Token surface : {Token::SurfaceRaised, Token::SurfaceHover, Token::AccentSoft}) {
+                addPair(Token::TextPrimary, surface);
+                addPair(Token::TextSecondary, surface);
+            }
+            addPair(Token::Accent, Token::Surface);
+            addPair(Token::Accent, Token::AccentSoft);
+            // Setup page: stepper, model cards, member cards, error text and summary.
+            addPair(Token::Accent, Token::Background);          // current step label
+            addPair(Token::PositiveText, Token::SuccessSoft);   // finished step check mark
+            addPair(Token::DangerText, Token::Surface);         // field error text
+            addPair(Token::DangerText, Token::Background);   // the other text pairs on Surface are covered above
+            // Chaos Slicer table: match badge and Ready pill text.
+            addPair(Token::TextPrimary, Token::SuccessSoft);
+            // Board and Tracking: column count chips, skill and pin chips, the member efficiency chip.
+            addPair(Token::DoneChipText, Token::SuccessSoft);
+            addPair(Token::Accent, Token::AccentSoftStrong);
+            addPair(Token::WarningText, Token::ReviewSoft);
+            // Home: pin count line, quick link subtitles and the empty pins message.
+            addPair(Token::TextTertiary, Token::Surface);
+            addPair(Token::TextTertiary, Token::Background);
+            // Pins: text on the four sticky-note tints, and the muted comment chip that stays TextMuted.
+            addPair(Token::StickyGreenText, Token::PinHandoff);
+            addPair(Token::StickyPinkText, Token::PinBlocker);
+            addPair(Token::StickyYellowText, Token::PinTesting);
+            addPair(Token::StickyBlueText, Token::PinArchitecture);
+            for (Token tint : {Token::PinHandoff, Token::PinBlocker, Token::PinTesting, Token::PinArchitecture})
+                addPair(Token::TextMuted, tint);
+            // Track (pressed buttons, the Pins column count chip), SurfaceHover (hovered buttons, nav items) and the
+            // status bar. TextMuted is not used on any of them (its pairs would fail in Light), apart from a disabled button.
+            for (Token surface : {Token::Track, Token::StatusBar}) {   // TextPrimary and TextSecondary on SurfaceHover are above
+                addPair(Token::TextPrimary, surface);
+                addPair(Token::TextSecondary, surface);
+            }
+            // Avatar initials on the six member colours (Board, Pins, Team, Tracking, Slicer pizza).
+            for (Token member : {Token::Member1, Token::Member2, Token::Member3, Token::Member4, Token::Member5,
+                                 Token::Member6})
+                addPair(Token::MemberText, member);
+            // GitHub: the notice bar (TextSecondary on SurfaceAlt) and disabled buttons (TextMuted on SurfaceAlt)
+            // are already covered by the general Text-on-Surface pairs above.
+        }
+    }
+
+    void textPairsReachAA()
+    {
+        QFETCH(bool, dark);
+        QFETCH(Token, foreground);
+        QFETCH(QColor, background);
+        const double ratio = contrast(tokenColor(dark, foreground), background);
+        QVERIFY2(ratio >= 4.5, qPrintable(QString("contrast %1").arg(ratio, 0, 'f', 2)));
+    }
+
+    // Smoke glass: every dark token that is not meant to carry a colour stays grey (channels differ by at most 10),
+    // so no purple or blue tint can creep back in.
+    void darkNeutralTokensHaveNoTint()
+    {
+        const QStringList exempt = {"MemberText", "ChartDone", "SuccessSoft", "WarningSoft", "DangerSoft",
+                                    "DangerText", "WarningText", "PositiveText", "ReviewText", "ReviewBorder",
+                                    "DoneChipText", "DangerAction", "DangerBorder", "StatusConnected"};
+        QStringList tinted;
+        for (int i = 0; i < kTokenCount; ++i) {
+            const QString name = kTokenNames[i];
+            if (exempt.contains(name) || name.startsWith("Member") || name.startsWith("Pizza")
+                || name.startsWith("Sticky"))
+                continue;
+            const QColor c = tokenColor(true, Token(i));
+            const int spread = std::max({c.red(), c.green(), c.blue()}) - std::min({c.red(), c.green(), c.blue()});
+            if (spread > 10)
+                tinted << QString("%1 (%2)").arg(name).arg(spread);
+        }
+        QVERIFY2(tinted.isEmpty(), qPrintable("tinted dark tokens: " + tinted.join(", ")));
+    }
+};
+
+QTEST_MAIN(TstContrast)
+#include "tst_Contrast.moc"

@@ -3,6 +3,7 @@
 #include "../widgets/BarChartWidget.h"
 #include "../widgets/DonutWidget.h"
 #include "../widgets/StatCardWidget.h"
+#include "../theme/ThemeManager.h"
 
 #include <QColor>
 #include <QDateTime>
@@ -16,16 +17,19 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLayoutItem>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPalette>
 #include <QPen>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QSizePolicy>
 #include <QStringList>
 #include <QTextLayout>
 #include <QTextLine>
 #include <QTextOption>
+#include <QToolButton>
 #include <QVariantAnimation>
 #include <QVBoxLayout>
 
@@ -35,10 +39,7 @@
 #include <string>
 #include <vector>
 
-// ============================================================
-// PIN NOTE WIDGET
 // Private sticky note painted on the Home pins card (home.qss colours via qproperty-*)
-// ============================================================
 
 namespace planova::s6::detail {
 
@@ -91,13 +92,13 @@ private:
     QColor m_shadowColor;
 };
 
-// ---------------- Constants ----------------
 
 namespace {
 
 constexpr int kInset = 6;
 constexpr int kPadding = 12;
-constexpr int kNoteHeight = 98;
+// Fits the tag, three 12 px body lines and the footer inside the padding.
+constexpr int kNoteHeight = 110;
 
 constexpr qreal kHoverScale = 0.04;
 
@@ -105,7 +106,6 @@ constexpr int kMaxBodyLines = 3;
 
 constexpr qreal kBodyLineHeight = 1.35;
 
-// ---------------- Text Wrapping ----------------
 
 QStringList wrapLines(const QString& text, const QFont& font, qreal width, int maxLines)
 {
@@ -140,7 +140,6 @@ QStringList wrapLines(const QString& text, const QFont& font, qreal width, int m
 }
 } // anonymous namespace
 
-// ---------------- Constructor ----------------
 
 PinNote::PinNote(QWidget* parent)
     : QWidget(parent),
@@ -168,7 +167,6 @@ PinNote::PinNote(QWidget* parent)
     });
 }
 
-// ---------------- Content ----------------
 
 void PinNote::setContent(const QString& tag, const QString& body, const QString& author,
     const QString& status, bool emphasiseStatus)
@@ -187,7 +185,6 @@ void PinNote::setTiltDegrees(double degrees)
     update();
 }
 
-// ---------------- Colors ----------------
 
 void PinNote::setNoteColor(const QColor& color)
 {
@@ -213,7 +210,6 @@ void PinNote::setShadowColor(const QColor& color)
     update();
 }
 
-// ---------------- Size ----------------
 
 QSize PinNote::sizeHint() const
 {
@@ -225,7 +221,6 @@ QSize PinNote::minimumSizeHint() const
     return QSize(110, kNoteHeight + 2 * kInset);
 }
 
-// ---------------- Hover Events ----------------
 
 void PinNote::enterEvent(QEnterEvent* event)
 {
@@ -247,7 +242,6 @@ void PinNote::animateHover(bool hovered)
     m_animation->start();
 }
 
-// ---------------- Painting ----------------
 
 void PinNote::paintEvent(QPaintEvent* event)
 {
@@ -280,9 +274,8 @@ void PinNote::paintEvent(QPaintEvent* event)
     painter.setPen(m_textColor);
 
     // Tag
-    QFont tagFont = font();
-    tagFont.setPixelSize(10);
-    tagFont.setBold(true);
+    QFont tagFont = ThemeManager::instance().textFont(TextStyle::Caption);
+    tagFont.setWeight(QFont::DemiBold);
     tagFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.5);
     const QFontMetricsF tagMetrics(tagFont);
     painter.setFont(tagFont);
@@ -290,8 +283,7 @@ void PinNote::paintEvent(QPaintEvent* event)
         Qt::AlignLeft | Qt::AlignVCenter, m_tag);
 
     // Footer
-    QFont footFont = font();
-    footFont.setPixelSize(10);
+    QFont footFont = ThemeManager::instance().textFont(TextStyle::Caption);
     const QFontMetricsF footMetrics(footFont);
     const QRectF footRect(content.left(), content.bottom() - footMetrics.height(), content.width(),
         footMetrics.height());
@@ -300,17 +292,15 @@ void PinNote::paintEvent(QPaintEvent* event)
     painter.setFont(footFont);
     painter.drawText(footRect, Qt::AlignLeft | Qt::AlignVCenter, m_author);
     QFont statusFont = footFont;
-    statusFont.setBold(m_emphasiseStatus);
+    statusFont.setWeight(m_emphasiseStatus ? QFont::DemiBold : QFont::Medium);
     painter.setFont(statusFont);
     painter.drawText(footRect, Qt::AlignRight | Qt::AlignVCenter, m_status);
     painter.restore();
 
     // Body
-    QFont bodyFont = font();
-    bodyFont.setPixelSize(11);
-    bodyFont.setWeight(QFont::Medium);
+    const QFont bodyFont = ThemeManager::instance().textFont(TextStyle::Caption);
     const QFontMetricsF bodyMetrics(bodyFont);
-    const qreal lineStep = 11.0 * kBodyLineHeight;
+    const qreal lineStep = bodyFont.pixelSize() * kBodyLineHeight;
     painter.setFont(bodyFont);
     const QStringList lines = wrapLines(m_body, bodyFont, content.width(), kMaxBodyLines);
     qreal y = content.top() + tagMetrics.height() + 4.0;
@@ -322,9 +312,6 @@ void PinNote::paintEvent(QPaintEvent* event)
 }
 } // namespace planova::s6::detail
 
-// ============================================================
-// HOME PAGE
-// ============================================================
 
 namespace planova::s6 {
 
@@ -382,6 +369,27 @@ QString shortName(const QString& fullName)
            + QLatin1Char('.');
 }
 
+// Label on the sticky note, by pin type.
+QString stickyTagText(PinCategory category)
+{
+    QString label;
+    switch (category) {
+    case PinCategory::HandoffNote:
+        label = QStringLiteral("Handoff");
+        break;
+    case PinCategory::FeedbackBlocker:
+        label = QStringLiteral("Blocker");
+        break;
+    case PinCategory::ReadyForTesting:
+        label = QStringLiteral("Testing");
+        break;
+    case PinCategory::ArchitectureDecision:
+        label = QStringLiteral("Architecture");
+        break;
+    }
+    return QStringLiteral("\U0001F4CC ") + label;
+}
+
 // Pin status
 
 QString statusText(PinCategory category)
@@ -435,7 +443,6 @@ void clearLayout(QLayout* layout)
 }
 } // anonymous namespace
 
-// ---------------- Constructor ----------------
 
 HomePage::HomePage(HomeService& homeService, IMemberQuery& memberQuery, QWidget* parent)
     : QWidget(parent),
@@ -448,19 +455,26 @@ HomePage::HomePage(HomeService& homeService, IMemberQuery& memberQuery, QWidget*
     refresh();
 }
 
-// ============================================================
-// BUILD UI
-// ============================================================
 
 void HomePage::buildUi()
 {
-    auto* pageLayout = new QVBoxLayout(this);
+    // The page scrolls when the window is shorter than its content, so the window can still go down to
+    // 1125 x 748 and nothing on the page gets squeezed.
+    auto* outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
+    auto* scrollArea = new QScrollArea(this);
+    scrollArea->setObjectName(QStringLiteral("homeScrollArea"));
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFocusPolicy(Qt::NoFocus);   // the controls inside take focus; the area itself would be a Tab stop with no ring
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    auto* content = new QWidget(scrollArea);
+    content->setObjectName(QStringLiteral("homeScrollContent"));
+    outerLayout->addWidget(scrollArea);
+
+    auto* pageLayout = new QVBoxLayout(content);
     pageLayout->setContentsMargins(32, 24, 32, 24);
     pageLayout->setSpacing(20);
 
-    // --------------------------------------------------------
-    // Header
-    // --------------------------------------------------------
     auto* headerLayout = new QHBoxLayout;
     headerLayout->setContentsMargins(0, 0, 0, 0);
     headerLayout->setSpacing(10);
@@ -481,6 +495,27 @@ void HomePage::buildUi()
     brandLayout->addWidget(m_projectTitle);
     headerLayout->addLayout(brandLayout);
     headerLayout->addStretch(1);
+    m_moreButton = new QToolButton(this);
+    m_moreButton->setObjectName(QStringLiteral("homeMoreButton"));
+    m_moreButton->setIconSize(QSize(18, 18));
+    m_moreButton->setPopupMode(QToolButton::InstantPopup);
+    m_moreButton->setCursor(Qt::PointingHandCursor);
+    m_moreButton->setFocusPolicy(Qt::StrongFocus);
+    m_moreButton->setToolTip(tr("More actions"));
+    m_moreButton->setAccessibleName(tr("More actions for %1").arg(m_projectTitle->text()));   // the button has no visible text
+    m_moreButton->setMinimumSize(32, 28);
+    auto* moreMenu = new QMenu(m_moreButton);
+    QAction* editAction = moreMenu->addAction(tr("Edit details"));
+    QAction* deleteAction = moreMenu->addAction(tr("Delete project"));
+    m_moreButton->setMenu(moreMenu);
+    // Queued so the dialog never opens inside the menu action (a refresh may rebuild this page).
+    connect(editAction, &QAction::triggered, this, [this] { emit editProjectRequested(); }, Qt::QueuedConnection);
+    connect(deleteAction, &QAction::triggered, this, [this] { emit deleteProjectRequested(); }, Qt::QueuedConnection);
+    // The icon is a picture in one colour, so it is drawn again when the theme changes.
+    auto tintMoreIcon = [this] { m_moreButton->setIcon(ThemeManager::instance().icon("more", Token::TextPrimary)); };
+    tintMoreIcon();
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, m_moreButton, tintMoreIcon);
+    headerLayout->addWidget(m_moreButton, 0, Qt::AlignBottom);
     auto* hubButton = new QPushButton(QStringLiteral("\u2302  Projects Hub"), this);
     hubButton->setObjectName(QStringLiteral("homeHubButton"));
     hubButton->setToolTip(QStringLiteral("Switch workspace"));
@@ -494,9 +529,6 @@ void HomePage::buildUi()
     headerLayout->addWidget(slicerButton, 0, Qt::AlignBottom);
     pageLayout->addLayout(headerLayout);
 
-    // --------------------------------------------------------
-    // Statistics
-    // --------------------------------------------------------
     auto* statsLayout = new QGridLayout;
     statsLayout->setContentsMargins(0, 0, 0, 0);
     statsLayout->setHorizontalSpacing(14);
@@ -517,13 +549,11 @@ void HomePage::buildUi()
         statsLayout->setColumnStretch(column, 1);
     pageLayout->addLayout(statsLayout);
 
-    // --------------------------------------------------------
-    // Middle Row: Charts + Pins
-    // --------------------------------------------------------
     auto* middleLayout = new QHBoxLayout;
     middleLayout->setContentsMargins(0, 0, 0, 0);
     middleLayout->setSpacing(18);
     auto* chartsContent = new QWidget(this);
+    chartsContent->setObjectName(QStringLiteral("homePanelContent"));
     auto* chartsLayout = new QVBoxLayout(chartsContent);
     chartsLayout->setContentsMargins(0, 0, 0, 0);
     chartsLayout->setSpacing(14);
@@ -539,22 +569,20 @@ void HomePage::buildUi()
     chartsLayout->addWidget(contributionTitle);
     m_contributionChart = new BarChartWidget(chartsContent);
     m_contributionChart->setMinScale(20.0);
-    chartsLayout->addWidget(m_contributionChart);
-    chartsLayout->addStretch(1);
-    auto* sprintBadge = new QLabel(QStringLiteral("Active Sprint"));
-    sprintBadge->setObjectName(QStringLiteral("homeBadge"));
+    chartsLayout->addWidget(m_contributionChart, 1);   // spare height goes to the bars, not to an empty band
+    // Only sprint-based models (Agile, Scrum) show this badge; setProcessModel() decides.
+    m_sprintBadge = new QLabel(QStringLiteral("Active Sprint"));
+    m_sprintBadge->setObjectName(QStringLiteral("homeBadge"));
     QFrame* chartsPanel = createPanel(QStringLiteral("Task Status & Sprint Velocity"),
-        chartsContent, sprintBadge);
+        chartsContent, m_sprintBadge);
+    m_sprintBadge->hide();   // hidden until setProcessModel() says otherwise
     chartsPanel->setMinimumWidth(330);
     middleLayout->addWidget(chartsPanel, 23);
     m_pinsPanel = createPinsPanel();
     m_pinsPanel->setMinimumWidth(260);
     middleLayout->addWidget(m_pinsPanel, 17);
-    pageLayout->addLayout(middleLayout, 1);
+    pageLayout->addLayout(middleLayout);   // natural height: no empty filler under the panels
 
-    // --------------------------------------------------------
-    // Quick Links
-    // --------------------------------------------------------
     auto* quickLinksLayout = new QGridLayout;
     quickLinksLayout->setContentsMargins(0, 0, 0, 0);
     quickLinksLayout->setHorizontalSpacing(14);
@@ -580,11 +608,10 @@ void HomePage::buildUi()
     for (int column = 0; column < 3; ++column)
         quickLinksLayout->setColumnStretch(column, 1);
     pageLayout->addLayout(quickLinksLayout);
+    pageLayout->addStretch(1);
+    scrollArea->setWidget(content);
 }
 
-// ============================================================
-// PANEL
-// ============================================================
 
 QFrame* HomePage::createPanel(const QString& title, QWidget* content, QWidget* headerExtra)
 {
@@ -609,9 +636,6 @@ QFrame* HomePage::createPanel(const QString& title, QWidget* content, QWidget* h
     return panel;
 }
 
-// ============================================================
-// PINS PANEL
-// ============================================================
 
 QFrame* HomePage::createPinsPanel()
 {
@@ -642,12 +666,13 @@ QFrame* HomePage::createPinsPanel()
 
     // Sticky Note Cluster
     auto* cluster = new QWidget(panel);
+    cluster->setObjectName(QStringLiteral("homePanelContent"));
     m_pinsGrid = new QGridLayout(cluster);
     m_pinsGrid->setContentsMargins(0, 0, 0, 0);
     m_pinsGrid->setHorizontalSpacing(0);
     m_pinsGrid->setVerticalSpacing(0);
     layout->addWidget(cluster, 1);
-    m_pinsEmptyLabel = new QLabel(QStringLiteral("No pins yet"), panel);
+    m_pinsEmptyLabel = new QLabel(QStringLiteral("No pins yet. Open Pins to leave the first one."), panel);
     m_pinsEmptyLabel->setObjectName(QStringLiteral("homeEmptyLabel"));
     m_pinsEmptyLabel->setAlignment(Qt::AlignCenter);
     layout->addWidget(m_pinsEmptyLabel, 1);
@@ -672,9 +697,6 @@ QFrame* HomePage::createPinsPanel()
     return panel;
 }
 
-// ============================================================
-// EVENT FILTER
-// ============================================================
 
 bool HomePage::eventFilter(QObject* watched, QEvent* event)
 {
@@ -690,9 +712,6 @@ bool HomePage::eventFilter(QObject* watched, QEvent* event)
     return QWidget::eventFilter(watched, event);
 }
 
-// ============================================================
-// QUICK LINK
-// ============================================================
 
 QPushButton* HomePage::createQuickLink(const QString& icon, const QString& title,
     const QString& subtitle, const QString& linkType)
@@ -730,19 +749,20 @@ QPushButton* HomePage::createQuickLink(const QString& icon, const QString& title
     return button;
 }
 
-// ============================================================
-// PROJECT NAME
-// ============================================================
 
 void HomePage::setProjectName(const QString& name)
 {
     const QString trimmed = name.simplified();
     m_projectTitle->setText(trimmed.isEmpty() ? placeholderProjectName() : trimmed);
+    m_moreButton->setAccessibleName(tr("More actions for %1").arg(m_projectTitle->text()));
 }
 
-// ============================================================
-// REFRESH
-// ============================================================
+
+void HomePage::setProcessModel(const QString& model)
+{
+    m_sprintBadge->setVisible(model == QStringLiteral("Agile") || model == QStringLiteral("Scrum"));
+}
+
 
 void HomePage::refresh()
 {
@@ -750,15 +770,15 @@ void HomePage::refresh()
     m_totalCard->setValue(QString::number(data.total));
     m_completedCard->setValue(QString::number(data.completed));
     m_inProgressCard->setValue(QString::number(data.inProgress));
+    // Review is not counted in "In Progress", so it is named under the number. An empty caption hides the line.
+    m_inProgressCard->setCaption(data.review > 0 ? QStringLiteral("+%1 in review").arg(data.review) : QString());
     m_remainingCard->setValue(QString::number(data.remaining));
-    m_statusDonut->setValues(data.completed, data.inProgress, data.remaining);
+    // The donut's "Active" segment is everything being worked on, Review included.
+    m_statusDonut->setValues(data.completed, data.inProgress + data.review, data.remaining);
     updateContributionChart(data);
     updatePins(data.pins);
 }
 
-// ============================================================
-// CONTRIBUTION CHART
-// ============================================================
 
 void HomePage::updateContributionChart(const DashboardData& data)
 {
@@ -778,28 +798,26 @@ void HomePage::updateContributionChart(const DashboardData& data)
     m_contributionChart->setBars(bars, QStringLiteral("h"));
 }
 
-// ============================================================
-// CREATE PIN NOTE
-// ============================================================
 
 QWidget* HomePage::createPinNote(const PinDto& pin, const QString& authorName, int index)
 {
     auto* note = new detail::PinNote;
     note->setProperty("category", categoryProperty(pin.category));
-    note->setContent(QStringLiteral("\U0001F4CC PINS"), toQString(pin.text), shortName(authorName),
+    note->setContent(stickyTagText(pin.category), toQString(pin.text), shortName(authorName),
         statusText(pin.category), pin.category == PinCategory::FeedbackBlocker);
     note->setTiltDegrees(kTilts[index % kMaxPins]);
     const QString time = relativeTime(pin.ts);
+    // The note shows at most three lines, so the tooltip carries the whole text. Qt shows a tooltip with markup as
+    // rich text, so the tip is always HTML and the user's text is escaped: a "<b>" in a pin shows as typed.
+    QString tip = QStringLiteral("<p style=\"white-space:pre-wrap\">") + toQString(pin.text).toHtmlEscaped();
     if (!time.isEmpty()) {
-        note->setToolTip(authorName + QStringLiteral(" \u00B7 ") + time);
+        tip += QStringLiteral("<br>") + authorName.toHtmlEscaped() + QStringLiteral(" \u00B7 ") + time;
     }
-
+    tip += QStringLiteral("</p>");
+    note->setToolTip(tip);
     return note;
 }
 
-// ============================================================
-// UPDATE PINS
-// ============================================================
 
 void HomePage::updatePins(const std::vector<PinDto>& pins)
 {
@@ -854,9 +872,6 @@ void HomePage::updatePins(const std::vector<PinDto>& pins)
     updatePinsCount();
 }
 
-// ============================================================
-// OPEN PIN COUNT
-// ============================================================
 
 void HomePage::setOpenPinCount(int count)
 {

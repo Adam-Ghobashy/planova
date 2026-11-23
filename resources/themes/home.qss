@@ -1,0 +1,395 @@
+/* Home Page. Values follow the GUI reference themes
+   (css/theme.css, css/home.css, css/components.css). */
+
+QWidget#homePage {
+    background-color: transparent;              /* the glass backdrop shows through */
+}
+
+/* Header / branding */
+
+QLabel#homeEyebrow {
+    color: @Accent;                         /* Accent */
+    font-size: 12px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+}
+
+QLabel#homeTitle {
+    color: @TextPrimary;                         /* text-1 */
+    font-size: 24px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+}
+
+/* .btn.btn-secondary.btn-sm */
+
+QPushButton#homeHubButton {
+    background-color: @GlassFillStrong;         /* surface-raised, as glass */
+    color: @TextPrimary;
+    border: 1px solid @BorderDefault;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QPushButton#homeHubButton:hover {
+    background-color: @SurfaceAlt;
+    border-color: @BorderStrong;
+}
+
+/* .btn.btn-primary.btn-sm */
+
+QPushButton#homeSlicerButton {
+    background-color: @Accent;
+    color: @AccentText;
+    border: 1px solid @Accent;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QPushButton#homeSlicerButton:hover {
+    background-color: @AccentHover;
+    border-color: @AccentHover;
+}
+
+QPushButton#homeSlicerButton:pressed {
+    background-color: @AccentPressed;
+    border-color: @AccentPressed;
+}
+
+/* Cards (.card) */
+
+QFrame#homePanel {
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
+    border-radius: 14px;
+}
+
+QFrame#homePanel:hover {
+    background-color: @GlassFillStrong;
+}
+
+QLabel#homePanelTitle {
+    color: @TextPrimary;
+    font-size: 16px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+}
+
+/* .badge.badge-primary */
+
+QLabel#homeBadge {
+    background-color: @AccentSoft;
+    color: @Accent;
+    border: 1px solid @Accent;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QLabel#homeSectionTitle {
+    color: @TextSecondary;                         /* text-2 */
+    font-size: 12px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+}
+
+QLabel#homeEmptyLabel {
+    color: @TextTertiary;
+    background: transparent;
+    border: none;
+}
+
+QFrame#homeDivider {
+    background-color: @BorderSubtle; /* border-subtle */
+    border: none;
+}
+
+/* Sticky-notes panel */
+
+QFrame#homePinsPanel {
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
+    border-radius: 14px;
+}
+
+QFrame#homePinsPanel:hover {
+    background-color: @GlassFillStrong;
+    border-color: @Accent;                  /* brand-primary */
+}
+
+QLabel#homeStickyTitle {
+    color: @TextPrimary;
+    font-size: 14px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+}
+
+/* .btn-ghost.btn-sm */
+
+QPushButton#homePinsMore {
+    color: @TextSecondary;
+    background: transparent;
+    border: 2px solid transparent;   /* room for the focus ring, so focus does not resize the button */
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 12px; font-weight: 500;
+}
+
+QPushButton#homePinsMore:hover {
+    background-color: @GlassFillStrong;
+    color: @TextPrimary;
+}
+
+QLabel#homePinsCount {
+    color: @TextTertiary;                         /* text-tertiary */
+    font-size: 12px; font-weight: 500;
+    background: transparent;
+    border: none;
+}
+
+QPushButton#homePinsLink {
+    color: @Accent;
+    font-size: 12px;
+    font-weight: 600;
+    background: transparent;
+    border: 2px solid transparent;   /* room for the focus ring, so focus does not resize the link */
+    border-radius: 6px;
+    padding: 3px 4px;                /* the ring sits 4 px from the text, and the target is at least 24 px high */
+}
+
+/* Sticky notes - integrated inside HomePage.cpp
+   Colors are applied through Q_PROPERTY. */
+
+QWidget#stickyNoteWidget {
+    qproperty-noteColor: @PinHandoff;
+    qproperty-borderColor: @StickyGreenBorder;
+    qproperty-textColor: @StickyGreenText;
+    qproperty-shadowColor: @ShadowSoft;
+}
+
+QWidget#stickyNoteWidget[category="handoff"] {
+    qproperty-noteColor: @PinHandoff;
+    qproperty-borderColor: @StickyGreenBorder;
+    qproperty-textColor: @StickyGreenText;
+}
+
+QWidget#stickyNoteWidget[category="blocker"] {
+    qproperty-noteColor: @PinBlocker;
+    qproperty-borderColor: @StickyPinkBorder;
+    qproperty-textColor: @StickyPinkText;
+}
+
+QWidget#stickyNoteWidget[category="architecture"] {
+    qproperty-noteColor: @PinArchitecture;
+    qproperty-borderColor: @StickyBlueBorder;
+    qproperty-textColor: @StickyBlueText;
+}
+
+QWidget#stickyNoteWidget[category="testing"] {
+    qproperty-noteColor: @PinTesting;
+    qproperty-borderColor: @StickyYellowBorder;
+    qproperty-textColor: @StickyYellowText;
+}
+
+/* Quick links (.home-bottom-card) */
+
+QPushButton#quickLinkCard {
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
+    border-radius: 14px;
+    text-align: left;
+}
+
+QPushButton#quickLinkCard:hover {
+    background-color: @GlassFillStrong;
+    border-color: @Accent;
+}
+
+QPushButton#quickLinkCard:pressed {
+    background-color: @SurfaceAlt;
+}
+
+/* .home-bottom-icon */
+
+QLabel#quickLinkIcon {
+    background-color: @GlassFillStrong;         /* surface-raised, as glass */
+    border: 1px solid @GlassEdge;
+    border-radius: 10px;
+    font-size: 20px;
+}
+
+QLabel#quickLinkTitle {
+    color: @TextPrimary;
+    font-size: 14px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+}
+
+QLabel#quickLinkSubtitle {
+    color: @TextTertiary;
+    font-size: 12px; font-weight: 500;
+    background: transparent;
+    border: none;
+}
+
+/* Stat cards (.oliver-stat-card) */
+
+QFrame#statCardWidget {
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
+    border-radius: 14px;
+}
+
+QFrame#statCardWidget:hover {
+    background-color: @GlassFillStrong;
+}
+
+QLabel#statCardTitle {
+    color: @TextTertiary;
+    font-size: 12px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+}
+
+QLabel#statCardValue {
+    font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI";
+    color: @TextPrimary;
+    font-size: 26px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+}
+
+/* "+N in review" under the In Progress number */
+QWidget#homePage QLabel#statCardCaption {
+    color: @TextMuted;
+    font-size: 12px; font-weight: 500;
+    background: transparent;
+    border: none;
+}
+
+QLabel#statCardValue[valueRole="default"] {
+    color: @TextPrimary;
+}
+
+QLabel#statCardValue[valueRole="success"] {
+    color: @PositiveText;
+}
+
+QLabel#statCardValue[valueRole="accent"] {
+    color: @Accent;
+}
+
+QLabel#statCardValue[valueRole="warning"] {
+    color: @WarningText;
+}
+
+/* Donut chart: colours reach DonutWidget through qproperty-* */
+
+QWidget#donutWidget {
+    background: transparent;
+    border: none;
+    font-size: 12px; font-weight: 500;
+    qproperty-doneColor: @ChartDone;
+    qproperty-activeColor: @Accent;
+    qproperty-trackColor: @Track;
+    qproperty-textColor: @TextPrimary;
+    qproperty-secondaryColor: @TextSecondary;
+    qproperty-mutedColor: @TextTertiary;
+    qproperty-outlineColor: @BorderSubtle;
+}
+
+/* Bar chart (contribution bars, one colour per member) */
+
+QWidget#barChartWidget {
+    background: transparent;
+    border: none;
+    font-size: 12px; font-weight: 500;
+    qproperty-barColor: @Accent;
+    qproperty-trackColor: @Track;
+    qproperty-textColor: @TextPrimary;
+    qproperty-mutedColor: @TextTertiary;
+    qproperty-member1Color: @Member1;
+    qproperty-member2Color: @Member2;
+    qproperty-member3Color: @Member3;
+    qproperty-member4Color: @Member4;
+    qproperty-member5Color: @Member5;
+    qproperty-member6Color: @Member6;
+}
+/* Plain content areas inside a panel show the panel's own surface, not the page background. */
+QWidget#homePanelContent {
+    background: transparent;
+}
+
+/* ---------- keyboard focus ----------
+   Dark Accent equals TextPrimary, so the Accent-filled slicer button swaps its fill for Surface and gets a TextPrimary
+   ring; the other buttons keep their fill and only get the ring. The border grows by 1 px and the padding shrinks by
+   1 px, so nothing moves. The combined states are listed so hover and pressed do not bring the Accent fill back. */
+QPushButton#homeSlicerButton:focus,
+QPushButton#homeSlicerButton:focus:hover,
+QPushButton#homeSlicerButton:focus:pressed {
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 2px solid @TextPrimary;
+    padding: 4px 9px;
+}
+
+QPushButton#homeHubButton:focus,
+QPushButton#homeHubButton:focus:hover {
+    border: 2px solid @TextPrimary;
+    padding: 4px 9px;
+}
+
+QPushButton#homePinsMore:focus,
+QPushButton#homePinsMore:focus:hover,
+QPushButton#homePinsLink:focus {
+    border: 2px solid @TextPrimary;
+}
+
+QPushButton#quickLinkCard:focus,
+QPushButton#quickLinkCard:focus:hover,
+QPushButton#quickLinkCard:focus:pressed {
+    border: 2px solid @TextPrimary;
+}
+
+/* "..." menu button (an icon) next to the Projects Hub button: same look as the secondary button */
+QToolButton#homeMoreButton {
+    background-color: @GlassFillStrong;
+    color: @TextPrimary;
+    border: 1px solid @BorderDefault;
+    border-radius: 6px;
+    padding: 0 8px;
+}
+
+QToolButton#homeMoreButton:hover {
+    background-color: @SurfaceAlt;
+    border-color: @BorderStrong;
+}
+
+QToolButton#homeMoreButton:pressed {
+    background-color: @Track;
+}
+
+QToolButton#homeMoreButton:focus,
+QToolButton#homeMoreButton:focus:hover {
+    border: 2px solid @TextPrimary;
+    padding: 0 7px;
+}
+
+QToolButton#homeMoreButton::menu-indicator { image: none; width: 0px; }

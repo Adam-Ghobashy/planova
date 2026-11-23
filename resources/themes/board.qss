@@ -1,0 +1,125 @@
+/* Phase Board (S3), matches Figma */
+
+/* ---------- header ---------- */
+QLabel#PageTitle      { font-size: 24px; font-weight: 600; color: @TextPrimary; background: transparent; }
+QLabel#ModelLabel     { font-size: 14px; color: @TextMuted; background: transparent; }
+QLabel#ModelValue     { font-size: 14px; font-weight: 600; color: @Accent; background: transparent; }
+QLabel#TaskCountLabel { font-size: 14px; color: @TextMuted; background: transparent; }
+
+QLineEdit#BoardSearch, QComboBox#BoardMemberFilter {
+    background: @GlassFillStrong; border: 1px solid @Border; border-radius: 20px;
+    padding: 9px 18px; min-height: 22px; font-size: 16px; color: @TextPrimary;
+}
+/* Focus is a 2 px Accent ring (the border grows by 1 px, the padding shrinks by 1 px, so nothing moves). */
+QLineEdit#BoardSearch:focus { border: 2px solid @Accent; padding: 8px 17px; }
+QComboBox#BoardMemberFilter:focus { border: 2px solid @Accent; padding: 8px 39px 8px 17px; }
+
+/* ---------- buttons ---------- */
+QPushButton#BoardPrimary {
+    background: @Accent; color: @AccentText; border: none; border-radius: 14px;
+    padding: 11px 22px; font-size: 16px; font-weight: 600;
+}
+QPushButton#BoardPrimary:hover { background: @AccentHover; }
+QPushButton#BoardPrimary:pressed { background: @AccentPressed; }
+QPushButton#BoardSecondary {
+    background: @GlassFillStrong; color: @TextPrimary; border: 1px solid @ControlBorder; border-radius: 14px;
+    padding: 11px 22px; font-size: 16px; font-weight: 600;
+}
+QPushButton#BoardSecondary:hover { background: @SurfaceHover; }
+
+/* Keyboard focus. Dark Accent equals TextPrimary, so the primary button swaps its Accent fill for Surface and gets a
+   TextPrimary ring; the secondary button only gets the ring. The border grows, the padding shrinks, size stays. The
+   combined hover and pressed states are listed so they do not bring the Accent fill back. */
+QPushButton#BoardPrimary:focus,
+QPushButton#BoardPrimary:focus:hover,
+QPushButton#BoardPrimary:focus:pressed {
+    background: @Surface; color: @TextPrimary; border: 2px solid @TextPrimary; padding: 9px 20px;
+}
+QPushButton#BoardSecondary:focus,
+QPushButton#BoardSecondary:focus:hover { border: 2px solid @TextPrimary; padding: 10px 21px; }
+
+/* ---------- combo popup + arrow (StyledComboBox paints the chevron from these two colours) ---------- */
+QComboBox#BoardMemberFilter { padding-right: 40px; combobox-popup: 0; qproperty-arrowColor: @TextMuted; qproperty-arrowActiveColor: @Accent; }
+QComboBox#BoardMemberFilter::drop-down {
+    subcontrol-origin: padding; subcontrol-position: center right;
+    width: 32px; border: none; background: transparent;
+}
+QComboBox#BoardMemberFilter::down-arrow { image: none; }
+QComboBox#BoardMemberFilter QComboBoxPrivateContainer {
+    background: @SurfaceDialog; border: 1px solid @Border; border-radius: 0;
+}
+QComboBox#BoardMemberFilter QAbstractItemView {
+    background: @SurfaceDialog; border: 1px solid @Border; border-radius: 12px; padding: 6px;
+    outline: 0; color: @TextPrimary; font-size: 16px;
+    selection-background-color: @AccentSoft; selection-color: @TextPrimary;
+}
+QComboBox#BoardMemberFilter QAbstractItemView::item { min-height: 34px; padding: 2px 10px; border-radius: 8px; }
+
+/* ---------- columns ---------- */
+QScrollArea#BoardScroll { background: transparent; border: none; }
+QWidget#BoardColumnsHost { background: transparent; }
+QScrollArea#BoardScroll QScrollBar:horizontal { height: 8px; background: transparent; margin: 0 4px; }
+QScrollArea#BoardScroll QScrollBar::handle:horizontal { background: @ScrollHandle; border-radius: 4px; min-width: 30px; }
+QScrollArea#BoardScroll QScrollBar::add-line:horizontal,
+QScrollArea#BoardScroll QScrollBar::sub-line:horizontal { width: 0; }
+
+QFrame#TaskColumn {
+    background: @GlassFill; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 26px;
+}
+QLabel#ColumnTitle { font-size: 16px; font-weight: 600; color: @TextPrimary; background: transparent; }
+QLabel#ColumnCount {
+    background: @SurfaceAlt; color: @TextPrimary; border-radius: 10px; padding: 3px 12px;
+    font-size: 14px; font-weight: 600;
+}
+QLabel#ColumnCount[tone="progress"] { background: @AccentSoftStrong; color: @Accent; }
+QLabel#ColumnCount[tone="review"]   { background: @ReviewSoft; color: @ReviewText; }
+QLabel#ColumnCount[tone="done"]     { background: @SuccessSoft; color: @DoneChipText; }
+QFrame#ColumnDivider { background: @GlassEdge; border: none; }
+
+QScrollArea#ColumnScroll { background: transparent; border: none; }
+QWidget#ColumnViewport, QWidget#ColumnContainer { background: transparent; }
+QScrollArea#ColumnScroll QScrollBar:vertical { width: 8px; background: transparent; margin: 4px 0; }
+QScrollArea#ColumnScroll QScrollBar::handle:vertical { background: @ScrollHandle; border-radius: 4px; min-height: 30px; }
+QScrollArea#ColumnScroll QScrollBar::add-line:vertical,
+QScrollArea#ColumnScroll QScrollBar::sub-line:vertical { height: 0; }
+
+/* ---------- cards ---------- */
+QFrame#TaskCard {
+    background: @GlassFillStrong; border: 1px solid @GlassEdge; border-top: 1px solid @GlassSheen; border-radius: 20px;
+    padding: 1px;
+}
+/* keyboard focus: the card opens its context menu with the Menu key */
+QFrame#TaskCard:focus { border: 2px solid @Accent; padding: 0; }   /* border +1 px, padding -1 px: nothing moves */
+QLabel#SkillChip {
+    background: @AccentSoft; color: @Accent; border: 1px solid @Accent; border-radius: 11px;
+    padding: 3px 8px; font-size: 12px; font-weight: 600;
+}
+QFrame#BlockedBadge { background: @GlassFillStrong; border: 1px solid @Border; border-radius: 10px; }
+QLabel#BlockedIcon  { font-size: 14px; background: transparent; }
+QLabel#BlockedText  { font-size: 12px; font-weight: 600; color: @TextPrimary; background: transparent; }
+QLabel#TaskTitle    { font-size: 16px; font-weight: 600; color: @TextPrimary; background: transparent; }
+QFrame#CardDivider  { background: @GlassEdge; border: none; }
+QLabel#CardAvatar {
+    background: @GlassFillStrong; border: 1px solid @ControlBorder; border-radius: 14px;
+    font-size: 12px; font-weight: 600; color: @TextPrimary;
+}
+QLabel#CardAvatar[memberColor] { color: @MemberText; border: none; }
+QLabel#CardAvatar[memberColor="1"] { background: @Member1; }
+QLabel#CardAvatar[memberColor="2"] { background: @Member2; }
+QLabel#CardAvatar[memberColor="3"] { background: @Member3; }
+QLabel#CardAvatar[memberColor="4"] { background: @Member4; }
+QLabel#CardAvatar[memberColor="5"] { background: @Member5; }
+QLabel#CardAvatar[memberColor="6"] { background: @Member6; }
+QLabel#CardMeta  { font-size: 14px; color: @TextMuted; background: transparent; }
+QLabel#DoneMark  { font-size: 20px; font-weight: 600; color: @TextPrimary; background: transparent; }
+QToolButton#AdvanceButton {
+    border: 2px solid transparent; background: transparent; color: @TextPrimary; font-size: 20px;
+    padding: 0 4px; border-radius: 10px;   /* the 2 px border is the room for the focus ring */
+}
+QToolButton#AdvanceButton:hover { background: @Border; }
+QToolButton#AdvanceButton:focus { border-color: @Accent; }
+
+/* pin badge on cards */
+QFrame#PinChip  { background: @ReviewSoft; border: 1px solid @ReviewBorder; border-radius: 10px; }
+QLabel#PinIcon  { font-size: 14px; background: transparent; }
+QLabel#PinCount { font-size: 14px; font-weight: 600; color: @WarningText; background: transparent; }

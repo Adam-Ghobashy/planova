@@ -1,6 +1,0 @@
-<RCC>
-  <qresource prefix="/themes/light">
-    <file alias="base.qss">../../../resources/themes/light/base.qss</file>
-    <file alias="pins.qss">../../../resources/themes/light/pins.qss</file>
-  </qresource>
-</RCC>

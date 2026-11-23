@@ -1,6 +1,8 @@
 #include "TrackingPage.h"
 
 #include "LeaderboardModel.h"
+#include "../theme/ThemeManager.h"
+#include "../widgets/EmptyHint.h"
 
 #include <QAbstractItemView>
 #include <QButtonGroup>
@@ -77,6 +79,7 @@ Card makeCard(const QString& title, const QString& headerObjectName, const QMarg
     outer->addWidget(header);
 
     auto* body = new QWidget(card);
+    body->setObjectName(QStringLiteral("TrackingCardBody"));   // transparent in tracking.qss, so the card keeps its Surface
     auto* bodyLayout = new QVBoxLayout(body);
     bodyLayout->setContentsMargins(bodyMargins);
     bodyLayout->setSpacing(0);
@@ -177,11 +180,10 @@ protected:
             maxValue = std::max(maxValue, bar.value);
         }
 
-        QFont labelFont(font());
-        labelFont.setPixelSize(11);
+        QFont labelFont = ThemeManager::instance().textFont(TextStyle::Caption);
         QFont valueFont = monoFont();
-        valueFont.setBold(true);
-        valueFont.setPixelSize(11);
+        valueFont.setWeight(QFont::DemiBold);
+        valueFont.setPixelSize(12);
 
         const double trackWidth = kCanvasWidth - 150.0;
         double y = kStartY;
@@ -197,11 +199,14 @@ protected:
             painter.setBrush(track_);
             painter.drawRect(QRectF(kTrackLeft, y, trackWidth, kBarHeight));
 
-            // Reference: Math.max(12, value / max * trackWidth), so zero rows keep a stub.
-            const double fill = std::max(
-                kMinFill, maxValue > 0.0 ? bar.value / maxValue * trackWidth : 0.0);
-            painter.setBrush(fill_);
-            painter.drawRect(QRectF(kTrackLeft, y, fill, kBarHeight));
+            // A value of 0 draws no bar (the label stays); any other value keeps at least a small stub.
+            const double fill = (bar.value > 0.0 && maxValue > 0.0)
+                                    ? std::max(kMinFill, bar.value / maxValue * trackWidth)
+                                    : 0.0;
+            if (fill > 0.0) {
+                painter.setBrush(fill_);
+                painter.drawRect(QRectF(kTrackLeft, y, fill, kBarHeight));
+            }
 
             painter.setFont(valueFont);
             painter.setPen(value_);
@@ -341,7 +346,7 @@ void TrackingPage::buildUi()
     table_->setWordWrap(false);
     table_->setFrameShape(QFrame::NoFrame);
     table_->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-    table_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    table_->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     table_->verticalHeader()->hide();
     table_->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     table_->horizontalHeader()->setSectionsClickable(false);
@@ -351,17 +356,20 @@ void TrackingPage::buildUi()
     table_->horizontalHeader()->setSectionResizeMode(LeaderboardModel::RoleColumn,
                                                      QHeaderView::Stretch);
     leaderboard.body->addWidget(table_, 1);
+    emptyLeaderboard_ = makeEmptyHint(tr("No team members yet. Add members on Team & Skills, then finish tasks to see rankings."), leaderboardCard);
+    leaderboard.body->addWidget(emptyLeaderboard_, 1);
     main->addWidget(leaderboardCard, kLeaderboardStretch);
 
-    // Chart card: padding 18, title margin-bottom 12, chart centred vertically.
+    // Chart card: padding 18, title margin-bottom 12, chart starts right under the title (top-aligned).
     const Card chartCardParts = makeCard(tr("Complexity Distribution Chart"),
                                          QStringLiteral("TrackingCardHeaderPlain"),
                                          QMargins(kCardPadding, kCardPadding, kCardPadding, 0),
                                          QMargins(kCardPadding, 12, kCardPadding, kCardPadding));
     QFrame* chartCard = chartCardParts.frame;
     chart_ = new ComplexityBarChart(chartCard);
-    chartCardParts.body->addStretch(1);
     chartCardParts.body->addWidget(chart_);
+    emptyChart_ = makeEmptyHint(tr("Nothing to chart yet."), chartCard);
+    chartCardParts.body->addWidget(emptyChart_);
     chartCardParts.body->addStretch(1);
     main->addWidget(chartCard, kChartStretch);
 
@@ -371,6 +379,11 @@ void TrackingPage::buildUi()
 void TrackingPage::refresh()
 {
     model_->setRows(stats_.leaderboard(), members_.all());
+    const bool empty = model_->rowCount() == 0;
+    table_->setVisible(!empty);
+    emptyLeaderboard_->setVisible(empty);
+    chart_->setVisible(!empty);
+    emptyChart_->setVisible(empty);
     refreshCards();
     refreshChart();
 }

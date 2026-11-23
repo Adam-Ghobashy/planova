@@ -190,10 +190,11 @@ void DonutWidget::paintEvent(QPaintEvent* event)
 
     QFont percentageFont = monoFont();
     percentageFont.setPixelSize(qMax(12, qRound(diameter * 0.19)));
-    percentageFont.setBold(true);
+    percentageFont.setWeight(QFont::DemiBold);
 
     QFont captionFont = font();
-    captionFont.setPixelSize(qMax(8, qRound(diameter * 0.077)));
+    captionFont.setPixelSize(qMax(12, qRound(diameter * 0.077)));
+    captionFont.setWeight(QFont::Medium);   // the Caption weight of the type scale
 
     const QFontMetrics percentageMetrics(percentageFont);
     const QFontMetrics captionMetrics(captionFont);
@@ -228,7 +229,7 @@ void DonutWidget::paintEvent(QPaintEvent* event)
 
     QFont legendFont = font();
     QFont countFont = legendFont;
-    countFont.setBold(true);
+    countFont.setWeight(QFont::DemiBold);
 
     const QFontMetrics legendMetrics(legendFont);
     const QFontMetrics countMetrics(countFont);

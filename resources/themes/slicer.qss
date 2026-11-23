@@ -1,0 +1,258 @@
+
+QWidget#ChaosSlicerPage {
+    background-color: transparent;
+    color: @TextPrimary;
+    font-family: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI";
+}
+
+QWidget#ChaosSlicerPage QScrollArea#slicerScrollArea {
+    background: transparent;
+    border: none;
+}
+
+QWidget#ChaosSlicerPage QWidget#slicerScrollContent {
+    background: transparent;
+}
+
+QWidget#ChaosSlicerPage QFrame#card {
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
+    border-radius: 12px;
+}
+
+QWidget#ChaosSlicerPage QFrame#card QLabel {
+    background: transparent;
+}
+
+QWidget#ChaosSlicerPage QLabel#cardTitle {
+    color: @TextPrimary;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QWidget#ChaosSlicerPage QLabel#cardSubtitle {
+    color: @TextMuted;
+    font-size: 12px; font-weight: 500;
+}
+
+QWidget#ChaosSlicerPage QPushButton#primaryButton, QWidget#ChaosSlicerPage QPushButton#applyButton, QWidget#ChaosSlicerPage QPushButton#sliceButton {
+    background-color: @Accent;
+    color: @AccentText;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QWidget#ChaosSlicerPage QPushButton#primaryButton:hover, QWidget#ChaosSlicerPage QPushButton#applyButton:hover, QWidget#ChaosSlicerPage QPushButton#sliceButton:hover {
+    background-color: @AccentHover;
+}
+
+QWidget#ChaosSlicerPage QPushButton#primaryButton:pressed, QWidget#ChaosSlicerPage QPushButton#applyButton:pressed, QWidget#ChaosSlicerPage QPushButton#sliceButton:pressed {
+    background-color: @AccentPressed;
+}
+
+QWidget#ChaosSlicerPage QPushButton#secondaryButton, QWidget#ChaosSlicerPage QPushButton#recalculateButton {
+    background-color: @GlassFillStrong;
+    color: @TextPrimary;
+    border: 1px solid @Border;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+QWidget#ChaosSlicerPage QPushButton#secondaryButton:hover, QWidget#ChaosSlicerPage QPushButton#recalculateButton:hover {
+    background-color: @SurfaceAlt;
+}
+
+QWidget#ChaosSlicerPage QPushButton#secondaryButton:pressed, QWidget#ChaosSlicerPage QPushButton#recalculateButton:pressed {
+    background-color: @Track;
+}
+
+QWidget#ChaosSlicerPage QLabel#statusLabel {
+    background-color: @SuccessSoft;
+    color: @TextPrimary;
+    border-radius: 12px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QWidget#ChaosSlicerPage QLabel#emptyLabel {
+    color: @TextMuted;
+    font-size: 14px;
+    padding: 28px;
+}
+
+QWidget#ChaosSlicerPage QWidget#WeightSlidersPanel {
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
+    border-radius: 12px;
+}
+
+QWidget#ChaosSlicerPage QWidget#WeightSlidersPanel QLabel, QWidget#ChaosSlicerPage QWidget#WeightSlidersPanel QSlider {
+    background: transparent;
+}
+
+QWidget#ChaosSlicerPage QSlider::groove:horizontal {
+    height: 6px;
+    background: @Track;
+    border-radius: 3px;
+}
+
+QWidget#ChaosSlicerPage QSlider::sub-page:horizontal {
+    background: @Accent;
+    border-radius: 3px;
+}
+
+QWidget#ChaosSlicerPage QSlider::handle:horizontal {
+    background: @Accent;
+    border: 2px solid @Surface;
+    width: 16px;
+    height: 16px;
+    margin: -5px 0;
+    border-radius: 8px;
+}
+
+QWidget#ChaosSlicerPage QSlider::handle:horizontal:hover {
+    background: @AccentHover;
+}
+
+QWidget#ChaosSlicerPage QLabel#sliderNameLabel {
+    color: @TextPrimary;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+QWidget#ChaosSlicerPage QLabel#sliderValueLabel {
+    color: @TextPrimary;
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 36px;
+}
+
+QWidget#ChaosSlicerPage QWidget#WeightSlidersPanel QLabel#sumLabel {
+    background-color: @AccentSoft;
+    color: @Accent;
+    border-radius: 10px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QWidget#ChaosSlicerPage QTableView#assignmentsTable {
+    background-color: @GlassFill;
+    border: 1px solid @GlassEdge;
+    border-top: 1px solid @GlassSheen;
+    border-radius: 12px;
+    gridline-color: @GlassEdge;
+    selection-background-color: @AccentSoft;
+    selection-color: @TextPrimary;
+    outline: none;
+}
+
+QWidget#ChaosSlicerPage QHeaderView,
+QWidget#ChaosSlicerPage QTableCornerButton::section {
+    background: transparent;
+    border: none;
+}
+
+QWidget#ChaosSlicerPage QHeaderView::section {
+    background-color: transparent;
+    color: @TextMuted;
+    border: none;
+    border-bottom: 1px solid @GlassEdge;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+}
+
+QWidget#ChaosSlicerPage QTableView::item {
+    padding: 8px 12px;
+    border-bottom: 1px solid @GlassEdge;
+}
+
+QWidget#ChaosSlicerPage QComboBox#overrideCombo {
+    background-color: @GlassFillStrong;
+    color: @TextPrimary;
+    border: 1px solid @Border;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px; font-weight: 500;
+}
+
+QWidget#ChaosSlicerPage QComboBox#overrideCombo:hover {
+    border-color: @Accent;
+}
+
+/* Focus is a 2 px ring, so it differs from the 1 px hover border; the padding shrinks by 1 px. */
+QWidget#ChaosSlicerPage QComboBox#overrideCombo:focus {
+    border: 2px solid @Accent;
+    padding: 3px 9px;
+}
+
+QWidget#ChaosSlicerPage QComboBox#overrideCombo::drop-down {
+    border: none;
+    width: 18px;
+}
+
+QWidget#ChaosSlicerPage QComboBox#overrideCombo QAbstractItemView {
+    background-color: @SurfaceDialog;
+    color: @TextPrimary;
+    border: 1px solid @Border;
+    selection-background-color: @AccentSoft;
+    selection-color: @TextPrimary;
+}
+
+/* ---------- polish (Task 18) ---------- */
+/* Labels inside cards stay transparent (the global QWidget rule is transparent too; this keeps it explicit). */
+QWidget#ChaosSlicerPage QLabel#pageTitle,
+QWidget#ChaosSlicerPage QLabel#cardTitle,
+QWidget#ChaosSlicerPage QLabel#cardSubtitle,
+QWidget#ChaosSlicerPage QLabel#sliderNameLabel,
+QWidget#ChaosSlicerPage QLabel#sliderValueLabel {
+    background: transparent;
+}
+
+QWidget#ChaosSlicerPage QLabel#emptyLabel {
+    background: transparent;
+    color: @TextSecondary;
+}
+
+/* Keyboard focus. In Dark the Accent fill and TextPrimary are the same near-white, so a plain ring on an
+   Accent-filled control disappears. The handle turns into a Surface disc inside a thick ring (as on the setup
+   page); a focused Accent button swaps its fill for Surface and gets a TextPrimary ring, so ring and fill differ
+   in both themes (Qt's "background-clip" does not stop the fill showing through a double border). */
+QWidget#ChaosSlicerPage QSlider::handle:horizontal:focus {
+    background: @Surface;
+    border: 3px solid @TextPrimary;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0;
+    border-radius: 10px;
+}
+
+QWidget#ChaosSlicerPage QPushButton#primaryButton:focus,
+QWidget#ChaosSlicerPage QPushButton#applyButton:focus,
+QWidget#ChaosSlicerPage QPushButton#sliceButton:focus {
+    background-color: @Surface;
+    color: @TextPrimary;
+    border: 2px solid @TextPrimary;
+    padding: 6px 16px;
+}
+
+QWidget#ChaosSlicerPage QPushButton#secondaryButton:focus,
+QWidget#ChaosSlicerPage QPushButton#recalculateButton:focus {
+    border: 2px solid @TextPrimary;
+    padding: 7px 15px;
+}
+
+QWidget#ChaosSlicerPage QPushButton:disabled {
+    background-color: @SurfaceAlt;
+    color: @TextMuted;
+}
