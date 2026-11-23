@@ -49,7 +49,7 @@ private:
     QWidget* buildSkillsColumn(const MemberDto& member, QWidget* parent);
     QWidget* buildUnderstandingColumn(const MemberDto& member, QWidget* parent);
     QWidget* buildAssignmentColumn(const MemberDto& member, QWidget* parent);
-    static void applyColumnWidths(QGridLayout* grid);
+    void applyColumnWidths(QGridLayout* grid) const;
     QPushButton* makeSwitch(const QString& objectName, const QString& title, const QString& settingKey,
                             QWidget* parent);
     void showSwitch(QPushButton* button, bool on);   // sets the check state and the "On"/"Off" text, saves nothing
@@ -87,6 +87,7 @@ private:
     QLabel* teamLeadValue_ = nullptr;
 
     QWidget* tableHeader_ = nullptr;
+    int understandingWidth_ = 0;   // set from the header title, so the title is never cut off
     QVBoxLayout* cardsLayout_ = nullptr;
     QLabel* emptyLabel_ = nullptr;
 

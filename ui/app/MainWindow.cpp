@@ -19,7 +19,6 @@
 #include "planova/common/EventTypes.h"
 #include <QApplication>
 #include <QDir>
-#include <QFocusEvent>
 #include <QHBoxLayout>
 #include <QSettings>
 #include <QShortcut>
@@ -45,7 +44,7 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     // Start with focus on the page area, so no sidebar item shows a focus ring before the user presses Tab.
     central->setFocusPolicy(Qt::ClickFocus);
     central->setFocus();
-    // Sees every focus change in the app, to tell keyboard focus from mouse focus.
+    // Sees every key and mouse press, to tell keyboard use from mouse use.
     qApp->installEventFilter(this);
 
     buildPages();
@@ -62,7 +61,7 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     }
 
     connect(&bridge_, &CoreBridge::changed, sidebar_, &Sidebar::refresh);
-    connect(sidebar_, &Sidebar::pageRequested, this, &MainWindow::showPage);
+    connect(sidebar_, &Sidebar::pageRequested, this, [this](Page page) { showPage(page); });
     connect(&bridge_, &CoreBridge::changed, this, &MainWindow::updateStatusBar);
     updateStatusBar();
 }
@@ -105,30 +104,30 @@ void MainWindow::buildPages()
     connect(&bridge_, &CoreBridge::changed, homePage_, showOpenPinCount);
     showOpenPinCount();
 
-    connect(boardPage, &PhaseBoardPage::slicerRequested, this, [this] { showPage(Page::Slicer); });
+    connect(boardPage, &PhaseBoardPage::slicerRequested, this, [this] { showPage(Page::Slicer, true); });
     connect(slicerPage, &planova::slicer::ChaosSlicerPage::assignmentsApplied, this,
-            [this](int) { showPage(Page::Board); });
+            [this](int) { showPage(Page::Board, true); });
 
-    connect(homePage_, &planova::s6::HomePage::projectsHubRequested, this, [this] { showPage(Page::Hub); });
-    connect(homePage_, &planova::s6::HomePage::slicerRequested, this, [this] { showPage(Page::Slicer); });
-    connect(homePage_, &planova::s6::HomePage::teamSkillsRequested, this, [this] { showPage(Page::Team); });
-    connect(homePage_, &planova::s6::HomePage::githubRequested, this, [this] { showPage(Page::GitHub); });
-    connect(homePage_, &planova::s6::HomePage::pinsRequested, this, [this] { showPage(Page::Pins); });
+    connect(homePage_, &planova::s6::HomePage::projectsHubRequested, this, [this] { showPage(Page::Hub, true); });
+    connect(homePage_, &planova::s6::HomePage::slicerRequested, this, [this] { showPage(Page::Slicer, true); });
+    connect(homePage_, &planova::s6::HomePage::teamSkillsRequested, this, [this] { showPage(Page::Team, true); });
+    connect(homePage_, &planova::s6::HomePage::githubRequested, this, [this] { showPage(Page::GitHub, true); });
+    connect(homePage_, &planova::s6::HomePage::pinsRequested, this, [this] { showPage(Page::Pins, true); });
 
     connect(welcome_, &WelcomePage::startNewProject, this, [this] {
         setupPage_->reset();   // every visit starts with an empty setup
         showPage(Page::Setup);
     });
     // The new project is already open (setupProject opens it), so Home can show it.
-    connect(setupPage_, &SetupPage::projectCreated, this, [this] { showHomeForCurrentProject(); });
+    connect(setupPage_, &SetupPage::projectCreated, this, [this] { showHomeForCurrentProject(true); });
     connect(setupPage_, &SetupPage::skipped, this, [this] {
         if (core_.currentProject())
-            showHomeForCurrentProject();
+            showHomeForCurrentProject(true);
         else
             showPage(Page::Hub);
     });
     // openProject publishes ProjectOpened on the bridge, which also refreshes the sidebar badges.
-    connect(welcome_, &WelcomePage::projectOpened, this, [this] { showHomeForCurrentProject(); });
+    connect(welcome_, &WelcomePage::projectOpened, this, [this] { showHomeForCurrentProject(true); });
     connect(welcome_, &WelcomePage::editProjectRequested, this, &MainWindow::editProject);
     connect(welcome_, &WelcomePage::deleteProjectRequested, this, &MainWindow::deleteProject);
     // The Home menu always acts on the open project.
@@ -197,28 +196,32 @@ void focusFirstControl(QWidget* page)
 
 bool MainWindow::eventFilter(QObject* watched, QEvent* event)
 {
-    if (event->type() == QEvent::FocusIn)
-        lastFocusReason_ = static_cast<QFocusEvent*>(event)->reason();
+    if (event->type() == QEvent::KeyPress)
+        lastInputWasKey_ = true;
+    else if (event->type() == QEvent::MouseButtonPress)
+        lastInputWasKey_ = false;
     return QMainWindow::eventFilter(watched, event);
 }
 
-void MainWindow::showPage(Page page)
+void MainWindow::showPage(Page page, bool fromControl)
 {
     // Read the focus before the old page is hidden: hiding it makes Qt move the focus on by itself.
     QWidget* focusedBefore = focusWidget();
-    const bool byKeyboard = lastFocusReason_ == Qt::TabFocusReason || lastFocusReason_ == Qt::BacktabFocusReason;
+    const bool focusWasInPages = focusedBefore && pages_->isAncestorOf(focusedBefore);
+    // A control asked for the switch and the last input was a key press (Space or Enter on a control the user
+    // Tabbed to): keep a visible ring. Mouse, sidebar and Ctrl+number never do.
+    const bool keepRing = fromControl && focusWasInPages && lastInputWasKey_;
 
     pages_->setCurrentIndex(static_cast<int>(page));
     sidebar_->setActivePage(page);
     // Home and Team start with a control first in the focus chain, which would show a focus ring right away. The page
     // itself takes the focus instead (Tab still moves on to the first control). The focus is only moved when nothing
     // has it yet or it is already inside the pages: a keyboard user who pressed Enter on a sidebar item keeps it there.
-    if ((page == Page::Home || page == Page::Team) && (!focusedBefore || pages_->isAncestorOf(focusedBefore))) {
+    if ((page == Page::Home || page == Page::Team) && (!focusedBefore || focusWasInPages)) {
         QWidget* target = pages_->currentWidget();
         target->setFocus();
-        // A keyboard user (the focus came from Tab) keeps a visible ring, so go on to the first control of the
-        // page. Mouse use and start-up leave the focus on the page itself.
-        if (focusedBefore && byKeyboard)
+        // After a keyboard activation the ring stays visible: go on to the first control of the new page.
+        if (keepRing)
             focusFirstControl(target);
     }
     // Only the pages with a sidebar item are remembered; Setup and the Hub are not.
@@ -270,10 +273,10 @@ void MainWindow::applyCurrentProjectToHome()
     }
 }
 
-void MainWindow::showHomeForCurrentProject()
+void MainWindow::showHomeForCurrentProject(bool fromControl)
 {
     applyCurrentProjectToHome();
-    showPage(Page::Home);
+    showPage(Page::Home, fromControl);
 }
 
 void MainWindow::editProject(const QString& projectId)

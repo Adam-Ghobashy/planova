@@ -51,7 +51,8 @@ const QStringList kKnownRoles = {
 // Three skill cells (five 24 px steps each) fit the skills column down to the default 1280 px window.
 constexpr int kProfileCol = 0, kSkillsCol = 1, kUnderstandingCol = 2, kAssignmentCol = 3;
 constexpr int kProfileWidth = 205;
-constexpr int kUnderstandingWidth = 140;
+constexpr int kMinUnderstandingWidth = 140;
+constexpr int kHeaderTitleSlack = 4;   // a few pixels of air after the header title
 constexpr int kUnderstandingSaveDelayMs = 500;   // pause after the last key press before the value is saved
 constexpr int kAssignmentWidth = 160;
 constexpr int kColumnGap = 10;
@@ -357,11 +358,11 @@ QFrame* TeamSkillsPage::buildSettingsCard(QWidget* parent) {
     return card;
 }
 
-void TeamSkillsPage::applyColumnWidths(QGridLayout* grid) {
+void TeamSkillsPage::applyColumnWidths(QGridLayout* grid) const {
     // The same widths are used by the header row and by every member row, so the columns line up.
     // Technical Skills takes whatever is left.
     grid->setColumnMinimumWidth(kProfileCol, kProfileWidth);
-    grid->setColumnMinimumWidth(kUnderstandingCol, kUnderstandingWidth);
+    grid->setColumnMinimumWidth(kUnderstandingCol, understandingWidth_);
     grid->setColumnMinimumWidth(kAssignmentCol, kAssignmentWidth);
     grid->setColumnStretch(kSkillsCol, 1);
 }
@@ -373,16 +374,27 @@ QWidget* TeamSkillsPage::buildTableHeader(QWidget* parent) {
     // 1 px card border + 20 px card padding, so the titles start where the row content starts.
     grid->setContentsMargins(21, 0, 21, 0);
     grid->setHorizontalSpacing(kColumnGap);
-    applyColumnWidths(grid);
 
     const char* titles[] = {"Role / Teammate", "Technical Skills", "Understanding & Velocity",
                             "Assignment / Clash"};
-    const int fixedWidths[] = {kProfileWidth, 0, kUnderstandingWidth, kAssignmentWidth};
+    QLabel* labels[4];
     for (int col = 0; col < 4; ++col) {
-        auto* title = new QLabel(titles[col], header);
-        title->setObjectName("tableHeaderCell");
-        if (fixedWidths[col] > 0) title->setFixedWidth(fixedWidths[col]);
-        grid->addWidget(title, 0, col, Qt::AlignBottom);
+        labels[col] = new QLabel(titles[col], header);
+        labels[col]->setObjectName("tableHeaderCell");
+    }
+
+    // The Understanding column is as wide as its title needs (never below the default). Polishing first gives the
+    // label the font from team.qss, so the measured text is the text that is drawn.
+    QLabel* understandingTitle = labels[kUnderstandingCol];
+    understandingTitle->ensurePolished();
+    const int titleWidth = understandingTitle->fontMetrics().horizontalAdvance(understandingTitle->text());
+    understandingWidth_ = qMax(kMinUnderstandingWidth, titleWidth + kHeaderTitleSlack);
+    applyColumnWidths(grid);
+
+    const int fixedWidths[] = {kProfileWidth, 0, understandingWidth_, kAssignmentWidth};
+    for (int col = 0; col < 4; ++col) {
+        if (fixedWidths[col] > 0) labels[col]->setFixedWidth(fixedWidths[col]);
+        grid->addWidget(labels[col], 0, col, Qt::AlignBottom);
     }
     return header;
 }
@@ -719,7 +731,7 @@ QWidget* TeamSkillsPage::buildSkillsColumn(const MemberDto& member, QWidget* par
 QWidget* TeamSkillsPage::buildUnderstandingColumn(const MemberDto& member, QWidget* parent) {
     auto* column = new QWidget(parent);
     column->setObjectName("understandingColumn");
-    column->setFixedWidth(kUnderstandingWidth);
+    column->setFixedWidth(understandingWidth_);
     auto* layout = new QVBoxLayout(column);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(10);

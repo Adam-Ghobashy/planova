@@ -457,9 +457,14 @@ void tst_PlanovaCoreProjects::deleteFailureAfterAppendDoesNotReopenDeletedProjec
             throw std::runtime_error("subscriber failed");
     });
 
+    const auto folder = std::filesystem::path(dir.path().toStdString()) / a;
+    QVERIFY(std::filesystem::exists(folder));
+
     QVERIFY_THROWS_EXCEPTION(std::runtime_error, core.deleteProject(a));
     QVERIFY(!core.projects().exists(a));
     QVERIFY(!core.currentProject().has_value());
+    // The project is gone from the list, so its folder must be gone too (no orphaned data).
+    QVERIFY(!std::filesystem::exists(folder));
 }
 
 QTEST_APPLESS_MAIN(tst_PlanovaCoreProjects)

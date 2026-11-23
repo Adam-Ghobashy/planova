@@ -68,6 +68,20 @@ bool isSafeFolderName(const std::string& id)
     return true;
 }
 
+// Removes a project folder and never throws. Returns the folder when it could not be removed completely.
+std::optional<std::filesystem::path> removeProjectFolder(const std::filesystem::path& folder)
+{
+    std::error_code error;
+    std::filesystem::remove_all(folder, error);
+    if (error)
+        return folder;
+    // If we cannot even tell whether the folder is still there, report it too.
+    const bool stillThere = std::filesystem::exists(folder, error);
+    if (error || stillThere)
+        return folder;
+    return std::nullopt;
+}
+
 } // namespace
 
 PlanovaCore::PlanovaCore(std::filesystem::path workspaceDir)
@@ -204,27 +218,23 @@ std::optional<std::filesystem::path> PlanovaCore::deleteProject(const Id& id)
     try {
         projects_.remove(id); // publishes ProjectDeleted, so every page refreshes
     } catch (...) {
-        // The failure may come after ProjectDeleted was stored (a bus subscriber threw), so only
-        // give the user their open project back when it is still in the list.
-        if (wasOpen && projects_.exists(id)) {
-            store_.setDirectory(projectEventsDir(id));
-            log_.rebuild();
-            currentProject_ = id;
+        // The failure may come after ProjectDeleted was stored (a bus subscriber threw). Then the project is
+        // already gone from the list, so its folder goes too (nothing may be left behind); only a project that
+        // is still in the list is given back to the user as the open one.
+        if (projects_.exists(id)) {
+            if (wasOpen) {
+                store_.setDirectory(projectEventsDir(id));
+                log_.rebuild();
+                currentProject_ = id;
+            }
+        } else {
+            removeProjectFolder(workspaceDir_ / id);
         }
         throw;
     }
 
     // The project is already gone from the list, so a folder that cannot be removed is reported, not thrown.
-    const auto folder = workspaceDir_ / id;
-    std::error_code error;
-    std::filesystem::remove_all(folder, error);
-    if (error)
-        return folder;
-    // If we cannot even tell whether the folder is still there, report it too.
-    const bool stillThere = std::filesystem::exists(folder, error);
-    if (error || stillThere)
-        return folder;
-    return std::nullopt;
+    return removeProjectFolder(workspaceDir_ / id);
 }
 
 std::optional<Id> PlanovaCore::currentProject() const

@@ -23,16 +23,18 @@ public:
     void showStartDialog();
 
 protected:
-    // Remembers how the focus last arrived (Tab key or something else), see showPage.
+    // Remembers whether the last user input was a key press or a mouse press, see showPage.
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
     void buildPages();
     void addShortcuts();
-    void showPage(Page page);
+    // `fromControl` is true when a control inside the pages asked for the switch (a link or button on a page).
+    // Only then can the keyboard focus follow to the new page, see showPage.
+    void showPage(Page page, bool fromControl = false);
     // The page saved by the last session, if it is one of the sidebar pages.
     std::optional<Page> savedPage() const;
-    void showHomeForCurrentProject();
+    void showHomeForCurrentProject(bool fromControl = false);
     void applyCurrentProjectToHome();   // name and process model of the open project, to the Home header
     void editProject(const QString& projectId);
     void deleteProject(const QString& projectId);
@@ -46,5 +48,5 @@ private:
     planova::s6::HomePage* homePage_ = nullptr;
     WelcomePage* welcome_ = nullptr;
     SetupPage* setupPage_ = nullptr;
-    Qt::FocusReason lastFocusReason_ = Qt::OtherFocusReason;
+    bool lastInputWasKey_ = false;
 };

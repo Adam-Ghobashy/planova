@@ -387,9 +387,98 @@ private slots:
                 link = card;
         }
         QVERIFY(link);
+        // The keyboard was used first (a Tab press), then the mouse: the click must not keep a ring.
+        QTest::keyClick(&window, Qt::Key_Tab);
         QTest::mouseClick(link, Qt::LeftButton);
         QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Team));
         QCOMPARE(window.focusWidget(), pages->currentWidget());
+    }
+
+    // Coming back to Home or Team without the keyboard must not show a ring, even when the page we leave still
+    // holds a focus that arrived with the Tab reason. Once with real mouse clicks, once without any click (a
+    // programmatic switch, which never moves the focus).
+    void returnToHomeAndTeamShowsNoRing_data()
+    {
+        QTest::addColumn<bool>("useMouse");
+        QTest::newRow("mouse click") << true;
+        QTest::newRow("programmatic") << false;
+    }
+
+    void returnToHomeAndTeamShowsNoRing()
+    {
+        QFETCH(bool, useMouse);
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("Alpha", "Team A", "Agile", ""));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        showActive(window);
+        auto* pages = window.findChild<QStackedWidget*>();
+        auto* sidebar = window.findChild<Sidebar*>();
+        auto goTo = [&](Page page, const QString& label) {
+            if (!useMouse) {
+                emit sidebar->pageRequested(page);
+                return;
+            }
+            for (auto* item : sidebar->findChildren<QPushButton*>("navItem")) {
+                if (item->accessibleName() == label) {
+                    QTest::mouseClick(item, Qt::LeftButton);
+                    return;
+                }
+            }
+            QFAIL("no sidebar item");
+        };
+        // Qt itself moves the focus on (with the Tab reason) when a page is hidden; imitate that on the page
+        // we leave, so a stale "keyboard" focus is waiting when we come back.
+        auto focusFirstTabStop = [&] {
+            QWidget* page = pages->currentWidget();
+            for (QWidget* w = page->nextInFocusChain(); w != page; w = w->nextInFocusChain()) {
+                if (page->isAncestorOf(w) && w->isVisible() && w->isEnabled() && (w->focusPolicy() & Qt::TabFocus)) {
+                    w->setFocus(Qt::TabFocusReason);
+                    return;
+                }
+            }
+        };
+        auto controlInsideCurrentPage = [&] {
+            QWidget* w = window.focusWidget();
+            return w && w != pages->currentWidget() && pages->currentWidget()->isAncestorOf(w);
+        };
+
+        goTo(Page::Board, "Phase Board");
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Board));
+        focusFirstTabStop();
+        QVERIFY(controlInsideCurrentPage());
+        goTo(Page::Home, "Overview");
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Home));
+        QVERIFY(!controlInsideCurrentPage());
+
+        goTo(Page::Board, "Phase Board");
+        focusFirstTabStop();
+        goTo(Page::Team, "Team & Skills");
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Team));
+        QVERIFY(!controlInsideCurrentPage());
+    }
+
+    // Ctrl+number is not a keyboard activation of a control: after Tabbing inside a page the new page shows no ring.
+    void shortcutAfterTabbingShowsNoRing()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("Alpha", "Team A", "Agile", ""));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        showActive(window);
+        auto* pages = window.findChild<QStackedWidget*>();
+        auto* more = window.findChild<QToolButton*>("homeMoreButton");
+        QVERIFY(more);
+        more->setFocus(Qt::TabFocusReason);
+        QVERIFY(more->hasFocus());
+        const int teamKey = Qt::Key_1 + int(Sidebar::navOrder().indexOf(Page::Team));
+        pressShortcut(window, static_cast<Qt::Key>(teamKey), Qt::ControlModifier);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Team));
+        QCOMPARE(window.focusWidget(), pages->currentWidget());   // the page itself, no control
     }
 
     // Same class of bug as the Home menu button: the first control of the Team page must not show a ring on arrival.

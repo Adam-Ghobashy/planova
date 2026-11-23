@@ -169,6 +169,29 @@ private slots:
         QCOMPARE(headers[3]->mapTo(page.get(), QPoint(0, 0)).x(), assignment->mapTo(page.get(), QPoint(0, 0)).x());
     }
 
+    // The "Understanding & Velocity" title must never be cut off, whatever the font: its cell is at least as
+    // wide as the text needs, and the member rows use the same column width.
+    void understandingHeaderIsNotClipped()
+    {
+        // A larger header font stands in for a wider system font: the column must grow with the text.
+        qApp->setStyleSheet(qApp->styleSheet()
+                            + "\nQWidget#TeamSkillsPage QLabel#tableHeaderCell { font-size: 20px; }\n");
+        Fixture f;
+        f.core.members().add("Ana", "Backend Developer", false);
+        std::unique_ptr<planova::team::TeamSkillsPage> page(f.makePage());
+        page->resize(1440, 900);
+        page->show();
+        QVERIFY(QTest::qWaitForWindowExposed(page.get()));
+        const auto headers = page->findChildren<QLabel*>("tableHeaderCell");
+        QCOMPARE(headers.size(), 4);
+        const int needed = headers[2]->fontMetrics().horizontalAdvance(headers[2]->text());
+        QVERIFY2(headers[2]->width() >= needed, qPrintable(QString("width %1, text needs %2").arg(headers[2]->width()).arg(needed)));
+        QVERIFY(headers[2]->width() >= 140);
+        auto* understanding = page->findChild<QWidget*>("understandingColumn");
+        QVERIFY(understanding);
+        QCOMPARE(headers[2]->width(), understanding->width());   // rows and header stay aligned
+    }
+
     void noSeedButton()
     {
         Fixture f;
