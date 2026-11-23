@@ -8,11 +8,17 @@
 
 A desktop app for splitting work fairly, tracking who did what, and handing tasks off without losing context.
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
-![Qt 6.8](https://img.shields.io/badge/Qt-6.8-41CD52?logo=qt&logoColor=white)
+![Qt 6.8](https://img.shields.io/badge/Qt-6.8%20Widgets-41CD52?logo=qt&logoColor=white)
 ![CMake](https://img.shields.io/badge/CMake-3.16%2B-064F8C?logo=cmake&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-53%20Qt%20Test%20suites-success)
+
+![Tests](https://img.shields.io/badge/tests-53%20suites-success)
+![Architecture](https://img.shields.io/badge/architecture-event%20sourced-6c47e0)
+![Storage](https://img.shields.io/badge/storage-JSON%20event%20files-orange)
+![Dependencies](https://img.shields.io/badge/dependencies-Qt%20only-brightgreen)
+![Themes](https://img.shields.io/badge/themes-light%20%26%20dark-333333)
 
 </div>
 
@@ -154,3 +160,12 @@ planova/
 - [Software engineering process](docs/SE_Process.md)
 - [Milestones](docs/Milestones.md)
 - [Architecture audit](docs/architecture/Planova_Full_Architecture_Audit.md)
+
+## Licence
+
+Planova's source code is released under the [MIT License](LICENSE). Copyright (c) 2026 The Planova Team.
+
+The bundled fonts keep their own licences. Inter, Space Grotesk and JetBrains Mono use the SIL Open Font License 1.1
+(see `resources/fonts/`). Macintosh Skeletal Filled is marked for personal use only, so it must be removed or licensed
+before Planova is distributed commercially. [docs/README.md](docs/README.md#fonts-and-licences) explains how to remove
+it.
