@@ -167,6 +167,11 @@ std::optional<std::filesystem::path> PlanovaCore::deleteProject(const Id& id)
 {
     if (!projects_.exists(id))
         throw std::invalid_argument("Unknown project: " + id);
+    // The folder below is removed for good, so the id must be one plain folder name. A damaged project file
+    // could hold "", "." or ".." (the workspace or its parent) or a nested path.
+    const std::filesystem::path name(id);
+    if (id.empty() || id == "." || id == ".." || name.filename() != name)
+        throw std::invalid_argument("This project's stored data is damaged, so it cannot be deleted here.");
 
     if (currentProject_ == id) {
         // Close it first so nothing keeps reading the folder we are about to delete.

@@ -28,6 +28,8 @@ private slots:
     void deleteUnknownProjectThrows();
     void deleteReportsFolderItCannotRemove();
     void restartAfterDeleteStartsClean();
+    void deleteRejectsUnsafeIdAndKeepsWorkspace_data();
+    void deleteRejectsUnsafeIdAndKeepsWorkspace();
 };
 
 namespace {
@@ -316,6 +318,58 @@ void tst_PlanovaCoreProjects::restartAfterDeleteStartsClean()
     PlanovaCore again(ws);
     QVERIFY(again.projects().list().empty());
     QVERIFY(!again.hasProjectData(a));
+}
+
+// A damaged or hand-edited project file can carry an id that is not a folder name. Deleting that project must
+// never remove the workspace (or anything outside it).
+void tst_PlanovaCoreProjects::deleteRejectsUnsafeIdAndKeepsWorkspace_data()
+{
+    QTest::addColumn<QString>("badId");
+    QTest::newRow("empty") << QString();
+    QTest::newRow("dot") << QString(".");
+    QTest::newRow("dot dot") << QString("..");
+    QTest::newRow("nested") << QString("x/y");
+}
+
+void tst_PlanovaCoreProjects::deleteRejectsUnsafeIdAndKeepsWorkspace()
+{
+    QFETCH(QString, badId);
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const std::filesystem::path ws = std::filesystem::path(dir.path().toStdString()) / "ws";
+    Id damaged;
+    Id keep;
+    {
+        PlanovaCore core(ws);
+        damaged = core.createProject("Damaged", "team", "Agile", "idea");
+        keep = core.createProject("Keep", "team", "Agile", "idea");
+        core.openProject(keep);
+        core.members().add("Ana", "Backend Developer", false);
+    }
+    // Rewrite the damaged project's creation event so its id is unsafe.
+    bool rewritten = false;
+    for (const auto& entry : std::filesystem::directory_iterator(ws)) {
+        if (entry.path().extension() != ".json")
+            continue;
+        QFile file(QString::fromStdString(entry.path().string()));
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        QByteArray data = file.readAll();
+        file.close();
+        const QByteArray from = "\"projectId\":\"" + QByteArray::fromStdString(damaged) + "\"";
+        if (!data.contains(from) || !data.contains("ProjectCreated"))
+            continue;
+        data.replace(from, "\"projectId\":\"" + badId.toUtf8() + "\"");
+        QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
+        file.write(data);
+        rewritten = true;
+    }
+    QVERIFY(rewritten);
+
+    PlanovaCore core(ws);
+    QVERIFY_THROWS_EXCEPTION(std::invalid_argument, core.deleteProject(badId.toStdString()));
+    QVERIFY(std::filesystem::exists(ws / keep / "events"));
+    QVERIFY(std::filesystem::exists(ws));
+    QVERIFY(core.hasProjectData(keep));
 }
 
 QTEST_APPLESS_MAIN(tst_PlanovaCoreProjects)
