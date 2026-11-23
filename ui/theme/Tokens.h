@@ -72,27 +72,28 @@ inline constexpr const char* kLightHex[] = {
 };
 
 inline constexpr const char* kDarkHex[] = {
-    // Violet glass: indigo surfaces, a light violet accent. Text colours are set so they pass 4.5:1 on a glass
-    // panel, and on a strong glass card inside a glass panel, at the brightest backdrop points (tst_Contrast).
-    "#0B0A18", "#100E22", "#100E22", "#16142C", "#1E1B38", "#2A2648", "#2C2848",
-    "#F4F4F7", "#B8B5CC", "#B4A9FF", "#0B0A18", "#221D44",
+    // Smoke glass: neutral grey surfaces and a white accent (tst_Contrast keeps every non-colour token grey). Text
+    // colours are set so they pass 4.5:1 on a glass panel, and on a strong glass card inside a glass panel, at the
+    // brightest backdrop points (tst_Contrast).
+    "#0E0F12", "#121317", "#121317", "#18191D", "#202226", "#2C2E33", "#2E3035",
+    "#F2F3F5", "#AEB1B7", "#E8EAEE", "#0E0F12", "#26282D",
     "#1C3A30", "#3A2D1A", "#3D1C2A",
-    "#15302B", "#30173A", "#302818", "#18244A",
+    "#24262A", "#26282C", "#26272A", "#24262A",
     "#EF4444", "#6366F1", "#10B981", "#8B5CF6", "#F59E0B", "#EC4899",
     "#D97706", "#92400E", "#FBBF24", "#DC2626", "#15803D",
-    "#FCA5A5", "#FCD34D", "#8E8BA8", "#DCDAE8", "#B8B5CC",
-    "#C4C1D6", "#0B0A18", "#1E1B38", "#221F3E", "#B8141128", "#2EFFFFFF",
-    "#3D3866", "#B3050414", "#CC000000", "#C7BFFF", "#A194FF",
-    "#3D3478", "#F4F4F7", "#262246", "#C4C1D6",
-    "#F4F4F7", "#3A2D1A", "#FCD34D",
-    "#BEBBD1", "#17FFFFFF", "#0FFFFFFF", "#3D3866", "#262246", "#2C2848",
-    "#3D3866", "#4E4880", "#59A9A6BD", "#99A9A6BD",
-    "#1A1733", "#2E2760", "#F4F4F7", "#40F59E0B",
+    "#FCA5A5", "#FCD34D", "#94969C", "#DFE0E4", "#B9BBC1",
+    "#B4B7BD", "#0E0F12", "#202226", "#25272B", "#B8141518", "#2EFFFFFF",
+    "#3E4046", "#B3050507", "#CC000000", "#FFFFFF", "#CACDD3",
+    "#383A40", "#F2F3F5", "#2A2C31", "#C5C7CC",
+    "#F2F3F5", "#2E2F33", "#FCD34D",
+    "#AEB1B7", "#17FFFFFF", "#0FFFFFFF", "#3E4046", "#2A2C31", "#2E3035",
+    "#3E4046", "#505259", "#59A9ACB2", "#99A9ACB2",
+    "#1B1C20", "#303237", "#F4F4F7", "#40F59E0B",
     "#FCA5A5", "#EF4444", "#34D399", "#99000000",
     "#4010B981", "#D1FAE5", "#40EC4899", "#FCE7F3",
     "#403B82F6", "#DBEAFE", "#40F59E0B", "#FEF3C7",
     "#34D399",
-    "#0B0A18", "#141130", "#387C5CFF", "#1F3B82F6", "#0FFFFFFF", "#17FFFFFF", "#1FFFFFFF",
+    "#0E0F12", "#16181D", "#14FFFFFF", "#0AFFFFFF", "#0FFFFFFF", "#17FFFFFF", "#24FFFFFF",
     "#05040C"
 };
 

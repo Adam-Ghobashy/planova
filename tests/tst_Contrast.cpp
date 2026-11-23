@@ -171,6 +171,27 @@ private slots:
         const double ratio = contrast(tokenColor(dark, foreground), background);
         QVERIFY2(ratio >= 4.5, qPrintable(QString("contrast %1").arg(ratio, 0, 'f', 2)));
     }
+
+    // Smoke glass: every dark token that is not meant to carry a colour stays grey (channels differ by at most 10),
+    // so no purple or blue tint can creep back in.
+    void darkNeutralTokensHaveNoTint()
+    {
+        const QStringList exempt = {"MemberText", "ChartDone", "SuccessSoft", "WarningSoft", "DangerSoft",
+                                    "DangerText", "WarningText", "PositiveText", "ReviewText", "ReviewBorder",
+                                    "DoneChipText", "DangerAction", "DangerBorder", "StatusConnected"};
+        QStringList tinted;
+        for (int i = 0; i < kTokenCount; ++i) {
+            const QString name = kTokenNames[i];
+            if (exempt.contains(name) || name.startsWith("Member") || name.startsWith("Pizza")
+                || name.startsWith("Sticky"))
+                continue;
+            const QColor c = tokenColor(true, Token(i));
+            const int spread = std::max({c.red(), c.green(), c.blue()}) - std::min({c.red(), c.green(), c.blue()});
+            if (spread > 10)
+                tinted << QString("%1 (%2)").arg(name).arg(spread);
+        }
+        QVERIFY2(tinted.isEmpty(), qPrintable("tinted dark tokens: " + tinted.join(", ")));
+    }
 };
 
 QTEST_MAIN(TstContrast)
