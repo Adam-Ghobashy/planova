@@ -8,6 +8,7 @@
 #include <QFrame>
 #include <QImage>
 #include <QRegularExpression>
+#include <QStandardPaths>
 #include <QtTest>
 
 #include "theme/ThemeManager.h"
@@ -18,6 +19,12 @@ private slots:
     void initTestCase() {
         Q_INIT_RESOURCE(planova);
         QCoreApplication::setOrganizationName("PlanovaTest"); // keep QSettings away from real settings
+        QStandardPaths::setTestModeEnabled(true);             // and the icon cache away from the real user cache
+    }
+
+    void cleanup() {   // a failed blocked-folder test must not leave its blocker files behind
+        QFile::remove(QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/themed-icons");
+        QFile::remove(QDir::tempPath() + "/planova-themed-icons");
     }
 
     void appliesEveryStylesheet() {
@@ -101,10 +108,51 @@ private slots:
         QVERIFY(ThemeManager::resolveIcons("@icon(check,AccentText)", ThemeMode::Dark)
                     .contains("dark-check-AccentText.png"));
     }
-    void unknownIconIsLeftAndWarned() {
+    void sameIconTwiceGivesTheSamePath() {
+        const QString css = ThemeManager::resolveIcons("a{image:@icon(check,AccentText);} b{image:@icon(check,AccentText);}",
+                                                      ThemeMode::Dark);
+        const QRegularExpression url("url\\(\"([^\"]+)\"\\)");
+        auto it = url.globalMatch(css);
+        QVERIFY(it.hasNext());
+        const QString first = it.next().captured(1);
+        QVERIFY(it.hasNext());
+        QCOMPARE(it.next().captured(1), first);
+    }
+    // The cache folder is made unusable by a plain file with its name: the icons go to the temp folder instead,
+    // and when that is blocked too the placeholder becomes "none", never the raw "@icon" text (it would make
+    // Qt drop the whole rule, so a checked box would look unchecked).
+    void blockedCacheFolderFallsBackToTemp() {
+        const QString cache = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+        QDir().mkpath(cache);
+        const QString blockedCache = cache + "/themed-icons";
+        QDir(blockedCache).removeRecursively();
+        QFile cacheBlocker(blockedCache);
+        QVERIFY(cacheBlocker.open(QIODevice::WriteOnly));
+        cacheBlocker.close();
+
+        const QString css = ThemeManager::resolveIcons("a{image:@icon(check,AccentText);}", ThemeMode::Light);
+        QVERIFY2(!css.contains("@icon"), qPrintable(css));
+        QVERIFY2(css.contains(QDir::fromNativeSeparators(QDir::tempPath())), qPrintable(css));
+        const QRegularExpressionMatch match = QRegularExpression("url\\(\"([^\"]+)\"\\)").match(css);
+        QVERIFY(match.hasMatch());
+        QVERIFY(QFile::exists(match.captured(1)));
+
+        // Block the temp folder too.
+        QDir(QDir::tempPath() + "/planova-themed-icons").removeRecursively();
+        QFile tempBlocker(QDir::tempPath() + "/planova-themed-icons");
+        QVERIFY(tempBlocker.open(QIODevice::WriteOnly));
+        tempBlocker.close();
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression("themed-icons|cache"));
+        const QString none = ThemeManager::resolveIcons("a{image:@icon(check,AccentText);}", ThemeMode::Light);
+        QCOMPARE(none, QString("a{image:none;}"));
+
+        tempBlocker.remove();
+        cacheBlocker.remove();
+    }
+    void unknownIconBecomesNoneAndWarns() {
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression("NoSuchIcon"));
-        const QString css = "x:@icon(NoSuchIcon,AccentText);";
-        QCOMPARE(ThemeManager::resolveIcons(css, ThemeMode::Light), css);
+        // "none" is valid qss; the raw placeholder would make Qt drop the rule.
+        QCOMPARE(ThemeManager::resolveIcons("x:@icon(NoSuchIcon,AccentText);", ThemeMode::Light), QString("x:none;"));
     }
     void applyResolvesIconsInTheStyleSheet() {
         ThemeManager::instance().apply(ThemeMode::Light);

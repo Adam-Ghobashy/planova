@@ -51,7 +51,8 @@ public:
 
     // Replaces @icon(name,Token) with url("<png path>"). The icon is tinted with the token of `mode` and written
     // to <cache>/themed-icons/<mode>-<name>-<Token>.png (rewritten on every call), because a stylesheet can only
-    // point at a file. A missing icon or an unknown token is left as it is and logged with qWarning.
+    // point at a file. The cache folder is used, otherwise the temp folder. A placeholder that cannot be resolved (missing
+    // icon, unknown token, no writable folder) becomes "none" and is logged with qWarning, so it never reaches Qt as text.
     static QString resolveIcons(const QString& css, ThemeMode mode);
 
     // Saved choice ("ui/theme" in QSettings), otherwise the operating system colour scheme.

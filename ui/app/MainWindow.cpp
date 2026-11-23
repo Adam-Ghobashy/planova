@@ -182,10 +182,14 @@ void MainWindow::showPage(Page page)
 {
     pages_->setCurrentIndex(static_cast<int>(page));
     sidebar_->setActivePage(page);
-    // Home starts with its first control ("..." menu) in the focus chain, which would show a focus ring right away.
-    // The page itself takes the focus instead; Tab still moves on to the menu button.
-    if (page == Page::Home)
-        homePage_->setFocus();
+    // Home and Team start with a control first in the focus chain, which would show a focus ring right away. The page
+    // itself takes the focus instead (Tab still moves on to the first control). The focus is only moved when nothing
+    // has it yet or it is already inside the pages: a keyboard user who pressed Enter on a sidebar item keeps it there.
+    if (page == Page::Home || page == Page::Team) {
+        QWidget* focused = focusWidget();
+        if (!focused || pages_->isAncestorOf(focused))
+            pages_->currentWidget()->setFocus();
+    }
     // Only the pages with a sidebar item are remembered; Setup and the Hub are not.
     if (Sidebar::navOrder().contains(page))
         QSettings().setValue("ui/lastPage", static_cast<int>(page));

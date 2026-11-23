@@ -117,6 +117,7 @@ QDialog#ModalDialog QCheckBox::indicator {
 }
 QDialog#ModalDialog QCheckBox::indicator:hover { border-color: @TextPrimary; }
 QDialog#ModalDialog QCheckBox::indicator:checked { background: @Accent; border-color: @Accent; image: @icon(check,AccentText); }
+QDialog#ModalDialog QCheckBox::indicator:checked:hover { background: @AccentHover; border-color: @AccentHover; }
 /* 14 + 2 x 2 px border = the same 18 px as the 16 + 2 x 1 px resting box, so focus never moves the label. */
 QDialog#ModalDialog QCheckBox::indicator:focus { width: 14px; height: 14px; border: 2px solid @TextPrimary; }
 /* The fill is clipped to the content box, so a 1 px gap keeps the ring apart from it (dark Accent is near the ring colour). */
@@ -125,3 +126,4 @@ QDialog#ModalDialog QCheckBox::indicator:checked:focus {
     border: 2px solid @TextPrimary; image: @icon(check,AccentText);
 }
 QDialog#ModalDialog QCheckBox::indicator:disabled { background: @Track; border: 1px solid @TextMuted; }
+QDialog#ModalDialog QCheckBox::indicator:checked:disabled { background: @Track; border: 1px solid @TextMuted; image: @icon(check,TextMuted); }

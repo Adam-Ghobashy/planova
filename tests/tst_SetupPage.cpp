@@ -131,7 +131,8 @@ private slots:
         QCOMPARE(lead->width(), other->width());
         QCOMPARE(f.edit("memberNameEdit_0")->width(), f.edit("memberNameEdit_1")->width());
         // The checked text fits the button.
-        QVERIFY(lead->fontMetrics().horizontalAdvance(lead->text()) < lead->width());
+        // The checked text fits the button with the padding setup.qss gives it (sizeHint is what the style needs).
+        QVERIFY2(lead->sizeHint().width() <= lead->width(), qPrintable(QString("needs %1, has %2").arg(lead->sizeHint().width()).arg(lead->width())));
     }
 
     void navigatingWritesNothing()

@@ -309,9 +309,60 @@ private slots:
         pressShortcut(window, Qt::Key_0, Qt::ControlModifier);
         pressShortcut(window, Qt::Key_1, Qt::ControlModifier);
         QVERIFY(!more->hasFocus());
-        // Tab still reaches it.
-        more->setFocus(Qt::TabFocusReason);
+        // Tab still reaches it: real key presses, at most a few (the page itself is the first stop).
+        for (int i = 0; i < 6 && !more->hasFocus(); ++i)
+            QTest::keyClick(window.focusWidget() ? window.focusWidget() : &window, Qt::Key_Tab);
         QVERIFY(more->hasFocus());
+    }
+
+    // Enter or Space on a sidebar item must leave the focus on that item: only a page that appears with
+    // nothing focused (start-up) or from inside the page stack moves the focus to the page.
+    void sidebarItemKeepsFocusWhenItShowsHome()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("Alpha", "Team A", "Agile", ""));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        showActive(window);
+        auto* pages = window.findChild<QStackedWidget*>();
+        pressShortcut(window, Qt::Key_2, Qt::ControlModifier);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Board));
+
+        QPushButton* homeItem = nullptr;
+        for (auto* item : window.findChild<Sidebar*>()->findChildren<QPushButton*>("navItem")) {
+            if (item->accessibleName() == "Overview")
+                homeItem = item;
+        }
+        QVERIFY(homeItem);
+        homeItem->setFocus(Qt::TabFocusReason);
+        QVERIFY(homeItem->hasFocus());
+        QTest::keyClick(homeItem, Qt::Key_Space);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Home));
+        QVERIFY(homeItem->hasFocus());
+    }
+
+    // Same class of bug as the Home menu button: the first control of the Team page must not show a ring on arrival.
+    void teamPageDoesNotFocusItsFirstControl()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("Alpha", "Team A", "Agile", ""));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        showActive(window);
+        auto* pages = window.findChild<QStackedWidget*>();
+        auto* autoMatch = window.findChild<QPushButton*>("autoMatchSwitch");
+        QVERIFY(autoMatch);
+        const int teamKey = Qt::Key_1 + int(Sidebar::navOrder().indexOf(Page::Team));
+        pressShortcut(window, static_cast<Qt::Key>(teamKey), Qt::ControlModifier);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Team));
+        QVERIFY(!autoMatch->hasFocus());
+        for (int i = 0; i < 8 && !autoMatch->hasFocus(); ++i)
+            QTest::keyClick(window.focusWidget() ? window.focusWidget() : &window, Qt::Key_Tab);
+        QVERIFY(autoMatch->hasFocus());   // Tab still reaches it
     }
 
     void editOpenProjectUpdatesEverywhere()

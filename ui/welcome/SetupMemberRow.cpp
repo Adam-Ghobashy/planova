@@ -14,6 +14,10 @@
 
 namespace {
 
+// Horizontal space a chip button adds around its text in setup.qss: padding 12 px + border 1 px on each side, plus
+// 4 px of spare room. If setup.qss changes the chip padding, change this too (tst_SetupPage fails when it no longer fits).
+constexpr int kChipPaddingAndBorder = 2 * 12 + 2 * 1 + 4;
+
 struct SkillInfo {
     SkillCategory category;
     const char* label;
@@ -93,15 +97,17 @@ SetupMemberRow::SetupMemberRow(int id, QWidget* parent)
     roleEdit_->hide();
 
     // A toggle button, not a check box: its checked state shows a check mark and a filled background.
-    leadCheck_ = new QPushButton(tr("Team lead"), this);
+    const QString leadOffText = tr("Team lead");
+    const QString leadOnText = tr("✓ Team lead");   // wider: the "✓" prefix
+    leadCheck_ = new QPushButton(leadOffText, this);
     leadCheck_->setCheckable(true);
     leadCheck_->setProperty("kind", "chip");
     leadCheck_->setCursor(Qt::PointingHandCursor);
     leadCheck_->setObjectName("memberLead_" + suffix);
     // One width for both texts: the "✓" prefix must not make the button wider and squeeze the fields beside it.
-    // Width = widest text + the chip padding (12 px each side) and border (1 px each side) from setup.qss.
+    // Width = widest text + the chip padding and border from setup.qss (tst_SetupPage checks the text still fits).
     const QFontMetrics chipMetrics(ThemeManager::instance().textFont(TextStyle::LabelActive));
-    leadCheck_->setFixedWidth(chipMetrics.horizontalAdvance(tr("✓ Team lead")) + 2 * 12 + 2 * 1 + 4);
+    leadCheck_->setFixedWidth(chipMetrics.horizontalAdvance(leadOnText) + kChipPaddingAndBorder);
 
     auto* fields = new QGridLayout;
     fields->setHorizontalSpacing(12);
@@ -153,8 +159,8 @@ SetupMemberRow::SetupMemberRow(int id, QWidget* parent)
     connect(nameEdit_, &QLineEdit::editingFinished, this, [this] { nameTouched_ = true; updateNameHint(); });
     connect(roleCombo_, &QComboBox::currentIndexChanged, this, [this] { updateRoleEdit(); emit changed(); });
     connect(roleEdit_, &QLineEdit::textChanged, this, &SetupMemberRow::changed);
-    connect(leadCheck_, &QPushButton::toggled, this, [this](bool lead) {
-        leadCheck_->setText(lead ? tr("✓ Team lead") : tr("Team lead"));
+    connect(leadCheck_, &QPushButton::toggled, this, [this, leadOnText, leadOffText](bool lead) {
+        leadCheck_->setText(lead ? leadOnText : leadOffText);
         emit changed();
     });
 

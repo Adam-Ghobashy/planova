@@ -437,8 +437,8 @@ int main(int argc, char* argv[])
         if (ThemeManager::instance().mode() != mode)
             ThemeManager::instance().apply(mode);
         pages->setCurrentIndex(job.second);
-        // MainWindow::showPage does the same: Home keeps the focus on the page, so no ring shows on its first control.
-        if (static_cast<Page>(job.second) == Page::Home)
+        // MainWindow::showPage does the same: Home and Team keep the focus on the page, so no ring shows on their first control.
+        if (static_cast<Page>(job.second) == Page::Home || static_cast<Page>(job.second) == Page::Team)
             pages->currentWidget()->setFocus();
         // The stack is switched directly, so tell the sidebar which item to highlight.
         window.findChild<Sidebar*>()->setActivePage(static_cast<Page>(job.second));

@@ -480,6 +480,11 @@ QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:checked {
     image: @icon(check,AccentText);
 }
 
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:checked:hover {
+    background: @AccentHover;
+    border-color: @AccentHover;
+}
+
 QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:focus {
     width: 14px;
     height: 14px;
@@ -501,6 +506,12 @@ QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:checked:focus {
 QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:disabled {
     background: @Track;
     border: 1px solid @TextMuted;
+}
+
+QWidget#TeamSkillsPage QCheckBox#leadCheck::indicator:checked:disabled {
+    background: @Track;
+    border: 1px solid @TextMuted;
+    image: @icon(check,TextMuted);
 }
 
 /* Surface disc inside a thick ring, the same recipe as the setup page. */

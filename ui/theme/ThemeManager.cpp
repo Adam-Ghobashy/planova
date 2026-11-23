@@ -5,7 +5,9 @@
 #include <QDir>
 #include <QFontDatabase>
 #include <QFile>
+#include <QFileInfo>
 #include <QGuiApplication>
+#include <QHash>
 #include <QPainter>
 #include <QPalette>
 #include <QPixmap>
@@ -142,12 +144,35 @@ QIcon ThemeManager::icon(const QString& name, Token tint) const
     return QIcon(pixmap);
 }
 
+namespace {
+// First folder that can hold the themed icon files: the cache folder, otherwise the temp folder. Empty when neither works.
+QString usableIconFolder()
+{
+    QStringList candidates;
+    const QString cache = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    if (!cache.isEmpty())   // an empty location would put the folder at the drive root
+        candidates << cache + "/themed-icons";
+    candidates << QDir::tempPath() + "/planova-themed-icons";
+    for (const QString& folder : candidates) {
+        if (QDir().mkpath(folder) && QFileInfo(folder).isDir() && QFileInfo(folder).isWritable())
+            return folder;
+    }
+    return QString();
+}
+}
+
 QString ThemeManager::resolveIcons(const QString& css, ThemeMode mode)
 {
     static const QRegularExpression placeholder("@icon\\(([A-Za-z0-9_-]+),([A-Za-z0-9]+)\\)");
 
-    const QString folder = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/themed-icons";
-    QDir().mkpath(folder);
+    const QString folder = usableIconFolder();
+    if (folder.isEmpty() && css.contains("@icon("))
+        qWarning() << "ThemeManager: no writable cache or temp folder for themed icons";
+
+    // Each icon file is rendered and written once per call, however often the stylesheet uses it.
+    // The value is the text that replaces the placeholder: url("...") or, when the icon cannot be made, "none".
+    // "none" is valid qss; the raw placeholder would make Qt drop the whole rule (a checked box would look unchecked).
+    QHash<QString, QString> replacements;
 
     QString result;
     qsizetype last = 0;
@@ -156,17 +181,27 @@ QString ThemeManager::resolveIcons(const QString& css, ThemeMode mode)
         const QRegularExpressionMatch match = it.next();
         const QString name = match.captured(1);
         const QString tokenName = match.captured(2);
-        const int token = tokenIndex(tokenName);
-        const QPixmap pixmap = token < 0 ? QPixmap() : renderIcon(name, tokenColor(mode, static_cast<Token>(token)));
-        const QString path = folder + "/" + (mode == ThemeMode::Dark ? "dark" : "light") + "-" + name + "-" + tokenName
-                             + ".png";
-        if (pixmap.isNull() || !pixmap.save(path, "PNG")) {
-            qWarning().noquote() << "ThemeManager: cannot resolve" << match.captured(0);
-            continue;   // the placeholder stays in the text
+        const QString key = name + "," + tokenName;
+        if (!replacements.contains(key)) {
+            QString replacement = "none";
+            const int token = tokenIndex(tokenName);
+            const QPixmap pixmap =
+                token < 0 ? QPixmap() : renderIcon(name, tokenColor(mode, static_cast<Token>(token)));
+            const QString path = folder + "/" + (mode == ThemeMode::Dark ? "dark" : "light") + "-" + name + "-"
+                                 + tokenName + ".png";
+            if (pixmap.isNull()) {
+                qWarning().noquote() << "ThemeManager: cannot resolve" << match.captured(0);
+            } else if (!folder.isEmpty()) {
+                if (pixmap.save(path, "PNG"))
+                    // Quoted, so a cache path with spaces is still one url(); qss wants forward slashes.
+                    replacement = "url(\"" + QDir::fromNativeSeparators(path) + "\")";
+                else
+                    qWarning().noquote() << "ThemeManager: cannot write" << path;
+            }
+            replacements.insert(key, replacement);
         }
         result += css.mid(last, match.capturedStart() - last);
-        // Quoted, so a cache path with spaces is still one url(); qss wants forward slashes.
-        result += "url(\"" + QDir::fromNativeSeparators(path) + "\")";
+        result += replacements.value(key);
         last = match.capturedEnd();
     }
     result += css.mid(last);
