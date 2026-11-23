@@ -33,6 +33,7 @@ private slots:
     void restartAfterDeleteStartsClean();
     void deleteRejectsUnsafeIdAndKeepsWorkspace_data();
     void deleteRejectsUnsafeIdAndKeepsWorkspace();
+    void deleteFailureAfterAppendDoesNotReopenDeletedProject();
 };
 
 namespace {
@@ -391,6 +392,14 @@ void tst_PlanovaCoreProjects::deleteRejectsUnsafeIdAndKeepsWorkspace_data()
     QTest::newRow("dot") << QString(".");
     QTest::newRow("dot dot") << QString("..");
     QTest::newRow("nested") << QString("x/y");
+    // Windows drops a trailing dot or space, so "a." would name the folder "a".
+    QTest::newRow("three dots") << QString("...");
+    QTest::newRow("space") << QString(" ");
+    QTest::newRow("dot space") << QString(". ");
+    QTest::newRow("trailing dot") << QString("a.");
+    QTest::newRow("trailing space") << QString("a ");
+    QTest::newRow("colon") << QString("a:b");
+    QTest::newRow("star") << QString("a*b");
 }
 
 void tst_PlanovaCoreProjects::deleteRejectsUnsafeIdAndKeepsWorkspace()
@@ -432,6 +441,25 @@ void tst_PlanovaCoreProjects::deleteRejectsUnsafeIdAndKeepsWorkspace()
     QVERIFY(std::filesystem::exists(ws / keep / "events"));
     QVERIFY(std::filesystem::exists(ws));
     QVERIFY(core.hasProjectData(keep));
+}
+
+// A bus subscriber that throws runs after ProjectDeleted is already stored, so the project is gone for good.
+// The open project must not be restored then.
+void tst_PlanovaCoreProjects::deleteFailureAfterAppendDoesNotReopenDeletedProject()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    PlanovaCore core(std::filesystem::path(dir.path().toStdString()));
+    const Id a = makeProject(core, "A");
+    core.openProject(a);
+    core.bus().subscribe([](const std::string& type) {
+        if (type == "ProjectDeleted")
+            throw std::runtime_error("subscriber failed");
+    });
+
+    QVERIFY_THROWS_EXCEPTION(std::runtime_error, core.deleteProject(a));
+    QVERIFY(!core.projects().exists(a));
+    QVERIFY(!core.currentProject().has_value());
 }
 
 QTEST_APPLESS_MAIN(tst_PlanovaCoreProjects)

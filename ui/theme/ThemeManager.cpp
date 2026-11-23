@@ -12,6 +12,7 @@
 #include <QPalette>
 #include <QPixmap>
 #include <QRegularExpression>
+#include <QSaveFile>
 #include <QSet>
 #include <QSettings>
 #include <QStandardPaths>
@@ -159,11 +160,28 @@ QString usableIconFolder()
     }
     return QString();
 }
+
+// Writes to a temporary file in the same folder and renames it over `path` when complete, so a second
+// running copy of the app never reads a half-written PNG.
+bool writePng(const QPixmap& pixmap, const QString& path)
+{
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly))
+        return false;
+    if (!pixmap.save(&file, "PNG")) {
+        file.cancelWriting();
+        return false;
+    }
+    return file.commit();
+}
 }
 
 QString ThemeManager::resolveIcons(const QString& css, ThemeMode mode)
 {
-    static const QRegularExpression placeholder("@icon\\(([A-Za-z0-9_-]+),([A-Za-z0-9]+)\\)");
+    // Spaces around the name and the token are allowed: @icon( check , AccentText ).
+    static const QRegularExpression placeholder("@icon\\(\\s*([A-Za-z0-9_-]+)\\s*,\\s*([A-Za-z0-9]+)\\s*\\)");
+    // Anything that still looks like @icon(...) after the pass below is malformed.
+    static const QRegularExpression leftover("@icon\\([^)]*\\)");
 
     const QString folder = usableIconFolder();
     if (folder.isEmpty() && css.contains("@icon("))
@@ -192,7 +210,7 @@ QString ThemeManager::resolveIcons(const QString& css, ThemeMode mode)
             if (pixmap.isNull()) {
                 qWarning().noquote() << "ThemeManager: cannot resolve" << match.captured(0);
             } else if (!folder.isEmpty()) {
-                if (pixmap.save(path, "PNG"))
+                if (writePng(pixmap, path))
                     // Quoted, so a cache path with spaces is still one url(); qss wants forward slashes.
                     replacement = "url(\"" + QDir::fromNativeSeparators(path) + "\")";
                 else
@@ -205,14 +223,21 @@ QString ThemeManager::resolveIcons(const QString& css, ThemeMode mode)
         last = match.capturedEnd();
     }
     result += css.mid(last);
+
+    // "none" is valid qss; a raw "@icon(...)" would make Qt drop the whole rule.
+    if (result.contains(leftover)) {
+        qWarning().noquote() << "ThemeManager: malformed icon placeholder" << leftover.match(result).captured(0);
+        result.replace(leftover, "none");
+    }
     return result;
 }
 
 QString ThemeManager::resolveTokens(const QString& css, ThemeMode mode)
 {
     // The pattern takes the whole name (letters and digits), so "@SurfaceAlt" is never
-    // read as "@Surface" followed by "Alt".
-    static const QRegularExpression placeholder("@([A-Za-z0-9]+)");
+    // read as "@Surface" followed by "Alt". A url("...") is matched first and left alone: an icon cache path
+    // may hold an "@" that is not a token.
+    static const QRegularExpression placeholder("url\\(\"[^\"]*\"\\)|@([A-Za-z0-9]+)");
 
     QString result;
     qsizetype last = 0;
@@ -220,6 +245,8 @@ QString ThemeManager::resolveTokens(const QString& css, ThemeMode mode)
     auto it = placeholder.globalMatch(css);
     while (it.hasNext()) {
         const QRegularExpressionMatch match = it.next();
+        if (!match.hasCaptured(1))
+            continue;   // a url("..."): it stays in the text
         const QString name = match.captured(1);
         bool known = false;
         for (int i = 0; i < kTokenCount; ++i) {

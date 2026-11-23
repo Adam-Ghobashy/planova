@@ -17,7 +17,9 @@
 #include "theme/GlassBackdrop.h"
 #include "theme/ThemeManager.h"
 #include "planova/common/EventTypes.h"
+#include <QApplication>
 #include <QDir>
+#include <QFocusEvent>
 #include <QHBoxLayout>
 #include <QSettings>
 #include <QShortcut>
@@ -43,6 +45,8 @@ MainWindow::MainWindow(PlanovaCore& core, CoreBridge& bridge, QWidget* parent)
     // Start with focus on the page area, so no sidebar item shows a focus ring before the user presses Tab.
     central->setFocusPolicy(Qt::ClickFocus);
     central->setFocus();
+    // Sees every focus change in the app, to tell keyboard focus from mouse focus.
+    qApp->installEventFilter(this);
 
     buildPages();
     addShortcuts();
@@ -178,17 +182,44 @@ void MainWindow::addShortcuts()
     add(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_L), [] { ThemeManager::instance().toggle(); });
 }
 
+namespace {
+// Gives the first control of `page` that Tab reaches the focus, with the Tab reason so its focus ring shows.
+void focusFirstControl(QWidget* page)
+{
+    for (QWidget* w = page->nextInFocusChain(); w != page; w = w->nextInFocusChain()) {
+        if (page->isAncestorOf(w) && w->isVisible() && w->isEnabled() && (w->focusPolicy() & Qt::TabFocus)) {
+            w->setFocus(Qt::TabFocusReason);
+            return;
+        }
+    }
+}
+}
+
+bool MainWindow::eventFilter(QObject* watched, QEvent* event)
+{
+    if (event->type() == QEvent::FocusIn)
+        lastFocusReason_ = static_cast<QFocusEvent*>(event)->reason();
+    return QMainWindow::eventFilter(watched, event);
+}
+
 void MainWindow::showPage(Page page)
 {
+    // Read the focus before the old page is hidden: hiding it makes Qt move the focus on by itself.
+    QWidget* focusedBefore = focusWidget();
+    const bool byKeyboard = lastFocusReason_ == Qt::TabFocusReason || lastFocusReason_ == Qt::BacktabFocusReason;
+
     pages_->setCurrentIndex(static_cast<int>(page));
     sidebar_->setActivePage(page);
     // Home and Team start with a control first in the focus chain, which would show a focus ring right away. The page
     // itself takes the focus instead (Tab still moves on to the first control). The focus is only moved when nothing
     // has it yet or it is already inside the pages: a keyboard user who pressed Enter on a sidebar item keeps it there.
-    if (page == Page::Home || page == Page::Team) {
-        QWidget* focused = focusWidget();
-        if (!focused || pages_->isAncestorOf(focused))
-            pages_->currentWidget()->setFocus();
+    if ((page == Page::Home || page == Page::Team) && (!focusedBefore || pages_->isAncestorOf(focusedBefore))) {
+        QWidget* target = pages_->currentWidget();
+        target->setFocus();
+        // A keyboard user (the focus came from Tab) keeps a visible ring, so go on to the first control of the
+        // page. Mouse use and start-up leave the focus on the page itself.
+        if (focusedBefore && byKeyboard)
+            focusFirstControl(target);
     }
     // Only the pages with a sidebar item are remembered; Setup and the Hub are not.
     if (Sidebar::navOrder().contains(page))

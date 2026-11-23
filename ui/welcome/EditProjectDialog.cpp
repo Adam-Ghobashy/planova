@@ -47,7 +47,8 @@ EditProjectDialog::EditProjectDialog(const ProjectDto& project, SaveFn save, QWi
     for (const char* model : kModels) model_->addItem(QString::fromLatin1(model));
     // An unknown stored model shows no selection; Save stays off until one is chosen.
     model_->setPlaceholderText(tr("Choose a process model"));
-    model_->setCurrentIndex(model_->findText(QString::fromStdString(project.seModel)));
+    // MatchFixedString ignores case, so a stored "scrum" still selects Scrum.
+    model_->setCurrentIndex(model_->findText(QString::fromStdString(project.seModel), Qt::MatchFixedString));
     root->addWidget(fieldLabel(tr("Process model"), model_, this));
     root->addWidget(model_);
 

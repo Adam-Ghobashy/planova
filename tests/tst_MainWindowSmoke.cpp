@@ -343,6 +343,55 @@ private slots:
         QVERIFY(homeItem->hasFocus());
     }
 
+    // A keyboard user who Tabbed to a quick link and pressed Space keeps a visible focus ring on the new page.
+    void keyboardNavigationFromHomeFocusesTheNewPage()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("Alpha", "Team A", "Agile", ""));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        showActive(window);
+        auto* pages = window.findChild<QStackedWidget*>();
+        QPushButton* link = nullptr;
+        for (auto* card : window.findChildren<QPushButton*>("quickLinkCard")) {
+            if (card->property("linkType").toString() == "quickLinkTeam")
+                link = card;
+        }
+        QVERIFY(link);
+        link->setFocus(Qt::TabFocusReason);
+        QVERIFY(link->hasFocus());
+        QTest::keyClick(link, Qt::Key_Space);   // Space presses a push button; Enter only does so in a dialog
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Team));
+        QWidget* focused = window.focusWidget();
+        QVERIFY(focused);
+        QVERIFY(focused != pages->currentWidget());   // a control, not the page itself
+        QVERIFY(pages->currentWidget()->isAncestorOf(focused));
+    }
+
+    // A mouse click on the same quick link shows no ring: the page itself has the focus.
+    void mouseNavigationFromHomeLeavesFocusOnThePage()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        PlanovaCore core(dir.path().toStdString());
+        core.openProject(core.createProject("Alpha", "Team A", "Agile", ""));
+        CoreBridge bridge(core);
+        MainWindow window(core, bridge);
+        showActive(window);
+        auto* pages = window.findChild<QStackedWidget*>();
+        QPushButton* link = nullptr;
+        for (auto* card : window.findChildren<QPushButton*>("quickLinkCard")) {
+            if (card->property("linkType").toString() == "quickLinkTeam")
+                link = card;
+        }
+        QVERIFY(link);
+        QTest::mouseClick(link, Qt::LeftButton);
+        QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Team));
+        QCOMPARE(window.focusWidget(), pages->currentWidget());
+    }
+
     // Same class of bug as the Home menu button: the first control of the Team page must not show a ring on arrival.
     void teamPageDoesNotFocusItsFirstControl()
     {

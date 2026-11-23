@@ -22,6 +22,10 @@ public:
     // The popup shown at start-up: start a new project or continue an old one.
     void showStartDialog();
 
+protected:
+    // Remembers how the focus last arrived (Tab key or something else), see showPage.
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
 private:
     void buildPages();
     void addShortcuts();
@@ -42,4 +46,5 @@ private:
     planova::s6::HomePage* homePage_ = nullptr;
     WelcomePage* welcome_ = nullptr;
     SetupPage* setupPage_ = nullptr;
+    Qt::FocusReason lastFocusReason_ = Qt::OtherFocusReason;
 };

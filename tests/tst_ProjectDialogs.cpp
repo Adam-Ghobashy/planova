@@ -128,6 +128,14 @@ private slots:
         QVERIFY(labels.contains("Team name"));
     }
 
+    void editStoredModelMatchesIgnoringCase()
+    {
+        ProjectDto project = sampleProject();
+        project.seModel = "scrum";   // an older file may hold another spelling
+        EditProjectDialog dialog(project, [](const QString&, const QString&, const QString&) {}, nullptr);
+        QCOMPARE(modelCombo(dialog)->currentText(), QString("Scrum"));
+    }
+
     void editUnknownModelShowsNoSelectionAndBlocksSave()
     {
         ProjectDto project = sampleProject();

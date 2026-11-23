@@ -77,6 +77,13 @@ private slots:
         const QString css = "x:@NoSuchToken; y:@NoSuchToken;";
         QCOMPARE(ThemeManager::resolveTokens(css, ThemeMode::Light), css);
     }
+    void atSignInsideUrlIsNotAToken() {
+        // A cache path may hold "@Accent"; only text outside url("...") is resolved.
+        const QString css = "a{image:url(\"C:/Users/x@Accent/themed-icons/p.png\");color:@Accent;}";
+        QCOMPARE(ThemeManager::resolveTokens(css, ThemeMode::Light),
+                 QString("a{image:url(\"C:/Users/x@Accent/themed-icons/p.png\");color:%1;}")
+                     .arg(kLightHex[int(Token::Accent)]));
+    }
     void translucentTokenIsAcceptedByQss() {
         // Qt reads #AARRGGBB (alpha first) in a stylesheet, so no rgba() conversion is needed.
         QCOMPARE(ThemeManager::resolveTokens("x:@Overlay;", ThemeMode::Light), QString("x:#B3000000;"));
@@ -107,6 +114,28 @@ private slots:
         // The dark file has its own name, so the two themes never overwrite each other.
         QVERIFY(ThemeManager::resolveIcons("@icon(check,AccentText)", ThemeMode::Dark)
                     .contains("dark-check-AccentText.png"));
+    }
+    void iconPlaceholderAllowsSpaces() {
+        const QString css = ThemeManager::resolveIcons("a{image:@icon( check , AccentText );}", ThemeMode::Light);
+        QVERIFY2(!css.contains("@icon"), qPrintable(css));
+        QVERIFY2(css.contains("light-check-AccentText.png"), qPrintable(css));
+    }
+    void malformedIconPlaceholderBecomesNoneAndWarnsOnce() {
+        // Neither placeholder matches the pattern. One warning for the whole call (a second would fail the test).
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression("@icon"));
+        QCOMPARE(ThemeManager::resolveIcons("a{image:@icon(bad name!,Accent);} b{image:@icon(check);}", ThemeMode::Light),
+                 QString("a{image:none;} b{image:none;}"));
+    }
+    void iconFilesAreWrittenCompletelyAndLeaveNoTemporaryFiles() {
+        // Written twice: the second write replaces the first file.
+        QString css;
+        for (int i = 0; i < 2; ++i)
+            css = ThemeManager::resolveIcons("a{image:@icon(check,AccentText);}", ThemeMode::Light);
+        const QString path = QRegularExpression("url\\(\"([^\"]+)\"\\)").match(css).captured(1);
+        QVERIFY2(!QImage(path).isNull(), qPrintable(path));
+        const QStringList files = QFileInfo(path).dir().entryList(QDir::Files);
+        for (const QString& name : files)
+            QVERIFY2(name.endsWith(".png"), qPrintable(name));
     }
     void sameIconTwiceGivesTheSamePath() {
         const QString css = ThemeManager::resolveIcons("a{image:@icon(check,AccentText);} b{image:@icon(check,AccentText);}",

@@ -51,6 +51,23 @@ void validateSetup(const ProjectSetup& setup)
         throw std::invalid_argument("Slicer weights must be zero or more and add up to 100");
 }
 
+// True when the id is one plain folder name that is safe to delete on every platform.
+bool isSafeFolderName(const std::string& id)
+{
+    // A damaged project file could hold "", "." or ".." (the workspace or its parent).
+    if (id.empty() || id == "." || id == "..")
+        return false;
+    // Windows ignores a trailing dot or space, so "a." would name the folder "a" (and "..." the workspace).
+    if (id.back() == '.' || id.back() == ' ')
+        return false;
+    // Path separators would make it a nested path; the other characters are not allowed in Windows names.
+    for (const char c : id) {
+        if (static_cast<unsigned char>(c) < 0x20 || std::string("<>:\"/\\|?*").find(c) != std::string::npos)
+            return false;
+    }
+    return true;
+}
+
 } // namespace
 
 PlanovaCore::PlanovaCore(std::filesystem::path workspaceDir)
@@ -167,10 +184,8 @@ std::optional<std::filesystem::path> PlanovaCore::deleteProject(const Id& id)
 {
     if (!projects_.exists(id))
         throw std::invalid_argument("This project no longer exists.");
-    // The folder below is removed for good, so the id must be one plain folder name. A damaged project file
-    // could hold "", "." or ".." (the workspace or its parent) or a nested path.
-    const std::filesystem::path name(id);
-    if (id.empty() || id == "." || id == ".." || name.filename() != name)
+    // The folder below is removed for good, so the id must be one plain folder name.
+    if (!isSafeFolderName(id))
         throw std::invalid_argument("This project's stored data is damaged, so it cannot be deleted here.");
 
     const bool wasOpen = (currentProject_ == id);
@@ -189,8 +204,9 @@ std::optional<std::filesystem::path> PlanovaCore::deleteProject(const Id& id)
     try {
         projects_.remove(id); // publishes ProjectDeleted, so every page refreshes
     } catch (...) {
-        // Nothing was deleted, so give the user their open project back.
-        if (wasOpen) {
+        // The failure may come after ProjectDeleted was stored (a bus subscriber threw), so only
+        // give the user their open project back when it is still in the list.
+        if (wasOpen && projects_.exists(id)) {
             store_.setDirectory(projectEventsDir(id));
             log_.rebuild();
             currentProject_ = id;
