@@ -143,7 +143,8 @@ private slots:
 
         auto* area = page.findChild<QScrollArea*>("slicerScrollArea");
         QVERIFY(area);
-        QVERIFY2(!area->horizontalScrollBar()->isVisible(), "the page scrolls sideways at 900 px");
+        // The vertical bar appears once the page is laid out, and the content then narrows; check the settled state.
+        QTRY_VERIFY2(!area->horizontalScrollBar()->isVisible(), "the page scrolls sideways at 900 px");
     }
     void overrideSurvivesPinEvent() {
         Board b;
