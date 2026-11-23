@@ -96,9 +96,8 @@ interfaces; projections hold state; one slice never reaches into another slice's
 
 For this final stage (full completion) we followed a fixed loop:
 
-1. **Spec** (`docs/superpowers/specs/2026-11-21-planova-full-completion-design.md`): the goal, what is in and out of
-   scope, and the design of each part.
-2. **Plan** (`docs/superpowers/plans/2026-11-21-planova-full-completion.md`): 22 tasks, each with files, steps (test
+1. **Spec**: the goal, what is in and out of scope, and the design of each part.
+2. **Plan**: 22 tasks, each with files, steps (test
    first) and a check. Two tasks were added during the work: 18b (focus-ring audit) and 20b (keyboard slider and GitHub
    layout).
 3. **Task by task**: one task, one commit. After each task: build, `ctest`, the hex grep, and for UI work a screenshot

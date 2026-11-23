@@ -154,7 +154,7 @@ planova/
 │   ├── Milestones.md                   # Three-week plan and what was delivered
 │   ├── architecture/                   # This audit document
 │   ├── planova/                        # Proposal and team implementation plan (PDF)
-│   └── superpowers/                    # Design specs and plans
+│   └── screenshots/                    # README screenshots
 └── tests/                              # CTest unit & integration tests
     ├── CMakeLists.txt                  # Defines test runners linking Qt6::Test & planova_core
     ├── fakes/                          # FakeClock, FakeEventStore, FakeMemberQuery, FakeTaskQuery
