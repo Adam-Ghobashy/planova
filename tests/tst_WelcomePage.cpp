@@ -93,10 +93,11 @@ private slots:
         QCOMPARE(actions[1]->text(), QString("Delete project"));
 
         actions[0]->trigger();
-        QCOMPARE(edit.count(), 1);
+        QCOMPARE(edit.count(), 0);   // queued: nothing is emitted inside the menu action
+        QTRY_COMPARE(edit.count(), 1);
         QCOMPARE(edit.at(0).at(0).toString(), QString::fromStdString(f.ids[0]));
         actions[1]->trigger();
-        QCOMPARE(del.count(), 1);
+        QTRY_COMPARE(del.count(), 1);
         QCOMPARE(del.at(0).at(0).toString(), QString::fromStdString(f.ids[0]));
         QCOMPARE(opened.count(), 0);
     }

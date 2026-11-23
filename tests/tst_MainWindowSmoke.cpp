@@ -71,10 +71,13 @@ void driveTopDialog(std::function<void(ModalDialog*)> drive, int delayMs = 50)
             auto* dialog = qobject_cast<ModalDialog*>(widget);
             if (dialog && dialog->isVisible()) {
                 drive(dialog);
+                // A failed check must not leave the dialog open: its exec() would never return and the test would hang.
+                if (QTest::currentTestFailed() && dialog->isVisible())
+                    dialog->reject();
                 return;
             }
         }
-        QFAIL("no modal dialog is open");
+        QFAIL("no modal dialog is open");   // nothing is open, so there is nothing to close
     });
 }
 
@@ -312,7 +315,7 @@ private slots:
         });
         more->menu()->actions().at(0)->trigger();
 
-        QCOMPARE(window.findChild<QLabel*>("homeTitle")->text(), QString("Orbit"));
+        QTRY_COMPARE(window.findChild<QLabel*>("homeTitle")->text(), QString("Orbit"));
         QVERIFY(!badge->isVisibleTo(&window));
         QVERIFY(window.findChild<QLabel*>("projectSwitcherName")->text().contains("Orbit"));
         QVERIFY(window.statusBar()->currentMessage().startsWith("Orbit"));
@@ -342,7 +345,7 @@ private slots:
         });
         more->menu()->actions().at(1)->trigger();
 
-        QVERIFY(!core.currentProject().has_value());
+        QTRY_VERIFY(!core.currentProject().has_value());
         QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Hub));
         pressShortcut(window, Qt::Key_2, Qt::ControlModifier);
         QCOMPARE(pages->currentIndex(), static_cast<int>(Page::Hub));
@@ -389,6 +392,7 @@ private slots:
             }, 100);
         });
         more->menu()->actions().at(1)->trigger();
+        QTRY_VERIFY(!core.currentProject().has_value());   // the menu signal is queued
         held.close();
         if (!sawInfo)
             QSKIP("folder removal did not fail on this platform");

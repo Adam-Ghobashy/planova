@@ -497,7 +497,7 @@ void HomePage::buildUi()
     headerLayout->addStretch(1);
     m_moreButton = new QToolButton(this);
     m_moreButton->setObjectName(QStringLiteral("homeMoreButton"));
-    m_moreButton->setText(QStringLiteral("\u22ef"));
+    m_moreButton->setText(QStringLiteral("⋯"));
     m_moreButton->setPopupMode(QToolButton::InstantPopup);
     m_moreButton->setCursor(Qt::PointingHandCursor);
     m_moreButton->setFocusPolicy(Qt::StrongFocus);
@@ -508,8 +508,9 @@ void HomePage::buildUi()
     QAction* editAction = moreMenu->addAction(tr("Edit details"));
     QAction* deleteAction = moreMenu->addAction(tr("Delete project"));
     m_moreButton->setMenu(moreMenu);
-    connect(editAction, &QAction::triggered, this, &HomePage::editProjectRequested);
-    connect(deleteAction, &QAction::triggered, this, &HomePage::deleteProjectRequested);
+    // Queued so the dialog never opens inside the menu action (a refresh may rebuild this page).
+    connect(editAction, &QAction::triggered, this, &HomePage::editProjectRequested, Qt::QueuedConnection);
+    connect(deleteAction, &QAction::triggered, this, &HomePage::deleteProjectRequested, Qt::QueuedConnection);
     headerLayout->addWidget(m_moreButton, 0, Qt::AlignBottom);
     auto* hubButton = new QPushButton(QStringLiteral("\u2302  Projects Hub"), this);
     hubButton->setObjectName(QStringLiteral("homeHubButton"));

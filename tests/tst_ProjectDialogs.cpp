@@ -120,6 +120,69 @@ private slots:
         QVERIFY(dialog.findChild<QLabel*>("editProjectError")->isVisibleTo(&dialog));
     }
 
+    void editLabelsFieldTeamName()
+    {
+        EditProjectDialog dialog(sampleProject(), [](const QString&, const QString&, const QString&) {}, nullptr);
+        QStringList labels;
+        for (auto* label : dialog.findChildren<QLabel*>("modalFieldLabel")) labels << label->text();
+        QVERIFY(labels.contains("Team name"));
+    }
+
+    void editUnknownModelShowsNoSelectionAndBlocksSave()
+    {
+        ProjectDto project = sampleProject();
+        project.seModel = "Kanban";   // not one of the four models
+        EditProjectDialog dialog(project, [](const QString&, const QString&, const QString&) {}, nullptr);
+        QComboBox* combo = modelCombo(dialog);
+        QCOMPARE(combo->currentIndex(), -1);
+        QCOMPARE(combo->placeholderText(), QString("Choose a process model"));
+        auto* save = dialog.findChild<QPushButton*>("modalPrimaryButton");
+        QVERIFY(!save->isEnabled());
+        combo->setCurrentIndex(1);
+        QVERIFY(save->isEnabled());
+    }
+
+    void editErrorHidesWhenTeamOrModelChanges()
+    {
+        EditProjectDialog dialog(sampleProject(),
+                                 [](const QString&, const QString&, const QString&) {
+                                     throw std::invalid_argument("Nope");
+                                 },
+                                 nullptr);
+        dialog.show();
+        auto* error = dialog.findChild<QLabel*>("editProjectError");
+        auto* save = dialog.findChild<QPushButton*>("modalPrimaryButton");
+
+        save->click();
+        QVERIFY(error->isVisibleTo(&dialog));
+        dialog.findChild<QLineEdit*>("editProjectTeam")->setText("Core");
+        QVERIFY(!error->isVisibleTo(&dialog));
+
+        save->click();
+        QVERIFY(error->isVisibleTo(&dialog));
+        modelCombo(dialog)->setCurrentText("Waterfall");
+        QVERIFY(!error->isVisibleTo(&dialog));
+    }
+
+    void editNonStandardExceptionStaysInline()
+    {
+        EditProjectDialog dialog(sampleProject(),
+                                 [](const QString&, const QString&, const QString&) { throw 42; },
+                                 nullptr);
+        dialog.show();
+        dialog.findChild<QPushButton*>("modalPrimaryButton")->click();
+        QVERIFY(dialog.isVisible());
+        auto* error = dialog.findChild<QLabel*>("editProjectError");
+        QVERIFY(error->isVisibleTo(&dialog));
+        QCOMPARE(error->text(), QString("Could not save the project."));
+    }
+
+    void deletePlaceholderIsNotTheName()
+    {
+        DeleteProjectDialog dialog("Orbit", nullptr);
+        QCOMPARE(dialog.findChild<QLineEdit*>("deleteProjectConfirm")->placeholderText(), QString("Project name"));
+    }
+
     void deleteNeedsExactName()
     {
         DeleteProjectDialog dialog("Orbit", nullptr);

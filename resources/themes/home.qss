@@ -375,7 +375,6 @@ QToolButton#homeMoreButton {
     border: 1px solid @BorderDefault;
     border-radius: 6px;
     padding: 0 8px;
-    font-family: "Segoe UI Symbol", "Segoe UI";
     font-size: 16px;
     font-weight: 600;
 }

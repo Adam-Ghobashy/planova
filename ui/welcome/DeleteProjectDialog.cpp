@@ -24,7 +24,7 @@ DeleteProjectDialog::DeleteProjectDialog(const QString& projectName, QWidget* pa
     confirm_ = new QLineEdit(this);
     confirm_->setObjectName("deleteProjectConfirm");
     confirm_->setAccessibleName(tr("Type the project name to confirm"));
-    confirm_->setPlaceholderText(projectName);
+    confirm_->setPlaceholderText(tr("Project name"));
     root->addWidget(confirm_);
 
     addButton(tr("Cancel"), Role::Secondary);

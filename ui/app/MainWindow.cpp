@@ -276,13 +276,8 @@ void MainWindow::deleteProject(const QString& projectId)
             return;
 
         const bool wasOpen = core_.currentProject() == id;
-        std::optional<std::filesystem::path> leftoverFolder;
-        try {
-            leftoverFolder = core_.deleteProject(id);
-        } catch (const std::exception& error) {
-            ModalDialog::info(this, tr("Could not delete project"), QString::fromUtf8(error.what()));
-            return;
-        }
+        // A failure throws and is reported by the single catch below.
+        const std::optional<std::filesystem::path> leftoverFolder = core_.deleteProject(id);
 
         if (wasOpen) {
             // The saved page belongs to the project that is gone; the next start must not restore it.

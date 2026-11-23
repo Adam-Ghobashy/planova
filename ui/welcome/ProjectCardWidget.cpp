@@ -5,6 +5,7 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPushButton>
+#include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -56,8 +57,13 @@ ProjectCardWidget::ProjectCardWidget(const ProjectDto& project, bool isCurrent, 
     QAction* deleteAction = menu->addAction(tr("Delete project"));
     more->setMenu(menu);
     top->addWidget(more, 0, Qt::AlignTop);
-    connect(editAction, &QAction::triggered, this, [this] { emit editRequested(id_); });
-    connect(deleteAction, &QAction::triggered, this, [this] { emit deleteRequested(id_); });
+    // Queued: a refresh may delete this card, and the dialog must not open inside its own menu action.
+    connect(editAction, &QAction::triggered, this, [this] {
+        QTimer::singleShot(0, this, [this] { emit editRequested(id_); });
+    });
+    connect(deleteAction, &QAction::triggered, this, [this] {
+        QTimer::singleShot(0, this, [this] { emit deleteRequested(id_); });
+    });
     root->addLayout(top);
 
     if (!team_.isEmpty()) {

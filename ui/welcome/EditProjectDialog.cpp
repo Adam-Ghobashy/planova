@@ -2,6 +2,7 @@
 
 #include "pins/StyledComboBox.h"
 
+#include <QComboBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -36,15 +37,17 @@ EditProjectDialog::EditProjectDialog(const ProjectDto& project, SaveFn save, QWi
 
     team_ = new QLineEdit(QString::fromStdString(project.team), this);
     team_->setObjectName("editProjectTeam");
-    team_->setAccessibleName(tr("Team"));
-    root->addWidget(fieldLabel(tr("Team"), team_, this));
+    team_->setAccessibleName(tr("Team name"));
+    root->addWidget(fieldLabel(tr("Team name"), team_, this));
     root->addWidget(team_);
 
     // StyledComboBox keeps its object name "PinCombo": pins.qss styles it by that name.
     model_ = new planova::s5::StyledComboBox(this);
     model_->setAccessibleName(tr("Process model"));
     for (const char* model : kModels) model_->addItem(QString::fromLatin1(model));
-    model_->setCurrentText(QString::fromStdString(project.seModel));
+    // An unknown stored model shows no selection; Save stays off until one is chosen.
+    model_->setPlaceholderText(tr("Choose a process model"));
+    model_->setCurrentIndex(model_->findText(QString::fromStdString(project.seModel)));
     root->addWidget(fieldLabel(tr("Process model"), model_, this));
     root->addWidget(model_);
 
@@ -59,13 +62,15 @@ EditProjectDialog::EditProjectDialog(const ProjectDto& project, SaveFn save, QWi
     saveButton_ = addButton(tr("Save"), Role::Primary);
 
     connect(name_, &QLineEdit::textChanged, this, &EditProjectDialog::updateSaveEnabled);
+    connect(team_, &QLineEdit::textChanged, this, &EditProjectDialog::updateSaveEnabled);
+    connect(model_, &QComboBox::currentIndexChanged, this, &EditProjectDialog::updateSaveEnabled);
     updateSaveEnabled();
 }
 
 void EditProjectDialog::updateSaveEnabled()
 {
-    saveButton_->setEnabled(!name_->text().trimmed().isEmpty());
-    error_->hide();   // an old message no longer matches what is typed
+    saveButton_->setEnabled(!name_->text().trimmed().isEmpty() && model_->currentIndex() >= 0);
+    error_->hide();   // an old message no longer matches what is entered
 }
 
 void EditProjectDialog::showError(const QString& message)
@@ -84,6 +89,9 @@ void EditProjectDialog::accept()
         return;
     } catch (const std::exception&) {
         showError(tr("The project could not be saved. Please try again."));
+        return;
+    } catch (...) {
+        showError(tr("Could not save the project."));
         return;
     }
     ModalDialog::accept();
