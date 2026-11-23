@@ -181,7 +181,7 @@ protected:
         }
 
         QFont labelFont = ThemeManager::instance().textFont(TextStyle::Caption);
-                QFont valueFont = monoFont();
+        QFont valueFont = monoFont();
         valueFont.setWeight(QFont::DemiBold);
         valueFont.setPixelSize(12);
 

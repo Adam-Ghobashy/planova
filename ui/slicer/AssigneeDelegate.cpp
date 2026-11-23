@@ -67,7 +67,7 @@ void AssigneeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
     QString text = index.data(Qt::DisplayRole).toString();
     QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
-        painter->setFont(font);
+    painter->setFont(font);
     painter->setPen(tm.color(Token::TextPrimary));
     painter->drawText(comboRect.adjusted(8, 0, -20, 0), Qt::AlignLeft | Qt::AlignVCenter, text);
 

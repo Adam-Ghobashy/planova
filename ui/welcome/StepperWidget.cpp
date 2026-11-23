@@ -68,8 +68,7 @@ void StepperWidget::paintEvent(QPaintEvent*)
         painter.drawRect(QRectF(centerX(0), circleY - kLine / 2.0, centerX(current_) - centerX(0), kLine));
     }
 
-    QFont numberFont = theme.font(FontRole::Body, 14);
-    numberFont.setWeight(QFont::DemiBold);
+    QFont numberFont = theme.textFont(TextStyle::LabelActive);
     for (int i = 0; i < count; ++i) {
         const bool done = i < current_;
         const bool active = i == current_;

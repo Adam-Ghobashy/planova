@@ -140,9 +140,7 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     }
 
     if (col == AssignmentTableModel::TaskComplexity) {
-        QFont titleFont = painter->font();
-        titleFont.setPixelSize(14);
-        titleFont.setWeight(QFont::DemiBold);
+        const QFont titleFont = tm.textFont(TextStyle::LabelActive);
         painter->setFont(titleFont);
         painter->setPen(tm.color(Token::TextPrimary));
         const int titleWidth = rect.width() - 20;
@@ -161,7 +159,7 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         }
 
         QFont levelFont = ThemeManager::instance().textFont(TextStyle::Caption);
-                painter->setFont(levelFont);
+        painter->setFont(levelFont);
         painter->setPen(tm.color(Token::TextMuted));
         painter->drawText(QRect(dotX + 54, dotY - 8, 40, 16), Qt::AlignLeft | Qt::AlignVCenter,
                           QString("C%1").arg(complexity));
@@ -229,7 +227,7 @@ void SlicerTableDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
 
     } else if (col == AssignmentTableModel::Rationale) {
         QFont font = ThemeManager::instance().textFont(TextStyle::Caption);
-                painter->setFont(font);
+        painter->setFont(font);
         painter->setPen(tm.color(Token::TextSecondary));
         // At most two lines; the full text is in the tooltip.
         const QString text = twoLines(index.data(AssignmentTableModel::RationaleRole).toString(),

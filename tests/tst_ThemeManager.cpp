@@ -99,9 +99,15 @@ private slots:
     }
     void fontsRegistered() {
         ThemeManager::instance().loadFonts();
+        // The app must not bundle Inter or Space Grotesk. The system may have its own "Inter", so the
+        // bundled files are checked, not the installed families.
+        const QStringList bundled = QDir(":/fonts").entryList(QDir::Files);
+        QVERIFY(!bundled.isEmpty());
+        for (const QString& name : bundled) {
+            QVERIFY2(!name.contains("Inter", Qt::CaseInsensitive), qPrintable(name));
+            QVERIFY2(!name.contains("SpaceGrotesk", Qt::CaseInsensitive), qPrintable(name));
+        }
         const QStringList families = QFontDatabase::families();
-        QVERIFY(!families.contains("Inter"));
-        QVERIFY(!families.contains("Space Grotesk"));
         QVERIFY(families.contains("JetBrains Mono"));
         QVERIFY(families.contains("Macintosh Skeletal Filled"));
         QCOMPARE(ThemeManager::instance().font(FontRole::Mono, 14).family(), QString("JetBrains Mono"));
@@ -143,17 +149,23 @@ private slots:
         QCOMPARE(int(font.weight()), weight);
         QCOMPARE(font.hintingPreference(), QFont::PreferDefaultHinting);
     }
-    void typeScaleRoles() {
-        // Caption, Body and Label read as body text; the rest are titles and use the Display family.
+    void roleForTextStyles() {
+        // Caption, Body, Label and LabelActive are body text (so the active nav item keeps its width); Heading
+        // and PageTitle are titles. Tested on the role itself: both families can resolve to the same font on a
+        // machine without Segoe UI Variable.
+        QCOMPARE(int(ThemeManager::roleFor(TextStyle::Caption)), int(FontRole::Body));
+        QCOMPARE(int(ThemeManager::roleFor(TextStyle::Body)), int(FontRole::Body));
+        QCOMPARE(int(ThemeManager::roleFor(TextStyle::Label)), int(FontRole::Body));
+        QCOMPARE(int(ThemeManager::roleFor(TextStyle::LabelActive)), int(FontRole::Body));
+        QCOMPARE(int(ThemeManager::roleFor(TextStyle::Heading)), int(FontRole::Display));
+        QCOMPARE(int(ThemeManager::roleFor(TextStyle::PageTitle)), int(FontRole::Display));
+    }
+    void textFontUsesTheRoleFamily() {
         auto& t = ThemeManager::instance();
-        const QString body = t.font(FontRole::Body, 14).family();
-        const QString display = t.font(FontRole::Display, 14).family();
-        QCOMPARE(t.textFont(TextStyle::Caption).family(), body);
-        QCOMPARE(t.textFont(TextStyle::Body).family(), body);
-        QCOMPARE(t.textFont(TextStyle::Label).family(), body);
-        QCOMPARE(t.textFont(TextStyle::LabelActive).family(), display);
-        QCOMPARE(t.textFont(TextStyle::Heading).family(), display);
-        QCOMPARE(t.textFont(TextStyle::PageTitle).family(), display);
+        for (TextStyle style : {TextStyle::Caption, TextStyle::Body, TextStyle::Label, TextStyle::LabelActive,
+                                TextStyle::Heading, TextStyle::PageTitle}) {
+            QCOMPARE(t.textFont(style).family(), t.font(ThemeManager::roleFor(style), 14).family());
+        }
     }
     void qssHasNoSmallOrOldFonts() {
         static const QRegularExpression size("font-size:\\s*(\\d+)px");

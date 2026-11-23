@@ -207,6 +207,28 @@ private slots:
         QCOMPARE(table->model()->index(0, AssignmentTableModel::Assignee)
                      .data(AssignmentTableModel::AssigneeNameRole).toString(), pick);
     }
+    void elidedTaskTitleHasFullTitleTooltip() {
+        Board b;
+        b.addAlice();
+        const std::string title = "Integrate the Critical Path Algorithm with the Weighted Scoring Strategy";
+        b.tasks.addTask(TaskDto{"t1", title, SkillCategory::Backend, Priority::Medium, 3, 4, TaskStatus::ToDo,
+                                std::nullopt, {}});
+        ChaosSlicerPage page(b.service, b.tasks, b.members);
+        page.resize(900, 900);
+        page.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&page));
+        auto* table = page.findChild<QTableView*>("assignmentsTable");
+        QVERIFY(table);
+
+        // The delegate paints the title in this font inside the cell minus 20 px; it must really be elided here.
+        const QFontMetrics metrics(ThemeManager::instance().textFont(TextStyle::LabelActive));
+        const QString full = QString::fromStdString(title);
+        const int cellWidth = table->columnWidth(AssignmentTableModel::TaskComplexity);
+        QVERIFY2(metrics.horizontalAdvance(full) > cellWidth - 20, "the title fits, so this test shows nothing");
+
+        const QModelIndex index = table->model()->index(0, AssignmentTableModel::TaskComplexity);
+        QCOMPARE(index.data(Qt::ToolTipRole).toString(), full);
+    }
     void failedSaveIsShownNotThrown() {
         FakeTaskQuery tasks;
         FakeMemberQuery members;

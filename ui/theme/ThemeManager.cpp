@@ -214,9 +214,23 @@ QFont ThemeManager::font(FontRole role, int pixelSize) const
     return result;
 }
 
+FontRole ThemeManager::roleFor(TextStyle style)
+{
+    switch (style) {
+    case TextStyle::Heading:
+    case TextStyle::PageTitle:
+        return FontRole::Display;
+    case TextStyle::Caption:
+    case TextStyle::Body:
+    case TextStyle::Label:
+    case TextStyle::LabelActive:
+        break;
+    }
+    return FontRole::Body;
+}
+
 QFont ThemeManager::textFont(TextStyle style) const
 {
-    FontRole role = FontRole::Body;
     int pixels = 14;
     QFont::Weight weight = QFont::Normal;
     switch (style) {
@@ -230,21 +244,18 @@ QFont ThemeManager::textFont(TextStyle style) const
         weight = QFont::Medium;
         break;
     case TextStyle::LabelActive:
-        role = FontRole::Display;
         weight = QFont::DemiBold;
         break;
     case TextStyle::Heading:
-        role = FontRole::Display;
         pixels = 16;
         weight = QFont::DemiBold;
         break;
     case TextStyle::PageTitle:
-        role = FontRole::Display;
         pixels = 24;
         weight = QFont::DemiBold;
         break;
     }
-    QFont result = font(role, pixels);
+    QFont result = font(roleFor(style), pixels);
     result.setWeight(weight);
     return result;
 }

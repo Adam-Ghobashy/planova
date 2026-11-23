@@ -13,7 +13,8 @@ enum class FontRole { Body, Display, Mono, Script };
 
 // The one type scale (pixel size and weight):
 // Caption 12/Medium, Body 14/Normal, Label 14/Medium, LabelActive 14/DemiBold, Heading 16/DemiBold,
-// PageTitle 24/DemiBold. Caption, Body and Label use the Body family, the rest the Display family.
+// PageTitle 24/DemiBold. Caption, Body, Label and LabelActive use the Body family (so the active nav item
+// keeps its width), Heading and PageTitle the Display family.
 enum class TextStyle { Caption, Body, Label, LabelActive, Heading, PageTitle };
 
 class ThemeManager : public QObject {
@@ -37,6 +38,8 @@ public:
     void loadFonts();
     // Font for a role at a size in pixels, with the system's default hinting.
     QFont font(FontRole role, int pixelSize) const;
+    // Font family role of one step of the type scale (see TextStyle).
+    static FontRole roleFor(TextStyle style);
     // Font for one step of the type scale (see TextStyle).
     QFont textFont(TextStyle style) const;
     // Pure helper behind font(): the first candidate family for the role that is in `available`, otherwise

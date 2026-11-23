@@ -1,9 +1,6 @@
 #include "StatCardWidget.h"
 
-#include "theme/ThemeManager.h"
-
 #include <QEasingCurve>
-#include <QFont>
 #include <QLabel>
 #include <QSizePolicy>
 #include <QStyle>
@@ -35,11 +32,8 @@ StatCardWidget::StatCardWidget(
     titleLabel->setObjectName("statCardTitle");
     valueLabel->setObjectName("statCardValue");
 
-    // Display family at the size home.qss gives it. Segoe UI digits all have the same width,
-    // so the count-up does not jitter.
-    QFont valueFont = ThemeManager::instance().font(FontRole::Display, 26);
-    valueFont.setWeight(QFont::DemiBold);
-    valueLabel->setFont(valueFont);
+    // Font family, size and weight come from home.qss (QLabel#statCardValue); Segoe UI digits all have the
+    // same width, so the count-up does not jitter.
 
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(20, 16, 20, 16);
